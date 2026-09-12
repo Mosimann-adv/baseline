@@ -1,8 +1,10 @@
 export const MIN_AGE = 6;
 export const MAX_AGE = 17;
 
+export type AgeBandId = "6-8" | "9-11" | "12-14" | "15-17";
+
 export interface AgeBand {
-  id: "6-8" | "9-11" | "12-14" | "15-17";
+  id: AgeBandId;
   label: string;
   focus: string;
 }

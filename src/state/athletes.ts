@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
-import { requireSupabase } from "../lib/supabase";
+import { isDemo, requireSupabase } from "../lib/supabase";
+import { demoCreateAthlete, demoLoad } from "../lib/demo";
 import { CONSENT_VERSION } from "../lib/consent";
 import type { Athlete, Consent, NewAthleteInput } from "../lib/types";
 
@@ -10,6 +11,14 @@ export function useAthletes(guardianId: string) {
   const [error, setError] = useState<string | null>(null);
 
   const reload = useCallback(async () => {
+    if (isDemo) {
+      const data = demoLoad();
+      setAthletes(data.athletes.filter((a) => a.guardian_id === guardianId));
+      setConsents(data.consents);
+      setError(null);
+      setLoading(false);
+      return;
+    }
     const client = requireSupabase();
     setLoading(true);
     const [athletesRes, consentsRes] = await Promise.all([
@@ -37,6 +46,11 @@ export function useAthletes(guardianId: string) {
   // Atleta e autorização são gravados juntos pela função do banco: nunca existe perfil sem autorização.
   const create = useCallback(
     async (input: NewAthleteInput): Promise<Athlete> => {
+      if (isDemo) {
+        const athlete = demoCreateAthlete(guardianId, input);
+        await reload();
+        return athlete;
+      }
       const { data, error: rpcError } = await requireSupabase().rpc("create_athlete_with_consent", {
         p_nickname: input.nickname,
         p_birth_year: input.birthYear,
@@ -48,7 +62,7 @@ export function useAthletes(guardianId: string) {
       await reload();
       return data as Athlete;
     },
-    [reload],
+    [guardianId, reload],
   );
 
   return { athletes, consents, loading, error, reload, create };

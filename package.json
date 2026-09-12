@@ -7,6 +7,7 @@
     "dev": "vite",
     "typecheck": "tsc --noEmit",
     "build": "tsc --noEmit && vite build",
+    "build:demo": "tsc --noEmit && vite build --mode demo --outDir dist-demo",
     "preview": "vite preview",
     "android:sync": "npm run build && cap sync android",
     "android:open": "cap open android"
