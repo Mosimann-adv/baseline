@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useAuth } from "./state/auth";
 import { useAthletes } from "./state/athletes";
 import { useSessions } from "./state/sessions";
+import { useTests } from "./state/tests";
 import { isSupabaseConfigured } from "./lib/supabase";
 import { programById } from "./content/programs";
 import { AuthFlow } from "./screens/AuthScreens";
@@ -10,6 +11,8 @@ import { WhoTrains } from "./screens/WhoTrains";
 import { AthleteHome } from "./screens/AthleteHome";
 import { ProgramDetail } from "./screens/ProgramDetail";
 import { TrainingSession } from "./screens/TrainingSession";
+import { Progress } from "./screens/Progress";
+import { TestSession } from "./screens/TestSession";
 import { GuardianArea } from "./screens/GuardianArea";
 import { Notice, PrimaryButton, Screen } from "./components/ui";
 
@@ -19,7 +22,9 @@ type View =
   | { name: "newAthlete" }
   | { name: "athlete"; athleteId: string }
   | { name: "program"; athleteId: string; programId: string }
-  | { name: "training"; athleteId: string; programId: string };
+  | { name: "training"; athleteId: string; programId: string }
+  | { name: "progress"; athleteId: string }
+  | { name: "tests"; athleteId: string };
 
 const lastAthleteKey = (guardianId: string) => `baseline.athlete.${guardianId}`;
 
@@ -34,6 +39,7 @@ export default function App() {
 function Family({ guardianId, email }: { guardianId: string; email: string }) {
   const family = useAthletes(guardianId);
   const training = useSessions(guardianId);
+  const skill = useTests(guardianId);
   const [view, setView] = useState<View>(() => {
     const saved = localStorage.getItem(lastAthleteKey(guardianId));
     return saved ? { name: "athlete", athleteId: saved } : { name: "picker" };
@@ -47,14 +53,14 @@ function Family({ guardianId, email }: { guardianId: string; email: string }) {
     window.scrollTo(0, 0);
   }, [view.name]);
 
-  if (family.loading || training.loading) return <Splash />;
-  const loadError = family.error ?? training.error;
+  if (family.loading || training.loading || skill.loading) return <Splash />;
+  const loadError = family.error ?? training.error ?? skill.error;
   if (loadError) {
     return (
       <Screen title="Sem conexão">
         <div className="stack">
           <Notice tone="error">{loadError}</Notice>
-          <PrimaryButton onClick={() => void Promise.all([family.reload(), training.reload()])}>Tentar de novo</PrimaryButton>
+          <PrimaryButton onClick={() => void Promise.all([family.reload(), training.reload(), skill.reload()])}>Tentar de novo</PrimaryButton>
         </div>
       </Screen>
     );
@@ -79,63 +85,68 @@ function Family({ guardianId, email }: { guardianId: string; email: string }) {
     setView({ name: "picker" });
   };
 
-  switch (view.name) {
-    case "newAthlete":
-      return (
-        <NewAthlete
-          first={false}
-          onBack={() => setView({ name: "guardian" })}
-          onCreate={async (input) => {
-            const athlete = await family.create(input);
-            setView({ name: "picker" });
-            return athlete;
-          }}
-        />
-      );
-    case "guardian":
-      return (
-        <GuardianArea
-          guardianId={guardianId}
-          email={email}
-          athletes={family.athletes}
-          consents={family.consents}
-          onBack={() => setView({ name: "picker" })}
-          onAddAthlete={() => setView({ name: "newAthlete" })}
-        />
-      );
-    case "athlete":
-    case "program":
-    case "training": {
-      const athlete = family.athletes.find((a) => a.id === view.athleteId);
-      if (!athlete) break;
-      const home = () => setView({ name: "athlete", athleteId: athlete.id });
+  if (view.name === "newAthlete") {
+    return (
+      <NewAthlete
+        first={false}
+        onBack={() => setView({ name: "guardian" })}
+        onCreate={async (input) => {
+          const athlete = await family.create(input);
+          setView({ name: "picker" });
+          return athlete;
+        }}
+      />
+    );
+  }
 
-      if (view.name !== "athlete") {
+  if (view.name === "guardian") {
+    return (
+      <GuardianArea
+        guardianId={guardianId}
+        email={email}
+        athletes={family.athletes}
+        consents={family.consents}
+        onBack={() => setView({ name: "picker" })}
+        onAddAthlete={() => setView({ name: "newAthlete" })}
+        onUpdateGoal={family.updateGoal}
+      />
+    );
+  }
+
+  if (view.name !== "picker") {
+    const athlete = family.athletes.find((a) => a.id === view.athleteId);
+    if (athlete) {
+      const athleteId = athlete.id;
+      const sessions = training.sessions.filter((s) => s.athlete_id === athleteId);
+      const tests = skill.tests.filter((t) => t.athlete_id === athleteId);
+      const home = () => setView({ name: "athlete", athleteId });
+
+      if (view.name === "program" || view.name === "training") {
         const program = programById(view.programId);
-        if (!program) break;
-        if (view.name === "training") {
+        if (program && view.name === "training") {
           return <TrainingSession athlete={athlete} program={program} onExit={home} onSave={training.create} />;
         }
+        if (program) {
+          return <ProgramDetail program={program} onBack={home} onStart={() => setView({ name: "training", athleteId, programId: program.id })} />;
+        }
+      } else if (view.name === "progress") {
+        return <Progress athlete={athlete} sessions={sessions} tests={tests} onBack={home} onStartTests={() => setView({ name: "tests", athleteId })} />;
+      } else if (view.name === "tests") {
+        return <TestSession athlete={athlete} tests={tests} onBack={() => setView({ name: "progress", athleteId })} onSave={skill.create} />;
+      } else {
         return (
-          <ProgramDetail
-            program={program}
-            onBack={home}
-            onStart={() => setView({ name: "training", athleteId: athlete.id, programId: program.id })}
+          <AthleteHome
+            athlete={athlete}
+            sessions={sessions}
+            tests={tests}
+            onSwitch={toPicker}
+            onOpenProgram={(programId) => setView({ name: "program", athleteId, programId })}
+            onOpenProgress={() => setView({ name: "progress", athleteId })}
+            onStartTests={() => setView({ name: "tests", athleteId })}
           />
         );
       }
-
-      return (
-        <AthleteHome
-          athlete={athlete}
-          sessions={training.sessions}
-          onSwitch={toPicker}
-          onOpenProgram={(programId) => setView({ name: "program", athleteId: athlete.id, programId })}
-        />
-      );
     }
-    case "picker":
-      break;
   }
 
   return (

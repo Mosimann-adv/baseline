@@ -204,6 +204,43 @@ button.row:active { background: var(--fill); }
 .video-frame iframe { width: 100%; height: 100%; border: 0; display: block; }
 .plain-link { color: var(--blue-bright); font-size: 14px; }
 
+/* ---------- Evolução ---------- */
+.goal-card, .due-card { margin: 0 0 8px; padding: 14px 16px; border-radius: var(--radius-group); background: var(--bg-elevated); }
+.goal-head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
+.goal-head span { font-size: 14px; color: var(--text-2); }
+.goal-head strong { font-size: 17px; font-weight: 600; font-variant-numeric: tabular-nums; }
+.goal-bar { height: 8px; margin: 10px 0 8px; border-radius: 999px; background: var(--fill-2); overflow: hidden; }
+.goal-bar span { display: block; height: 100%; border-radius: 999px; background: var(--blue-bright); transition: width 0.4s var(--ease); }
+.goal-bar span.met { background: var(--orange); }
+.goal-card p { margin: 0; font-size: 13px; color: var(--text-3); font-variant-numeric: tabular-nums; }
+.due-card { display: flex; align-items: center; justify-content: space-between; gap: 12px; box-shadow: inset 0 0 0 1px rgba(125, 184, 232, 0.35); }
+.due-card .subtitle { color: var(--blue-bright); }
+.due-card p { margin: 0; font-size: 14px; line-height: 1.4; color: var(--text-2); }
+.secondary-button { flex: 0 0 auto; min-height: 44px; padding: 0 16px; border: 0; border-radius: 12px; background: var(--fill-2); color: var(--text); font-size: 15px; font-weight: 600; }
+.secondary-button:active { opacity: 0.72; }
+.chart-box { padding: 12px 12px 8px; }
+.weeks-chart { display: block; width: 100%; height: auto; }
+.weeks-chart .bar { fill: var(--fill-2); }
+.weeks-chart .bar.met { fill: var(--orange); }
+.weeks-chart .goal-line { stroke: var(--yellow); stroke-width: 1.5; stroke-dasharray: 4 4; }
+.weeks-chart .axis { fill: var(--text-3); font-size: 10px; font-family: var(--font); font-variant-numeric: tabular-nums; }
+.test-row { gap: 10px; }
+.sparkline { flex: 0 0 auto; }
+.sparkline path { fill: none; stroke: var(--orange); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.sparkline circle { fill: var(--orange); }
+.chip-up { flex: 0 0 auto; padding: 2px 8px; border-radius: 999px; background: rgba(238, 160, 71, 0.18); color: var(--orange); font-size: 12px; font-weight: 600; }
+.badges { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 8px; padding: 12px; }
+.badge { display: flex; flex-direction: column; gap: 2px; padding: 12px; border-radius: 12px; background: var(--fill); color: var(--text-3); }
+.badge strong { font-size: 14px; font-weight: 600; color: var(--text-2); }
+.badge span { font-size: 12px; line-height: 1.35; }
+.badge-mark { font-size: 20px; line-height: 1; margin-bottom: 4px; }
+.badge.earned { background: rgba(238, 160, 71, 0.14); color: var(--text-2); }
+.badge.earned strong { color: var(--text); }
+.badge.earned .badge-mark { color: var(--orange); }
+.goal-select { flex: 0 0 auto; max-width: 42%; }
+.test-input { flex-basis: 40%; font-variant-numeric: tabular-nums; }
+.visually-hidden { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+
 .demo-banner {
   position: sticky; top: 0; z-index: 10; margin: 0; padding: calc(6px + var(--safe-top)) 16px 6px;
   background: var(--yellow); color: var(--navy-deep); font-size: 13px; font-weight: 600; text-align: center;

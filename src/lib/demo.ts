@@ -1,18 +1,20 @@
 import type { Session } from "@supabase/supabase-js";
-import type { Athlete, Consent, NewAthleteInput, NewSessionInput, TrainingSession } from "./types";
+import type { Athlete, Consent, NewAthleteInput, NewSessionInput, NewTestInput, SkillTestRecord, TrainingSession } from "./types";
 import { CONSENT_VERSION } from "./consent";
 import { MAX_AGE, MIN_AGE, ageThisYear } from "./age";
 import { localIsoDate } from "./dates";
 
-// Modo demonstração: sessão, atletas e treinos ficam só neste navegador, sem servidor.
+// Modo demonstração: sessão, atletas, treinos e testes ficam só neste navegador, sem servidor.
 const SESSION_KEY = "baseline.demo.session";
 const DATA_KEY = "baseline.demo.data";
 const DEMO_GUARDIAN_ID = "demo-guardian";
+const DEFAULT_WEEKLY_GOAL = 3;
 
 interface DemoData {
   athletes: Athlete[];
   consents: Consent[];
   sessions: TrainingSession[];
+  tests: SkillTestRecord[];
 }
 
 function read<T>(key: string, fallback: T): T {
@@ -74,7 +76,13 @@ export function demoDeleteAccount(): void {
 
 export function demoLoad(): DemoData {
   const data = read<Partial<DemoData>>(DATA_KEY, {});
-  return { athletes: data.athletes ?? [], consents: data.consents ?? [], sessions: data.sessions ?? [] };
+  return {
+    // Perfis criados antes da meta semanal existir recebem a meta padrão, como faz o banco.
+    athletes: (data.athletes ?? []).map((athlete) => ({ ...athlete, weekly_goal: athlete.weekly_goal ?? DEFAULT_WEEKLY_GOAL })),
+    consents: data.consents ?? [],
+    sessions: data.sessions ?? [],
+    tests: data.tests ?? [],
+  };
 }
 
 export function demoCreateAthlete(guardianId: string, input: NewAthleteInput): Athlete {
@@ -89,12 +97,19 @@ export function demoCreateAthlete(guardianId: string, input: NewAthleteInput): A
     birth_year: input.birthYear,
     level: input.level,
     position: input.position,
+    weekly_goal: DEFAULT_WEEKLY_GOAL,
     created_at: now,
   };
   data.athletes.push(athlete);
   data.consents.unshift({ id: crypto.randomUUID(), athlete_id: athlete.id, document_version: CONSENT_VERSION, accepted_at: now, revoked_at: null });
   write(DATA_KEY, data);
   return athlete;
+}
+
+export function demoUpdateGoal(athleteId: string, goal: number): void {
+  const data = demoLoad();
+  data.athletes = data.athletes.map((athlete) => (athlete.id === athleteId ? { ...athlete, weekly_goal: goal } : athlete));
+  write(DATA_KEY, data);
 }
 
 export function demoCreateSession(guardianId: string, input: NewSessionInput): TrainingSession {
@@ -115,4 +130,19 @@ export function demoCreateSession(guardianId: string, input: NewSessionInput): T
   data.sessions.unshift(session);
   write(DATA_KEY, data);
   return session;
+}
+
+export function demoCreateTest(guardianId: string, input: NewTestInput): SkillTestRecord {
+  const data = demoLoad();
+  const record: SkillTestRecord = {
+    id: crypto.randomUUID(),
+    guardian_id: guardianId,
+    athlete_id: input.athleteId,
+    tested_on: localIsoDate(),
+    results: input.results,
+    created_at: new Date().toISOString(),
+  };
+  data.tests.unshift(record);
+  write(DATA_KEY, data);
+  return record;
 }

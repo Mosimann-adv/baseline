@@ -7,6 +7,7 @@ import { checkPin, hasPin, savePin } from "../lib/pin";
 import type { Athlete, Consent } from "../lib/types";
 
 const formatDate = (iso: string) => new Date(iso).toLocaleDateString("pt-BR");
+const GOALS = [1, 2, 3, 4, 5, 6, 7];
 
 export function GuardianArea({
   guardianId,
@@ -15,6 +16,7 @@ export function GuardianArea({
   consents,
   onBack,
   onAddAthlete,
+  onUpdateGoal,
 }: {
   guardianId: string;
   email: string;
@@ -22,10 +24,20 @@ export function GuardianArea({
   consents: Consent[];
   onBack: () => void;
   onAddAthlete: () => void;
+  onUpdateGoal: (athleteId: string, goal: number) => Promise<void>;
 }) {
   const [unlocked, setUnlocked] = useState(false);
   if (!unlocked) return <PinGate guardianId={guardianId} onUnlock={() => setUnlocked(true)} onBack={onBack} />;
-  return <FamilySettings email={email} athletes={athletes} consents={consents} onBack={onBack} onAddAthlete={onAddAthlete} />;
+  return (
+    <FamilySettings
+      email={email}
+      athletes={athletes}
+      consents={consents}
+      onBack={onBack}
+      onAddAthlete={onAddAthlete}
+      onUpdateGoal={onUpdateGoal}
+    />
+  );
 }
 
 function PinGate({ guardianId, onUnlock, onBack }: { guardianId: string; onUnlock: () => void; onBack: () => void }) {
@@ -88,12 +100,14 @@ function FamilySettings({
   consents,
   onBack,
   onAddAthlete,
+  onUpdateGoal,
 }: {
   email: string;
   athletes: Athlete[];
   consents: Consent[];
   onBack: () => void;
   onAddAthlete: () => void;
+  onUpdateGoal: (athleteId: string, goal: number) => Promise<void>;
 }) {
   const { signOut, deleteAccount } = useAuth();
   const [confirming, setConfirming] = useState(false);
@@ -111,9 +125,18 @@ function FamilySettings({
     }
   }
 
+  async function changeGoal(athleteId: string, goal: number) {
+    setError(null);
+    try {
+      await onUpdateGoal(athleteId, goal);
+    } catch (err) {
+      setError(friendlyError(err));
+    }
+  }
+
   return (
     <Screen eyebrow="Área do responsável" title="Sua família" onBack={onBack}>
-      <Group header="Atletas">
+      <Group header="Atletas" footer="A meta é quantos treinos por semana cada atleta deve fazer. Ela aparece na tela inicial dele.">
         {athletes.map((athlete) => {
           const consent = consents.find((c) => c.athlete_id === athlete.id && !c.revoked_at);
           return (
@@ -124,6 +147,18 @@ function FamilySettings({
                   {ageThisYear(athlete.birth_year)} anos · {consent ? `autorizado em ${formatDate(consent.accepted_at)}` : "sem autorização ativa"}
                 </small>
               </span>
+              <select
+                className="row-select goal-select"
+                aria-label={`Meta semanal de ${athlete.nickname}`}
+                value={athlete.weekly_goal}
+                onChange={(e) => void changeGoal(athlete.id, Number(e.target.value))}
+              >
+                {GOALS.map((goal) => (
+                  <option key={goal} value={goal}>
+                    {goal} por semana
+                  </option>
+                ))}
+              </select>
             </div>
           );
         })}

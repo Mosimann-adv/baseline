@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { isDemo, requireSupabase } from "../lib/supabase";
-import { demoCreateAthlete, demoLoad } from "../lib/demo";
+import { demoCreateAthlete, demoLoad, demoUpdateGoal } from "../lib/demo";
 import { CONSENT_VERSION } from "../lib/consent";
 import type { Athlete, Consent, NewAthleteInput } from "../lib/types";
 
@@ -10,6 +10,8 @@ export function useAthletes(guardianId: string) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  // `loading` só vale para a primeira carga: recarregar depois de salvar não pode trocar a tela
+  // pela de carregamento (isso trancava de novo a Área do responsável).
   const reload = useCallback(async () => {
     if (isDemo) {
       const data = demoLoad();
@@ -20,7 +22,6 @@ export function useAthletes(guardianId: string) {
       return;
     }
     const client = requireSupabase();
-    setLoading(true);
     const [athletesRes, consentsRes] = await Promise.all([
       client.from("athletes").select("*").eq("guardian_id", guardianId).order("created_at"),
       client
@@ -65,5 +66,18 @@ export function useAthletes(guardianId: string) {
     [guardianId, reload],
   );
 
-  return { athletes, consents, loading, error, reload, create };
+  const updateGoal = useCallback(
+    async (athleteId: string, goal: number): Promise<void> => {
+      if (isDemo) {
+        demoUpdateGoal(athleteId, goal);
+      } else {
+        const { error: updateError } = await requireSupabase().from("athletes").update({ weekly_goal: goal }).eq("id", athleteId);
+        if (updateError) throw updateError;
+      }
+      await reload();
+    },
+    [reload],
+  );
+
+  return { athletes, consents, loading, error, reload, create, updateGoal };
 }

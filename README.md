@@ -16,7 +16,7 @@ npm run dev
 
 1. Criar um projeto novo, região São Paulo (não usar o projeto do app pessoal).
 2. Em **Authentication**, deixar ativo o login por e-mail e senha, com confirmação de e-mail.
-3. Rodar `supabase/migrations/0001_fundacao.sql` no SQL Editor.
+3. Rodar no SQL Editor, em ordem, os arquivos de `supabase/migrations/` (`0001_fundacao.sql`, `0002_treinos.sql`, `0003_evolucao.sql`).
 4. Copiar a Project URL e a chave pública para `.env.local`.
 
 ## Android
@@ -30,9 +30,9 @@ Requer JDK 21 (o Android Studio já traz um em `jbr`).
 
 ## Etapas
 
-1. **Fundação** — cadastro do responsável, perfis com autorização, PIN, exclusão de conta. ← atual
-2. **Treino** — biblioteca por faixa etária com vídeos, treino guiado, registro.
-3. **Evolução** — testes a cada 4 semanas, metas, conquistas, histórico.
+1. **Fundação** — cadastro do responsável, perfis com autorização, PIN, exclusão de conta. ✓
+2. **Treino** — biblioteca por faixa etária com vídeos, treino guiado, registro. ✓
+3. **Evolução** — testes a cada 4 semanas, meta semanal, sequência, conquistas, histórico. ✓
 4. **Privacidade e loja** — política de privacidade, termos, formulários do Google Play.
 5. **Teste e publicação** — conta de organização do Instituto Arvoredo, teste fechado, publicação.
 

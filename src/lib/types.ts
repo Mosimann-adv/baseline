@@ -10,6 +10,8 @@ export interface Athlete {
   birth_year: number;
   level: Level;
   position: Position | null;
+  /** Treinos por semana definidos pelo responsável (1 a 7). */
+  weekly_goal: number;
   created_at: string;
 }
 
@@ -73,4 +75,32 @@ export interface NewSessionInput {
   drillsTotal: number;
   feeling: number | null;
   discomfort: boolean;
+}
+
+export interface SkillTestDef {
+  id: string;
+  name: string;
+  unit: string;
+  /** "max": quanto maior, melhor. "min": quanto menor, melhor (tempos). */
+  better: "max" | "min";
+  bands: AgeBandId[];
+  /** Como medir, em linguagem simples. */
+  protocol: string;
+  min: number;
+  max: number;
+  step: "int" | "decimal";
+}
+
+export interface SkillTestRecord {
+  id: string;
+  guardian_id: string;
+  athlete_id: string;
+  tested_on: string;
+  results: Record<string, number>;
+  created_at: string;
+}
+
+export interface NewTestInput {
+  athleteId: string;
+  results: Record<string, number>;
 }
