@@ -1,4 +1,4 @@
-import { useEffect, useReducer, useState } from "react";
+import { useEffect, useReducer, useRef, useState } from "react";
 import { Group, Notice, PlainButton, PrimaryButton, Segmented } from "../components/ui";
 import { friendlyError } from "../lib/errors";
 import type { Athlete, Drill, NewSessionInput, Program } from "../lib/types";
@@ -21,6 +21,7 @@ interface Action {
 }
 
 const INITIAL: RunState = { phase: "ready", index: 0, endsAt: 0, pausedLeft: null, done: 0, startedAt: null };
+const YOUTUBE_ORIGIN = "https://www.youtube-nocookie.com";
 
 // Contagem pelo relógio (endsAt), não por ticks: o intervalo atrasa com a tela bloqueada ou o app em segundo plano.
 function run(state: RunState, action: Action): RunState {
@@ -84,6 +85,23 @@ function useWakeLock(active: boolean) {
   }, [active]);
 }
 
+// O vídeo acompanha o exercício: começa junto com a contagem e repete até o fim.
+// Navegadores de celular só tocam sozinhos com som desligado; o som liga no próprio player.
+function youtubeSrc(video: NonNullable<Drill["video"]>, autoplay: boolean): string {
+  const params = new URLSearchParams({
+    rel: "0",
+    playsinline: "1",
+    enablejsapi: "1",
+    mute: "1",
+    loop: "1",
+    playlist: video.id,
+    autoplay: autoplay ? "1" : "0",
+  });
+  if (video.start) params.set("start", String(video.start));
+  if (location.origin.startsWith("http")) params.set("origin", location.origin);
+  return `${YOUTUBE_ORIGIN}/embed/${video.id}?${params.toString()}`;
+}
+
 const clock = (ms: number) => {
   const total = Math.ceil(ms / 1000);
   return `${Math.floor(total / 60)}:${String(total % 60).padStart(2, "0")}`;
@@ -103,7 +121,7 @@ export function TrainingSession({
   const drills = program.drills;
   const [state, dispatch] = useReducer(run, INITIAL);
   const [now, setNow] = useState(() => Date.now());
-  const [videoOpen, setVideoOpen] = useState(false);
+  const playerRef = useRef<HTMLIFrameElement>(null);
   const act = (type: Action["type"]) => dispatch({ type, now: Date.now(), drills });
 
   const running = (state.phase === "work" || state.phase === "rest") && state.pausedLeft === null;
@@ -121,28 +139,26 @@ export function TrainingSession({
   useEffect(() => {
     if (state.phase === "work") navigator.vibrate?.(60);
     if (state.phase === "done") navigator.vibrate?.([120, 80, 120]);
-    setVideoOpen(false);
   }, [state.phase, state.index]);
+
+  // Pausar o treino pausa o vídeo, e continuar volta a tocar (API de iframe do YouTube via postMessage).
+  useEffect(() => {
+    if (state.phase !== "work") return;
+    const func = state.pausedLeft === null ? "playVideo" : "pauseVideo";
+    playerRef.current?.contentWindow?.postMessage(JSON.stringify({ event: "command", func, args: [] }), YOUTUBE_ORIGIN);
+  }, [state.phase, state.pausedLeft]);
 
   useWakeLock(state.phase !== "done");
 
   if (state.phase === "done") {
-    return (
-      <Finish
-        athlete={athlete}
-        program={program}
-        done={state.done}
-        startedAt={state.startedAt}
-        onExit={onExit}
-        onSave={onSave}
-      />
-    );
+    return <Finish athlete={athlete} program={program} done={state.done} startedAt={state.startedAt} onExit={onExit} onSave={onSave} />;
   }
 
   const drill = drills[state.index];
   const next = drills[state.index + 1];
   const left = state.pausedLeft ?? Math.max(0, state.endsAt - now);
   const progress = ((state.index + (state.phase === "rest" ? 1 : 0)) / drills.length) * 100;
+  const video = state.phase !== "rest" ? drill.video : undefined;
 
   return (
     <main className="training">
@@ -169,48 +185,37 @@ export function TrainingSession({
           )}
         </section>
       ) : (
-        <section className="training-body">
-          <p className="phase-label">{state.phase === "ready" ? program.title : "Agora"}</p>
+        <section className={`training-body${video ? " with-video" : ""}`}>
+          {video && (
+            <div className="video-block">
+              <div className="video-frame">
+                <iframe
+                  key={`${drill.id}-${state.phase}`}
+                  ref={playerRef}
+                  src={youtubeSrc(video, state.phase === "work")}
+                  title={video.title}
+                  allow="autoplay; encrypted-media; picture-in-picture"
+                  allowFullScreen
+                  referrerPolicy="strict-origin-when-cross-origin"
+                />
+              </div>
+              <a
+                className="plain-link"
+                href={`https://www.youtube.com/watch?v=${video.id}${video.start ? `&t=${video.start}s` : ""}`}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                O vídeo não aparece? Abrir no YouTube
+              </a>
+            </div>
+          )}
+          <p className="phase-label">{state.phase === "ready" ? program.title : state.pausedLeft === null ? "Agora" : "Pausado"}</p>
           <h1 className="drill-name">{drill.name}</h1>
           <p className="drill-cue">{drill.cue}</p>
           {state.phase === "work" && (
             <p className="countdown" aria-live="off">
               {clock(left)}
             </p>
-          )}
-          {drill.video && (
-            <div className="video-block">
-              {videoOpen ? (
-                <>
-                  <div className="video-frame">
-                    <iframe
-                      src={`https://www.youtube-nocookie.com/embed/${drill.video.id}?rel=0&playsinline=1${drill.video.start ? `&start=${drill.video.start}` : ""}`}
-                      title={drill.video.title}
-                      allow="accelerometer; encrypted-media; gyroscope; picture-in-picture"
-                      allowFullScreen
-                      referrerPolicy="strict-origin-when-cross-origin"
-                    />
-                  </div>
-                  <a
-                    className="plain-link"
-                    href={`https://www.youtube.com/watch?v=${drill.video.id}${drill.video.start ? `&t=${drill.video.start}s` : ""}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                  >
-                    O vídeo não abriu? Ver no YouTube
-                  </a>
-                </>
-              ) : (
-                <PlainButton
-                  onClick={() => {
-                    act("pause");
-                    setVideoOpen(true);
-                  }}
-                >
-                  Ver como faz
-                </PlainButton>
-              )}
-            </div>
           )}
         </section>
       )}
@@ -322,9 +327,7 @@ function Finish({
           <Segmented label="Algo doeu durante o treino?" options={DISCOMFORT} value={discomfort} onChange={setDiscomfort} />
         </div>
       </Group>
-      {discomfort === "sim" && (
-        <Notice tone="error">Pare de treinar e conte para um adulto agora. Se a dor continuar, procure um médico.</Notice>
-      )}
+      {discomfort === "sim" && <Notice tone="error">Pare de treinar e conte para um adulto agora. Se a dor continuar, procure um médico.</Notice>}
       {error && <Notice tone="error">{error}</Notice>}
       <div className="stack bottom-cta">
         <PrimaryButton onClick={() => void save()} disabled={busy}>
