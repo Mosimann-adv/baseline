@@ -138,7 +138,14 @@ supabase/migrations/    0001 fundação · 0002 treinos · 0003 evolução · 00
 
 ## 7. Banco de dados (Supabase)
 
-**O projeto do Baseline ainda não foi criado. Nenhuma migração foi rodada.**
+**Projeto criado em 2026-09-12:** ref `szpmzcrxyisehrvwlene` (`https://szpmzcrxyisehrvwlene.supabase.co`).
+
+- **Migrações:** 0001–0004 aplicadas. A conferência foi feita pela API pública:
+  - as 4 tabelas respondem "permission denied" ao acesso anônimo;
+  - a coluna `weekly_goal` existe.
+- **Auth:** e-mail ativo, confirmação de e-mail obrigatória, cadastro aberto.
+- **Chave pública (publishable):** configurada nas variáveis da Vercel e no `.env.local` local, que não vai para o repositório. **Nunca** usar a `secret`/`service_role`.
+- **E-mail:** usa o SMTP padrão do Supabase, que só entrega para membros da equipe do projeto e com limite baixo por hora. Antes de convidar outras famílias, configure um SMTP próprio (ex.: Resend).
 
 | Migração | O que faz |
 |---|---|
@@ -147,12 +154,19 @@ supabase/migrations/    0001 fundação · 0002 treinos · 0003 evolução · 00
 | `0003_evolucao.sql` | `athletes.weekly_goal` (1–7, padrão 3) e `skill_tests` (`results` jsonb `{id_do_teste: valor}`) |
 | `0004_privacidade.sql` | Unicidade da autorização só entre ativas; revogação definitiva por trigger; idade 6–17 também na correção; insert de treino e teste exige autorização ativa |
 
-Para criar o projeto:
-1. Região São Paulo.
-2. Auth por e-mail e senha, com confirmação.
-3. Site URL do deploy web.
-4. Rodar as migrações **em ordem** no SQL Editor.
-5. Copiar a URL e a chave pública para `.env.local`.
+Migração nova: crie `supabase/migrations/0005_...sql` e rode-a no SQL Editor do projeto acima. Escreva migrações idempotentes (`if not exists`, `drop ... if exists`, `create or replace`), como as atuais.
+
+## 7.1 Site na Vercel
+
+- **Endereço:** https://baseline-six-sigma.vercel.app/
+- **Deploy:** automático a cada push na `main` (preset Vite, `npm run build`, pasta `dist`).
+- **Variáveis de ambiente** (Production e Preview): `VITE_SUPABASE_URL` e `VITE_SUPABASE_ANON_KEY`.
+  - Elas só entram no site depois de um novo build.
+  - Para confirmar, procure `szpmzcrxyisehrvwlene` dentro do `assets/index-*.js` publicado.
+- **Páginas públicas:**
+  - https://baseline-six-sigma.vercel.app/#/privacidade
+  - https://baseline-six-sigma.vercel.app/#/termos
+  - https://baseline-six-sigma.vercel.app/#/excluir-conta
 
 ## 8. Próximos passos de código (ordem combinada)
 
@@ -182,15 +196,21 @@ O próximo passo proposto ao dono, ainda sem início.
 Não existe. Hoje `detectSessionInUrl: false`. Avalie código OTP por e-mail (evita deep link) ou link com deep link no Android. Enquanto não existir, a página de exclusão manda escrever para o e-mail de privacidade.
 
 ### 8.4 Google Play
-Formulários de Segurança dos dados, público-alvo (Famílias), classificação de conteúdo e URL da política. Os endereços públicos, depois do deploy web:
-- `<site>/#/privacidade`
-- `<site>/#/termos`
-- `<site>/#/excluir-conta`
+Formulários de Segurança dos dados, público-alvo (Famílias), classificação de conteúdo e URL da política. Os endereços públicos estão na seção 7.1.
 
 ## 9. Pendências fora do código (dependem do dono)
 
-- [ ] Criar o projeto Supabase do Baseline e rodar as migrações 0001–0004.
-- [ ] Deploy web (ex.: Vercel), para testar o vídeo de verdade e publicar os endereços legais.
+- [x] Criar o projeto Supabase do Baseline e rodar as migrações 0001–0004.
+- [x] Deploy web na Vercel, com variáveis de ambiente.
+- [ ] Confirmar no Supabase, em **Authentication → URL Configuration**, a Site URL `https://baseline-six-sigma.vercel.app` e a Redirect URL `https://baseline-six-sigma.vercel.app/**`. Ainda não foi verificado.
+- [ ] Testar de ponta a ponta no site real, pelo celular:
+  - cadastro com confirmação de e-mail e login;
+  - criar atleta;
+  - treino com vídeo tocando;
+  - teste de habilidade;
+  - revogar e renovar autorização;
+  - baixar dados.
+- [ ] Configurar SMTP próprio no Supabase antes de convidar outras famílias.
 - [ ] Instalar JDK 21 / Android Studio.
 - [ ] Conta de organização no Google Play (Instituto Arvoredo, D-U-N-S).
 - [ ] Confirmar o `appId`.
