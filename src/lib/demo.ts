@@ -1,5 +1,5 @@
 import type { Session } from "@supabase/supabase-js";
-import type { Athlete, Consent, NewAthleteInput, NewSessionInput, NewTestInput, SkillTestRecord, TrainingSession } from "./types";
+import type { Athlete, AthletePatch, Consent, NewAthleteInput, NewSessionInput, NewTestInput, SkillTestRecord, TrainingSession } from "./types";
 import { CONSENT_VERSION } from "./consent";
 import { MAX_AGE, MIN_AGE, ageThisYear } from "./age";
 import { localIsoDate } from "./dates";
@@ -106,10 +106,34 @@ export function demoCreateAthlete(guardianId: string, input: NewAthleteInput): A
   return athlete;
 }
 
-export function demoUpdateGoal(athleteId: string, goal: number): void {
+export function demoUpdateAthlete(athleteId: string, patch: AthletePatch): void {
   const data = demoLoad();
-  data.athletes = data.athletes.map((athlete) => (athlete.id === athleteId ? { ...athlete, weekly_goal: goal } : athlete));
+  data.athletes = data.athletes.map((athlete) => (athlete.id === athleteId ? { ...athlete, ...patch } : athlete));
   write(DATA_KEY, data);
+}
+
+export function demoRevoke(athleteId: string): void {
+  const data = demoLoad();
+  const now = new Date().toISOString();
+  data.consents = data.consents.map((c) => (c.athlete_id === athleteId && !c.revoked_at ? { ...c, revoked_at: now } : c));
+  write(DATA_KEY, data);
+}
+
+export function demoAuthorize(athleteId: string): void {
+  const data = demoLoad();
+  if (data.consents.some((c) => c.athlete_id === athleteId && c.document_version === CONSENT_VERSION && !c.revoked_at)) return;
+  data.consents.unshift({ id: crypto.randomUUID(), athlete_id: athleteId, document_version: CONSENT_VERSION, accepted_at: new Date().toISOString(), revoked_at: null });
+  write(DATA_KEY, data);
+}
+
+export function demoDeleteAthlete(athleteId: string): void {
+  const data = demoLoad();
+  write(DATA_KEY, {
+    athletes: data.athletes.filter((a) => a.id !== athleteId),
+    consents: data.consents.filter((c) => c.athlete_id !== athleteId),
+    sessions: data.sessions.filter((s) => s.athlete_id !== athleteId),
+    tests: data.tests.filter((t) => t.athlete_id !== athleteId),
+  });
 }
 
 export function demoCreateSession(guardianId: string, input: NewSessionInput): TrainingSession {

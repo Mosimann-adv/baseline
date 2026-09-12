@@ -1,3 +1,5 @@
+import type { Consent } from "./types";
+
 // RASCUNHO — texto pendente de revisão jurídica. Mudou o texto? Troque a versão:
 // cada autorização fica gravada com a versão aceita.
 export const CONSENT_VERSION = "2026-09-rascunho-1";
@@ -9,3 +11,8 @@ export const CONSENT_POINTS: readonly string[] = [
   "Os vídeos de treino abrem pelo YouTube no modo sem cookies.",
   "Você pode ver, revogar e apagar tudo a qualquer momento na Área do responsável.",
 ];
+
+/** Autorização válida: não revogada e da versão atual do termo. Sem ela, o perfil fica bloqueado. */
+export function activeConsent(consents: Consent[], athleteId: string): Consent | undefined {
+  return consents.find((c) => c.athlete_id === athleteId && c.document_version === CONSENT_VERSION && !c.revoked_at);
+}

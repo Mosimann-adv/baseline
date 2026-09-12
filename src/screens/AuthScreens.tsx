@@ -1,18 +1,22 @@
 import { useState, type FormEvent } from "react";
 import { useAuth } from "../state/auth";
 import { friendlyError } from "../lib/errors";
+import { LEGAL_DOCS, type LegalId } from "../content/legal";
+import { LegalScreen } from "./LegalScreen";
 import { Field, Group, Notice, PlainButton, PrimaryButton, Screen, SwitchRow } from "../components/ui";
 
 type Mode = "welcome" | "signin" | "signup";
 
 export function AuthFlow() {
   const [mode, setMode] = useState<Mode>("welcome");
+  const [doc, setDoc] = useState<LegalId | null>(null);
   if (mode === "signin") return <SignIn onBack={() => setMode("welcome")} onSwitch={() => setMode("signup")} />;
   if (mode === "signup") return <SignUp onBack={() => setMode("welcome")} onSwitch={() => setMode("signin")} />;
-  return <Welcome onSignIn={() => setMode("signin")} onSignUp={() => setMode("signup")} />;
+  if (doc) return <LegalScreen doc={LEGAL_DOCS[doc]} onBack={() => setDoc(null)} />;
+  return <Welcome onSignIn={() => setMode("signin")} onSignUp={() => setMode("signup")} onDoc={setDoc} />;
 }
 
-function Welcome({ onSignIn, onSignUp }: { onSignIn: () => void; onSignUp: () => void }) {
+function Welcome({ onSignIn, onSignUp, onDoc }: { onSignIn: () => void; onSignUp: () => void; onDoc: (doc: LegalId) => void }) {
   return (
     <main className="welcome">
       <img src="icons/icon-192.png" alt="" width={88} height={88} className="welcome-icon" />
@@ -23,6 +27,14 @@ function Welcome({ onSignIn, onSignUp }: { onSignIn: () => void; onSignUp: () =>
         <PlainButton onClick={onSignIn}>Já tenho conta</PlainButton>
       </div>
       <p className="fine">A conta é sempre de um adulto. Cada atleta treina pelo perfil que você criar.</p>
+      <p className="fine legal-links">
+        <button type="button" className="inline-link" onClick={() => onDoc("privacidade")}>
+          Política de privacidade
+        </button>
+        <button type="button" className="inline-link" onClick={() => onDoc("termos")}>
+          Termos de uso
+        </button>
+      </p>
     </main>
   );
 }
@@ -72,6 +84,8 @@ function SignUp({ onBack, onSwitch }: { onBack: () => void; onSwitch: () => void
   const [error, setError] = useState<string | null>(null);
   const [sentTo, setSentTo] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  // O texto abre por cima do formulário sem desmontá-lo: o que já foi digitado continua lá na volta.
+  const [reading, setReading] = useState<LegalId | null>(null);
 
   const ready = email.includes("@") && password.length >= 8 && isGuardian && acceptsTerms;
 
@@ -89,6 +103,8 @@ function SignUp({ onBack, onSwitch }: { onBack: () => void; onSwitch: () => void
       setBusy(false);
     }
   }
+
+  if (reading) return <LegalScreen doc={LEGAL_DOCS[reading]} onBack={() => setReading(null)} />;
 
   if (sentTo) {
     return (
@@ -108,20 +124,29 @@ function SignUp({ onBack, onSwitch }: { onBack: () => void; onSwitch: () => void
           <Field id="signup-email" label="E-mail" type="email" inputMode="email" autoComplete="email" value={email} onChange={setEmail} placeholder="voce@exemplo.com" />
           <Field id="signup-password" label="Senha" type="password" autoComplete="new-password" value={password} onChange={setPassword} />
         </Group>
-        <Group header="Declarações">
+        <Group
+          header="Declarações"
+          footer={
+            <>
+              Leia antes de aceitar:{" "}
+              <button type="button" className="inline-link" onClick={() => setReading("termos")}>
+                Termos de uso
+              </button>{" "}
+              e{" "}
+              <button type="button" className="inline-link" onClick={() => setReading("privacidade")}>
+                Política de privacidade
+              </button>
+              . Textos em revisão antes do lançamento.
+            </>
+          }
+        >
           <SwitchRow
             id="signup-guardian"
             label="Sou maior de 18 anos e responsável legal pelos atletas que vou cadastrar"
             checked={isGuardian}
             onChange={setIsGuardian}
           />
-          <SwitchRow
-            id="signup-terms"
-            label="Li e aceito os Termos de uso e a Política de privacidade"
-            hint="Textos em revisão antes do lançamento"
-            checked={acceptsTerms}
-            onChange={setAcceptsTerms}
-          />
+          <SwitchRow id="signup-terms" label="Li e aceito os Termos de uso e a Política de privacidade" checked={acceptsTerms} onChange={setAcceptsTerms} />
         </Group>
         {error && <Notice tone="error">{error}</Notice>}
         <PrimaryButton type="submit" disabled={!ready || busy}>

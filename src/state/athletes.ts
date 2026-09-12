@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useState } from "react";
 import { isDemo, requireSupabase } from "../lib/supabase";
-import { demoCreateAthlete, demoLoad, demoUpdateGoal } from "../lib/demo";
+import { demoAuthorize, demoCreateAthlete, demoDeleteAthlete, demoLoad, demoRevoke, demoUpdateAthlete } from "../lib/demo";
 import { CONSENT_VERSION } from "../lib/consent";
-import type { Athlete, Consent, NewAthleteInput } from "../lib/types";
+import type { Athlete, AthletePatch, Consent, NewAthleteInput } from "../lib/types";
 
 export function useAthletes(guardianId: string) {
   const [athletes, setAthletes] = useState<Athlete[]>([]);
@@ -66,12 +66,12 @@ export function useAthletes(guardianId: string) {
     [guardianId, reload],
   );
 
-  const updateGoal = useCallback(
-    async (athleteId: string, goal: number): Promise<void> => {
+  const update = useCallback(
+    async (athleteId: string, patch: AthletePatch): Promise<void> => {
       if (isDemo) {
-        demoUpdateGoal(athleteId, goal);
+        demoUpdateAthlete(athleteId, patch);
       } else {
-        const { error: updateError } = await requireSupabase().from("athletes").update({ weekly_goal: goal }).eq("id", athleteId);
+        const { error: updateError } = await requireSupabase().from("athletes").update(patch).eq("id", athleteId);
         if (updateError) throw updateError;
       }
       await reload();
@@ -79,5 +79,56 @@ export function useAthletes(guardianId: string) {
     [reload],
   );
 
-  return { athletes, consents, loading, error, reload, create, updateGoal };
+  // Revogar não apaga nada: o perfil fica bloqueado até nova autorização ou exclusão.
+  const revoke = useCallback(
+    async (athleteId: string): Promise<void> => {
+      if (isDemo) {
+        demoRevoke(athleteId);
+      } else {
+        const { error: updateError } = await requireSupabase()
+          .from("consents")
+          .update({ revoked_at: new Date().toISOString() })
+          .eq("athlete_id", athleteId)
+          .is("revoked_at", null);
+        if (updateError) throw updateError;
+      }
+      await reload();
+    },
+    [reload],
+  );
+
+  // Nova autorização é um registro novo: o histórico de aceites e revogações fica preservado.
+  const authorize = useCallback(
+    async (athleteId: string): Promise<void> => {
+      if (isDemo) {
+        demoAuthorize(athleteId);
+      } else {
+        const { error: insertError } = await requireSupabase().from("consents").insert({
+          guardian_id: guardianId,
+          athlete_id: athleteId,
+          document_version: CONSENT_VERSION,
+          guardian_declaration: true,
+        });
+        if (insertError) throw insertError;
+      }
+      await reload();
+    },
+    [guardianId, reload],
+  );
+
+  // Apaga o perfil; autorizações, treinos e testes saem junto (on delete cascade no banco).
+  const remove = useCallback(
+    async (athleteId: string): Promise<void> => {
+      if (isDemo) {
+        demoDeleteAthlete(athleteId);
+      } else {
+        const { error: deleteError } = await requireSupabase().from("athletes").delete().eq("id", athleteId);
+        if (deleteError) throw deleteError;
+      }
+      await reload();
+    },
+    [reload],
+  );
+
+  return { athletes, consents, loading, error, reload, create, update, revoke, authorize, remove };
 }

@@ -30,6 +30,9 @@ export interface NewAthleteInput {
   position: Position | null;
 }
 
+/** Correções que o responsável pode fazer no perfil. */
+export type AthletePatch = Partial<Pick<Athlete, "nickname" | "birth_year" | "level" | "position" | "weekly_goal">>;
+
 export type Category = "drible" | "arremesso" | "passe" | "defesa" | "fisico";
 
 export interface Drill {

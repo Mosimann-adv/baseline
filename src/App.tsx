@@ -4,7 +4,9 @@ import { useAthletes } from "./state/athletes";
 import { useSessions } from "./state/sessions";
 import { useTests } from "./state/tests";
 import { isSupabaseConfigured } from "./lib/supabase";
+import { activeConsent } from "./lib/consent";
 import { programById } from "./content/programs";
+import { LEGAL_DOCS, legalIdFromHash, type LegalId } from "./content/legal";
 import { AuthFlow } from "./screens/AuthScreens";
 import { NewAthlete } from "./screens/NewAthlete";
 import { WhoTrains } from "./screens/WhoTrains";
@@ -14,6 +16,7 @@ import { TrainingSession } from "./screens/TrainingSession";
 import { Progress } from "./screens/Progress";
 import { TestSession } from "./screens/TestSession";
 import { GuardianArea } from "./screens/GuardianArea";
+import { LegalScreen } from "./screens/LegalScreen";
 import { Notice, PrimaryButton, Screen } from "./components/ui";
 
 type View =
@@ -30,10 +33,41 @@ const lastAthleteKey = (guardianId: string) => `baseline.athlete.${guardianId}`;
 
 export default function App() {
   const { session, loading } = useAuth();
+  const [publicDoc, closePublicDoc] = usePublicDoc();
+
+  // Endereços públicos (#/privacidade, #/termos, #/excluir-conta) abrem sem login: o Google Play exige os links.
+  if (publicDoc) {
+    return (
+      <LegalScreen doc={LEGAL_DOCS[publicDoc]} onBack={closePublicDoc}>
+        {publicDoc === "excluir-conta" && (
+          <div className="stack legal-cta">
+            <PrimaryButton onClick={closePublicDoc}>{session ? "Abrir o Baseline" : "Entrar para excluir a conta"}</PrimaryButton>
+          </div>
+        )}
+      </LegalScreen>
+    );
+  }
+
   if (!isSupabaseConfigured) return <SetupNotice />;
   if (loading) return <Splash />;
   if (!session) return <AuthFlow />;
   return <Family key={session.user.id} guardianId={session.user.id} email={session.user.email ?? ""} />;
+}
+
+function usePublicDoc(): [LegalId | null, () => void] {
+  const [doc, setDoc] = useState<LegalId | null>(() => legalIdFromHash(window.location.hash));
+
+  useEffect(() => {
+    const sync = () => setDoc(legalIdFromHash(window.location.hash));
+    window.addEventListener("hashchange", sync);
+    return () => window.removeEventListener("hashchange", sync);
+  }, []);
+
+  const close = () => {
+    window.history.replaceState(null, "", window.location.pathname + window.location.search);
+    setDoc(null);
+  };
+  return [doc, close];
 }
 
 function Family({ guardianId, email }: { guardianId: string; email: string }) {
@@ -80,6 +114,8 @@ function Family({ guardianId, email }: { guardianId: string; email: string }) {
     );
   }
 
+  const isAuthorized = (athleteId: string) => Boolean(activeConsent(family.consents, athleteId));
+
   const toPicker = () => {
     localStorage.removeItem(lastAthleteKey(guardianId));
     setView({ name: "picker" });
@@ -106,15 +142,24 @@ function Family({ guardianId, email }: { guardianId: string; email: string }) {
         email={email}
         athletes={family.athletes}
         consents={family.consents}
+        sessions={training.sessions}
+        tests={skill.tests}
         onBack={() => setView({ name: "picker" })}
         onAddAthlete={() => setView({ name: "newAthlete" })}
-        onUpdateGoal={family.updateGoal}
+        onUpdate={family.update}
+        onRevoke={family.revoke}
+        onAuthorize={family.authorize}
+        onDeleteAthlete={async (athleteId) => {
+          await family.remove(athleteId);
+          await Promise.all([training.reload(), skill.reload()]);
+        }}
       />
     );
   }
 
   if (view.name !== "picker") {
-    const athlete = family.athletes.find((a) => a.id === view.athleteId);
+    // Perfil sem autorização ativa não abre: cai na escolha de atleta, onde aparece bloqueado.
+    const athlete = family.athletes.find((a) => a.id === view.athleteId && isAuthorized(a.id));
     if (athlete) {
       const athleteId = athlete.id;
       const sessions = training.sessions.filter((s) => s.athlete_id === athleteId);
@@ -152,6 +197,7 @@ function Family({ guardianId, email }: { guardianId: string; email: string }) {
   return (
     <WhoTrains
       athletes={family.athletes}
+      isLocked={(athleteId) => !isAuthorized(athleteId)}
       onPick={(athleteId) => setView({ name: "athlete", athleteId })}
       onGuardian={() => setView({ name: "guardian" })}
     />

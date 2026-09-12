@@ -12,6 +12,8 @@ export function friendlyError(err: unknown): string {
   if (/email not confirmed/i.test(msg)) return "Confirme o e-mail pelo link que enviamos antes de entrar.";
   if (/rate limit|too many/i.test(msg)) return "Muitas tentativas seguidas. Espere um minuto e tente de novo.";
   if (/idade fora da faixa/i.test(msg)) return "O Baseline é para atletas de 6 a 17 anos.";
+  if (/row-level security/i.test(msg)) return "Este atleta está sem autorização ativa. O responsável pode autorizar de novo na Área do responsável.";
+  if (/duplicate key/i.test(msg)) return "Este atleta já está autorizado.";
   if (/failed to fetch|network/i.test(msg)) return "Sem conexão. Confira a internet e tente de novo.";
   return "Algo não funcionou. Tente de novo em instantes.";
 }

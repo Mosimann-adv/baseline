@@ -3,19 +3,8 @@ import { Field, Group, Notice, PrimaryButton, Screen, Segmented, SwitchRow } fro
 import { ageThisYear, allowedBirthYears, bandFor } from "../lib/age";
 import { CONSENT_POINTS, CONSENT_VERSION } from "../lib/consent";
 import { friendlyError } from "../lib/errors";
+import { LEVELS, POSITIONS } from "../lib/profile";
 import type { Athlete, Level, NewAthleteInput, Position } from "../lib/types";
-
-const LEVELS: readonly { value: Level; label: string }[] = [
-  { value: "iniciante", label: "Iniciante" },
-  { value: "intermediario", label: "Intermediário" },
-  { value: "avancado", label: "Avançado" },
-];
-
-const POSITIONS: readonly { value: Position; label: string }[] = [
-  { value: "armador", label: "Armador" },
-  { value: "ala", label: "Ala" },
-  { value: "pivo", label: "Pivô" },
-];
 
 export function NewAthlete({
   first,

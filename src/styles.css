@@ -241,6 +241,23 @@ button.row:active { background: var(--fill); }
 .test-input { flex-basis: 40%; font-variant-numeric: tabular-nums; }
 .visually-hidden { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 
+/* ---------- Privacidade e documentos ---------- */
+.legal { display: grid; gap: 22px; margin: 18px 4px 8px; max-width: 65ch; }
+.legal section { display: grid; gap: 8px; }
+.legal h2 { margin: 0; font-size: 17px; font-weight: 600; line-height: 1.3; color: var(--text); text-wrap: balance; }
+.legal p, .legal li { margin: 0; font-size: 15px; line-height: 1.55; color: var(--text-2); text-wrap: pretty; }
+.legal .legal-intro { font-size: 16px; color: var(--text); }
+.legal ul, .legal ol { display: grid; gap: 6px; margin: 0; padding-left: 22px; }
+.legal li::marker { color: var(--text-3); }
+.legal-cta { margin-top: 16px; }
+.inline-link { padding: 0; border: 0; background: none; color: var(--blue-bright); font: inherit; text-decoration: underline; text-underline-offset: 2px; }
+.legal-links { display: flex; flex-wrap: wrap; justify-content: center; gap: 4px 16px; }
+.legal-links .inline-link { min-height: 32px; }
+.status-chip { flex: 0 0 auto; padding: 2px 8px; border-radius: 999px; background: var(--fill-2); color: var(--text-2); font-size: 12px; font-weight: 600; }
+.status-chip.ok { background: rgba(125, 184, 232, 0.18); color: var(--blue-bright); }
+.athlete-card.locked .avatar { opacity: 0.55; }
+.athlete-card.locked span:last-child { color: var(--coral-soft); }
+
 .demo-banner {
   position: sticky; top: 0; z-index: 10; margin: 0; padding: calc(6px + var(--safe-top)) 16px 6px;
   background: var(--yellow); color: var(--navy-deep); font-size: 13px; font-weight: 600; text-align: center;
