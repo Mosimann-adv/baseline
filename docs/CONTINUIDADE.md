@@ -144,7 +144,7 @@ supabase/migrations/    0001 fundação · 0002 treinos · 0003 evolução · 00
   - as 4 tabelas respondem "permission denied" ao acesso anônimo;
   - a coluna `weekly_goal` existe.
 - **Auth:** e-mail ativo, confirmação de e-mail obrigatória, cadastro aberto.
-- **Chave pública (publishable):** configurada nas variáveis da Vercel e no `.env.local` local, que não vai para o repositório. **Nunca** usar a `secret`/`service_role`.
+- **Chave pública (publishable):** fica em `.env.production`, versionado (seção 7.1). **Nunca** usar a `secret`/`service_role`.
 - **E-mail:** usa o SMTP padrão do Supabase, que só entrega para membros da equipe do projeto e com limite baixo por hora. Antes de convidar outras famílias, configure um SMTP próprio (ex.: Resend).
 
 | Migração | O que faz |
@@ -160,9 +160,11 @@ Migração nova: crie `supabase/migrations/0005_...sql` e rode-a no SQL Editor d
 
 - **Endereço:** https://baseline-six-sigma.vercel.app/
 - **Deploy:** automático a cada push na `main` (preset Vite, `npm run build`, pasta `dist`).
-- **Variáveis de ambiente** (Production e Preview): `VITE_SUPABASE_URL` e `VITE_SUPABASE_ANON_KEY`.
-  - Elas só entram no site depois de um novo build.
-  - Para confirmar, procure `szpmzcrxyisehrvwlene` dentro do `assets/index-*.js` publicado.
+- **Endereço e chave do Supabase:** ficam em `.env.production`, versionado no repositório.
+  - São valores públicos: a chave publishable vai de qualquer forma para o navegador, e a proteção dos dados é o RLS.
+  - Motivo: as variáveis cadastradas no painel da Vercel não chegaram ao build (em 2026-09-12 o bundle saiu idêntico ao de um build sem variáveis).
+  - Variáveis do processo, se um dia funcionarem na Vercel, têm prioridade sobre o arquivo.
+- **Conferir um deploy:** procure `szpmzcrxyisehrvwlene` dentro do `assets/index-*.js` publicado.
 - **Páginas públicas:**
   - https://baseline-six-sigma.vercel.app/#/privacidade
   - https://baseline-six-sigma.vercel.app/#/termos

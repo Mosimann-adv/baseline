@@ -16,7 +16,7 @@ App de treinos de basquete para crianças (a partir de 6 anos) e adolescentes. N
    - Perfil sem autorização ativa (revogada ou de versão antiga do termo) fica bloqueado: não abre no app e o banco recusa treinos e testes novos.
    - Revogação é definitiva; autorizar de novo cria outro registro em `consents`.
    - O responsável corrige perfis, baixa a cópia dos dados da família, revoga autorizações e exclui perfis na Área do responsável.
-8. **Nunca** colocar a `service_role` key no app ou no repositório.
+8. **Nunca** colocar a `service_role`/`secret` key no app ou no repositório. O endereço e a chave `sb_publishable_` são públicos e ficam em `.env.production`.
 9. Conteúdo de treino só é publicado depois de validado por profissional de educação física.
 10. Responder em português do Brasil.
 
