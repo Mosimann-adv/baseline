@@ -48,9 +48,11 @@ export function TestSession({
 
   return (
     <Screen eyebrow={`${athlete.nickname} · a cada 4 semanas`} title="Testes" onBack={onBack}>
-      <p className="lead">Faça os testes com um adulto por perto. Preencha só o que fizer hoje.</p>
+      <p className="lead">
+        {athlete.is_self ? "Aqueça antes e faça os testes em local seguro." : "Faça os testes com um adulto por perto."} Preencha só o que fizer hoje.
+      </p>
 
-      {defs.length === 0 && <Notice tone="error">Não há testes para a idade do perfil. Peça ao responsável para conferir o ano de nascimento.</Notice>}
+      {defs.length === 0 && <Notice tone="error">Não há testes para a idade do perfil. Confira o ano de nascimento na tela Conta.</Notice>}
 
       {defs.map((def) => {
         const previous = tests.find((record) => typeof record.results[def.id] === "number")?.results[def.id];

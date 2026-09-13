@@ -21,12 +21,12 @@ function Welcome({ onSignIn, onSignUp, onDoc }: { onSignIn: () => void; onSignUp
     <main className="welcome">
       <img src="icons/icon-192.png" alt="" width={88} height={88} className="welcome-icon" />
       <h1 className="large-title">Baseline</h1>
-      <p className="welcome-sub">Treinos de basquete para crianças e adolescentes, com o acompanhamento de quem cuida delas.</p>
+      <p className="welcome-sub">Treinos de basquete guiados, com vídeo, para você e para as crianças e adolescentes que você acompanha.</p>
       <div className="welcome-actions">
-        <PrimaryButton onClick={onSignUp}>Criar conta de responsável</PrimaryButton>
+        <PrimaryButton onClick={onSignUp}>Criar conta</PrimaryButton>
         <PlainButton onClick={onSignIn}>Já tenho conta</PlainButton>
       </div>
-      <p className="fine">A conta é sempre de um adulto. Cada atleta treina pelo perfil que você criar.</p>
+      <p className="fine">A conta é de um adulto, a partir de 18 anos. Você treina pelo seu perfil e pode criar perfis para crianças e adolescentes.</p>
       <p className="fine legal-links">
         <button type="button" className="inline-link" onClick={() => onDoc("privacidade")}>
           Política de privacidade
@@ -69,7 +69,7 @@ function SignIn({ onBack, onSwitch }: { onBack: () => void; onSwitch: () => void
         <PrimaryButton type="submit" disabled={busy || !email || !password}>
           {busy ? "Entrando…" : "Entrar"}
         </PrimaryButton>
-        <PlainButton onClick={onSwitch}>Criar conta de responsável</PlainButton>
+        <PlainButton onClick={onSwitch}>Criar conta</PlainButton>
       </form>
     </Screen>
   );
@@ -118,7 +118,7 @@ function SignUp({ onBack, onSwitch }: { onBack: () => void; onSwitch: () => void
   }
 
   return (
-    <Screen eyebrow="Conta de responsável" title="Criar conta" onBack={onBack}>
+    <Screen eyebrow="Conta de adulto" title="Criar conta" onBack={onBack}>
       <form onSubmit={submit} className="stack">
         <Group footer="A senha precisa ter pelo menos 8 caracteres.">
           <Field id="signup-email" label="E-mail" type="email" inputMode="email" autoComplete="email" value={email} onChange={setEmail} placeholder="voce@exemplo.com" />
@@ -142,7 +142,7 @@ function SignUp({ onBack, onSwitch }: { onBack: () => void; onSwitch: () => void
         >
           <SwitchRow
             id="signup-guardian"
-            label="Sou maior de 18 anos e responsável legal pelos atletas que vou cadastrar"
+            label="Tenho 18 anos ou mais"
             checked={isGuardian}
             onChange={setIsGuardian}
           />

@@ -7,10 +7,14 @@ Leia junto com `AGENTS.md` (regras que não mudam sem pedido explícito) e `READ
 
 ## 1. O produto em uma página
 
-- **O que é:** app de treinos de basquete para crianças (a partir de 6 anos) e adolescentes (até 17). Nome público **Baseline**; marca **Baseline by Arvoredo**.
+- **O que é:** app de treinos de basquete para adultos e para crianças (a partir de 6 anos) e adolescentes acompanhados por um adulto. Nome público **Baseline**; marca **Baseline by Arvoredo**.
 - **Quem mantém:** Instituto Arvoredo. A publicação no Google Play será por **conta de organização** do Instituto, que exige número D-U-N-S.
-- **Modelo de conta:** o cadastro é sempre do **responsável** (adulto). Ele cria os perfis dos atletas, que não têm login nem e-mail.
-- **Área do responsável:** protegida por PIN de 4 dígitos, que funciona só como trava contra a criança no aparelho.
+- **Modelo de conta** (decisão de 2026-09-12): a conta é sempre de um **adulto (18+)**.
+  - O adulto pode ter **um perfil próprio de treino** (`is_self`), com consentimento do titular.
+  - O adulto pode criar **perfis de crianças e adolescentes** (6–17), com autorização do responsável. Esses perfis não têm login nem e-mail.
+  - Conta nova começa pela tela "Quem vai treinar?" (Eu / Uma criança ou adolescente).
+- **Tela Conta** (antes "Área do responsável"; o componente continua `GuardianArea.tsx`): pede PIN de 4 dígitos **só quando a conta tem perfil de menor**. O PIN é só uma trava contra a criança no aparelho.
+- **Faixa Adulto:** na v1 usa os mesmos treinos e testes de 15–17 (`contentBand` em `src/lib/age.ts`).
 - **Escopo da v1:** não há área do treinador. O foco é o atleta:
   - treinos guiados com vídeo;
   - registro dos treinos;
@@ -44,7 +48,9 @@ Leia junto com `AGENTS.md` (regras que não mudam sem pedido explícito) e `READ
 | `fac2cb3` | Treinos guiados por faixa etária e modo demonstração |
 | `d752170` | Vídeo do exercício na tela durante o treino guiado |
 | `a5f1a3c` | Evolução: testes a cada 4 semanas, meta semanal, sequência de semanas e conquistas |
-| (este commit) | Privacidade: política, termos, página de exclusão, revogar e renovar autorização, corrigir e excluir perfil, cópia dos dados; migração 0004; este documento |
+| `0d1da1e` | Privacidade: política, termos, página de exclusão, revogar e renovar autorização, corrigir e excluir perfil, cópia dos dados; migração 0004; este documento |
+| `aae6fd2`, `94a9b77`, `793555b` | Registro do Supabase e da Vercel; `.env.production` com os valores públicos; build ignora variáveis vazias |
+| (este commit) | Adultos: perfil próprio de treino, tela inicial "Quem vai treinar?", PIN só com menores, faixa Adulto, consentimento do titular (`SELF_CONSENT_VERSION`), termo de menores na versão `rascunho-2`, textos legais na versão `rascunho-2`; migração 0005 |
 
 Etapas do `README.md`:
 1. Fundação — pronta.
@@ -140,7 +146,7 @@ supabase/migrations/    0001 fundação · 0002 treinos · 0003 evolução · 00
 
 **Projeto criado em 2026-09-12:** ref `szpmzcrxyisehrvwlene` (`https://szpmzcrxyisehrvwlene.supabase.co`).
 
-- **Migrações:** 0001–0004 aplicadas. A conferência foi feita pela API pública:
+- **Migrações:** 0001–0004 aplicadas. **A 0005 (adultos) precisa ser rodada** no SQL Editor; sem ela, criar perfil próprio falha. A conferência das anteriores foi feita pela API pública:
   - as 4 tabelas respondem "permission denied" ao acesso anônimo;
   - a coluna `weekly_goal` existe.
 - **Auth:** e-mail ativo, confirmação de e-mail obrigatória, cadastro aberto.
@@ -153,6 +159,7 @@ supabase/migrations/    0001 fundação · 0002 treinos · 0003 evolução · 00
 | `0002_treinos.sql` | `training_sessions` (sem update; `discomfort` booleano) |
 | `0003_evolucao.sql` | `athletes.weekly_goal` (1–7, padrão 3) e `skill_tests` (`results` jsonb `{id_do_teste: valor}`) |
 | `0004_privacidade.sql` | Unicidade da autorização só entre ativas; revogação definitiva por trigger; idade 6–17 também na correção; insert de treino e teste exige autorização ativa |
+| `0005_adultos.sql` | `athletes.is_self` (um por conta, imutável); ano de nascimento a partir de 1900; idade por tipo no cadastro e na correção (adulto 18+, menor 6–17); `create_self_profile_with_consent` |
 
 Migração nova: crie `supabase/migrations/0005_...sql` e rode-a no SQL Editor do projeto acima. Escreva migrações idempotentes (`if not exists`, `drop ... if exists`, `create or replace`), como as atuais.
 
@@ -234,3 +241,5 @@ Formulários de Segurança dos dados, público-alvo (Famílias), classificação
 - **Contagens com limite:** `useSessions` carrega no máximo 300 treinos, então as contagens da Área do responsável podem ficar abaixo do real em famílias muito ativas. A cópia de dados busca tudo, dentro do limite padrão de 1000 linhas por consulta do Supabase.
 - **Idade por ano:** é calculada pela diferença de anos do calendário (`ano atual − ano de nascimento`), tanto no app quanto no banco.
 - **Comparação só consigo mesmo:** conquistas e testes nunca comparam atletas. Mantenha assim.
+- **Menor que completa 18 anos:** passa a receber a faixa Adulto, mas continua sendo perfil de menor, com autorização do responsável. Falta decidir se deve virar perfil próprio com conta própria.
+- **Faixa Adulto:** reaproveita o conteúdo de 15–17. Treinos específicos para adultos dependem do profissional de educação física.

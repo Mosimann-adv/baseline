@@ -1,8 +1,8 @@
 import { useEffect, useState, type FormEvent } from "react";
 import { Field, Group, Notice, PlainButton, PrimaryButton, Screen, Segmented, SwitchRow } from "../components/ui";
 import { useAuth } from "../state/auth";
-import { ageThisYear, allowedBirthYears, bandFor } from "../lib/age";
-import { CONSENT_POINTS, CONSENT_VERSION, activeConsent } from "../lib/consent";
+import { adultBirthYears, ageThisYear, allowedBirthYears, bandFor } from "../lib/age";
+import { activeConsent, consentPointsFor, consentVersionFor } from "../lib/consent";
 import { localIsoDate } from "../lib/dates";
 import { friendlyError } from "../lib/errors";
 import { collectFamilyData, saveJsonFile } from "../lib/exportData";
@@ -16,7 +16,7 @@ const formatDate = (iso: string) => new Date(iso).toLocaleDateString("pt-BR");
 const count = (n: number, one: string, many: string) => `${n} ${n === 1 ? one : many}`;
 const GOALS = [1, 2, 3, 4, 5, 6, 7];
 
-interface FamilyProps {
+interface AccountProps {
   guardianId: string;
   email: string;
   athletes: Athlete[];
@@ -25,16 +25,20 @@ interface FamilyProps {
   tests: SkillTestRecord[];
   onBack: () => void;
   onAddAthlete: () => void;
+  onAddSelf: () => void;
   onUpdate: (athleteId: string, patch: AthletePatch) => Promise<void>;
   onRevoke: (athleteId: string) => Promise<void>;
-  onAuthorize: (athleteId: string) => Promise<void>;
+  onAuthorize: (athlete: Athlete) => Promise<void>;
   onDeleteAthlete: (athleteId: string) => Promise<void>;
 }
 
-export function GuardianArea(props: FamilyProps) {
+// Tela Conta. O PIN existe para proteger perfis de crianças e adolescentes:
+// conta só com o perfil do próprio adulto abre direto.
+export function GuardianArea(props: AccountProps) {
+  const needsPin = props.athletes.some((a) => !a.is_self);
   const [unlocked, setUnlocked] = useState(false);
-  if (!unlocked) return <PinGate guardianId={props.guardianId} onUnlock={() => setUnlocked(true)} onBack={props.onBack} />;
-  return <FamilySettings {...props} />;
+  if (needsPin && !unlocked) return <PinGate guardianId={props.guardianId} onUnlock={() => setUnlocked(true)} onBack={props.onBack} />;
+  return <AccountSettings {...props} />;
 }
 
 function PinGate({ guardianId, onUnlock, onBack }: { guardianId: string; onUnlock: () => void; onBack: () => void }) {
@@ -74,7 +78,7 @@ function PinGate({ guardianId, onUnlock, onBack }: { guardianId: string; onUnloc
         <Group
           footer={
             creating
-              ? "O PIN protege autorizações e dados da família neste aparelho. Não compartilhe com os atletas."
+              ? "A conta tem perfis de crianças ou adolescentes. O PIN protege autorizações e dados deles neste aparelho. Não compartilhe com eles."
               : "Esqueceu o PIN? Saia da conta e entre de novo com seu e-mail e senha para criar outro."
           }
         >
@@ -93,7 +97,21 @@ function PinGate({ guardianId, onUnlock, onBack }: { guardianId: string; onUnloc
 
 type Sub = { kind: "athlete"; id: string } | { kind: "doc"; id: LegalId } | null;
 
-function FamilySettings({ guardianId, email, athletes, consents, sessions, tests, onBack, onAddAthlete, onUpdate, onRevoke, onAuthorize, onDeleteAthlete }: FamilyProps) {
+function AccountSettings({
+  guardianId,
+  email,
+  athletes,
+  consents,
+  sessions,
+  tests,
+  onBack,
+  onAddAthlete,
+  onAddSelf,
+  onUpdate,
+  onRevoke,
+  onAuthorize,
+  onDeleteAthlete,
+}: AccountProps) {
   const { signOut, deleteAccount } = useAuth();
   const [sub, setSub] = useState<Sub>(null);
   const [confirming, setConfirming] = useState(false);
@@ -111,7 +129,7 @@ function FamilySettings({ guardianId, email, athletes, consents, sessions, tests
   const selected = sub?.kind === "athlete" ? athletes.find((a) => a.id === sub.id) : undefined;
   if (selected) {
     return (
-      <AthleteSettings
+      <ProfileSettings
         key={selected.id}
         athlete={selected}
         consents={consents.filter((c) => c.athlete_id === selected.id)}
@@ -120,7 +138,7 @@ function FamilySettings({ guardianId, email, athletes, consents, sessions, tests
         onBack={() => setSub(null)}
         onUpdate={(patch) => onUpdate(selected.id, patch)}
         onRevoke={() => onRevoke(selected.id)}
-        onAuthorize={() => onAuthorize(selected.id)}
+        onAuthorize={() => onAuthorize(selected)}
         onDelete={async () => {
           await onDeleteAthlete(selected.id);
           setSub(null);
@@ -128,6 +146,9 @@ function FamilySettings({ guardianId, email, athletes, consents, sessions, tests
       />
     );
   }
+
+  const hasSelf = athletes.some((a) => a.is_self);
+  const ordered = [...athletes].sort((a, b) => Number(b.is_self) - Number(a.is_self));
 
   async function removeEverything() {
     setBusy(true);
@@ -157,27 +178,40 @@ function FamilySettings({ guardianId, email, athletes, consents, sessions, tests
   }
 
   return (
-    <Screen eyebrow="Área do responsável" title="Sua família" onBack={onBack}>
-      <Group header="Atletas" footer="Toque em um atleta para corrigir o perfil, mudar a meta semanal, revogar a autorização ou excluir o perfil.">
-        {athletes.map((athlete) => {
-          const active = activeConsent(consents, athlete.id);
+    <Screen eyebrow="Baseline" title="Conta" onBack={onBack}>
+      <Group header="Perfis de treino" footer="Toque em um perfil para corrigir os dados, mudar a meta semanal, revogar o aceite ou excluir.">
+        {ordered.map((athlete) => {
+          const active = activeConsent(consents, athlete);
+          const status = athlete.is_self
+            ? active
+              ? "consentimento ativo"
+              : "sem consentimento"
+            : active
+              ? `autorizado em ${formatDate(active.accepted_at)}`
+              : "sem autorização";
           return (
             <button key={athlete.id} type="button" className="row row-nav" onClick={() => setSub({ kind: "athlete", id: athlete.id })}>
               <span className="row-label">
                 {athlete.nickname}
                 <small>
-                  {ageThisYear(athlete.birth_year)} anos · meta {athlete.weekly_goal} por semana · {active ? `autorizado em ${formatDate(active.accepted_at)}` : "sem autorização"}
+                  {athlete.is_self ? "Você · " : ""}
+                  {ageThisYear(athlete.birth_year)} anos · meta {athlete.weekly_goal} por semana · {status}
                 </small>
               </span>
             </button>
           );
         })}
+        {!hasSelf && (
+          <button type="button" className="row row-action" onClick={onAddSelf}>
+            Criar meu perfil de treino
+          </button>
+        )}
         <button type="button" className="row row-action" onClick={onAddAthlete}>
-          Adicionar atleta
+          Adicionar criança ou adolescente
         </button>
       </Group>
 
-      <Group header="Privacidade e dados" footer="A cópia inclui a conta, os perfis, as autorizações, os treinos e os testes. Guarde em local seguro: são dados de crianças e adolescentes.">
+      <Group header="Privacidade e dados" footer="A cópia inclui a conta, os perfis, os aceites, os treinos e os testes. Guarde em local seguro.">
         <button type="button" className="row row-action" disabled={exporting} onClick={() => void exportData()}>
           {exporting ? "Preparando arquivo…" : "Baixar cópia dos dados"}
         </button>
@@ -200,10 +234,10 @@ function FamilySettings({ guardianId, email, athletes, consents, sessions, tests
         </button>
       </Group>
 
-      <Group header="Excluir conta" footer="Apaga a conta, os perfis de atleta, as autorizações e todos os registros. Não dá para desfazer.">
+      <Group header="Excluir conta" footer="Apaga a conta, todos os perfis, os aceites e todos os registros. Não dá para desfazer.">
         {confirming ? (
           <>
-            <p className="row-note">Tem certeza? Tudo da sua família será apagado agora.</p>
+            <p className="row-note">Tem certeza? Tudo desta conta será apagado agora.</p>
             <button type="button" className="row row-action destructive" disabled={busy} onClick={() => void removeEverything()}>
               {busy ? "Excluindo…" : "Excluir tudo definitivamente"}
             </button>
@@ -222,7 +256,7 @@ function FamilySettings({ guardianId, email, athletes, consents, sessions, tests
   );
 }
 
-function AthleteSettings({
+function ProfileSettings({
   athlete,
   consents,
   sessionCount,
@@ -249,17 +283,20 @@ function AthleteSettings({
   const [position, setPosition] = useState<Position | null>(athlete.position);
   const [goal, setGoal] = useState(athlete.weekly_goal);
   const [agree, setAgree] = useState(false);
+  const [agreeGuardian, setAgreeGuardian] = useState(false);
   const [confirm, setConfirm] = useState<"revoke" | "delete" | null>(null);
   const [busy, setBusy] = useState<"save" | "consent" | "delete" | null>(null);
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const self = athlete.is_self;
   const age = ageThisYear(athlete.birth_year);
   const band = bandFor(age);
-  const active = activeConsent(consents, athlete.id);
+  const active = activeConsent(consents, athlete);
   const lastRevoked = consents.find((c) => c.revoked_at);
-  const years = allowedBirthYears();
+  const years = self ? adultBirthYears() : allowedBirthYears();
   const yearOptions = years.includes(athlete.birth_year) ? years : [...years, athlete.birth_year];
+  const canAccept = agree && (self || agreeGuardian);
 
   const patch: AthletePatch = {};
   if (nickname.trim() !== athlete.nickname) patch.nickname = nickname.trim();
@@ -290,7 +327,7 @@ function AthleteSettings({
   }
 
   return (
-    <Screen eyebrow={band ? `${band.label} · ${age} anos` : `${age} anos`} title={athlete.nickname} onBack={onBack}>
+    <Screen eyebrow={self ? `Seu perfil · ${age} anos` : band ? `${band.label} · ${age} anos` : `${age} anos`} title={athlete.nickname} onBack={onBack}>
       <form onSubmit={save} className="stack">
         <Group header="Perfil" footer="Corrija os dados quando precisar. O nível e a idade mudam os treinos e testes sugeridos.">
           <Field id="edit-nickname" label="Apelido" value={nickname} onChange={setNickname} maxLength={24} autoComplete="off" />
@@ -317,12 +354,12 @@ function AthleteSettings({
         </Group>
         <Group header="Nível">
           <div className="row">
-            <Segmented label="Nível do atleta" options={LEVELS} value={level} onChange={setLevel} />
+            <Segmented label="Nível" options={LEVELS} value={level} onChange={setLevel} />
           </div>
         </Group>
         <Group header="Posição" footer="Opcional. Toque de novo para desmarcar.">
           <div className="row">
-            <Segmented label="Posição do atleta" options={POSITIONS} value={position} onChange={(value) => setPosition(position === value ? null : value)} />
+            <Segmented label="Posição" options={POSITIONS} value={position} onChange={(value) => setPosition(position === value ? null : value)} />
           </div>
         </Group>
         {saved && !canSave && <Notice tone="success">Alterações salvas.</Notice>}
@@ -331,20 +368,22 @@ function AthleteSettings({
         </PrimaryButton>
       </form>
 
-      <Group header="Autorização" footer={`Versão atual do termo: ${CONSENT_VERSION}.`}>
+      <Group header={self ? "Consentimento" : "Autorização"} footer={`Versão atual do termo: ${consentVersionFor(athlete)}.`}>
         {active ? (
           <>
             <div className="row">
               <span className="row-label">
-                Autorizado
+                {self ? "Consentimento dado" : "Autorizado"}
                 <small>em {formatDate(active.accepted_at)}</small>
               </span>
-              <span className="status-chip ok">ativa</span>
+              <span className="status-chip ok">{self ? "ativo" : "ativa"}</span>
             </div>
             {confirm === "revoke" ? (
               <>
                 <p className="row-note">
-                  Sem autorização, {athlete.nickname} não consegue abrir treinos nem registrar nada. Os registros já feitos ficam guardados, sem uso, até você autorizar de novo ou excluir o perfil.
+                  {self
+                    ? "Sem consentimento, seu perfil fica bloqueado: nada de treinos nem registros novos. Os registros já feitos ficam guardados, sem uso, até você consentir de novo ou excluir o perfil."
+                    : `Sem autorização, ${athlete.nickname} não consegue abrir treinos nem registrar nada. Os registros já feitos ficam guardados, sem uso, até você autorizar de novo ou excluir o perfil.`}
                 </p>
                 <button
                   type="button"
@@ -362,38 +401,51 @@ function AthleteSettings({
               </>
             ) : (
               <button type="button" className="row row-action destructive" onClick={() => setConfirm("revoke")}>
-                Revogar autorização
+                {self ? "Revogar consentimento" : "Revogar autorização"}
               </button>
             )}
           </>
         ) : (
           <>
             <p className="row-note">
-              {lastRevoked?.revoked_at ? `Autorização revogada em ${formatDate(lastRevoked.revoked_at)}.` : "Falta autorizar a versão atual do termo."} Enquanto isso, {athlete.nickname} não
-              consegue treinar.
+              {lastRevoked?.revoked_at
+                ? `${self ? "Consentimento revogado" : "Autorização revogada"} em ${formatDate(lastRevoked.revoked_at)}.`
+                : "Falta aceitar a versão atual do termo."}{" "}
+              {self ? "Enquanto isso, seu perfil não consegue treinar." : `Enquanto isso, ${athlete.nickname} não consegue treinar.`}
             </p>
             <ul className="consent-list">
-              {CONSENT_POINTS.map((point) => (
+              {consentPointsFor(athlete).map((point) => (
                 <li key={point}>{point}</li>
               ))}
             </ul>
-            <SwitchRow id="reauthorize-consent" label={`Autorizo o uso dos dados de ${athlete.nickname} como descrito acima`} checked={agree} onChange={setAgree} />
+            {!self && (
+              <SwitchRow id="reauthorize-guardian" label={`Sou mãe, pai ou responsável legal por ${athlete.nickname}`} checked={agreeGuardian} onChange={setAgreeGuardian} />
+            )}
+            <SwitchRow
+              id="reauthorize-consent"
+              label={self ? "Concordo com o uso dos meus dados como descrito acima" : `Autorizo o uso dos dados de ${athlete.nickname} como descrito acima`}
+              checked={agree}
+              onChange={setAgree}
+            />
             <button
               type="button"
               className="row row-action"
-              disabled={!agree || busy !== null}
+              disabled={!canAccept || busy !== null}
               onClick={async () => {
-                if (await run("consent", onAuthorize)) setAgree(false);
+                if (await run("consent", onAuthorize)) {
+                  setAgree(false);
+                  setAgreeGuardian(false);
+                }
               }}
             >
-              {busy === "consent" ? "Salvando…" : "Autorizar"}
+              {busy === "consent" ? "Salvando…" : self ? "Dar consentimento" : "Autorizar"}
             </button>
           </>
         )}
       </Group>
 
       {consents.length > 1 && (
-        <Group header="Histórico de autorizações">
+        <Group header={self ? "Histórico de consentimentos" : "Histórico de autorizações"}>
           {consents.map((c) => (
             <div key={c.id} className="row">
               <span className="row-label">
@@ -410,11 +462,15 @@ function AthleteSettings({
 
       <Group
         header="Excluir perfil"
-        footer={`Apaga o perfil, as autorizações, ${count(sessionCount, "treino", "treinos")} e ${count(testCount, "bateria de testes", "baterias de testes")} de ${athlete.nickname}. Não dá para desfazer.`}
+        footer={
+          self
+            ? `Apaga seu perfil de treino, os aceites, ${count(sessionCount, "treino", "treinos")} e ${count(testCount, "bateria de testes", "baterias de testes")}. A conta continua. Não dá para desfazer.`
+            : `Apaga o perfil, as autorizações, ${count(sessionCount, "treino", "treinos")} e ${count(testCount, "bateria de testes", "baterias de testes")} de ${athlete.nickname}. Não dá para desfazer.`
+        }
       >
         {confirm === "delete" ? (
           <>
-            <p className="row-note">Tem certeza? Tudo de {athlete.nickname} será apagado agora.</p>
+            <p className="row-note">{self ? "Tem certeza? Seu perfil e seus registros serão apagados agora." : `Tem certeza? Tudo de ${athlete.nickname} será apagado agora.`}</p>
             <button type="button" className="row row-action destructive" disabled={busy !== null} onClick={() => void run("delete", onDelete)}>
               {busy === "delete" ? "Excluindo…" : "Excluir perfil definitivamente"}
             </button>

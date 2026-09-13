@@ -35,7 +35,7 @@ export async function collectFamilyData(guardianId: string, email: string) {
   return {
     app: "Baseline",
     exportado_em: new Date().toISOString(),
-    aviso: "Arquivo gerado pela Área do responsável. Contém dados de crianças e adolescentes: guarde em local seguro.",
+    aviso: "Arquivo gerado pela tela Conta do Baseline. Pode conter dados de crianças e adolescentes: guarde em local seguro.",
     conta: { email },
     atletas: athletes,
     autorizacoes: consents,

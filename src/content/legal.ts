@@ -1,6 +1,6 @@
 // RASCUNHO — pendente de revisão jurídica. Trechos entre colchetes precisam ser preenchidos antes de publicar.
 // Mudou o texto de forma relevante? Troque LEGAL_VERSION.
-export const LEGAL_VERSION = "2026-09-rascunho-1";
+export const LEGAL_VERSION = "2026-09-rascunho-2";
 
 const ORG = "Instituto Arvoredo";
 const CNPJ = "[CNPJ a preencher]";
@@ -24,7 +24,7 @@ export const LEGAL_DOCS: Record<LegalId, LegalDoc> = {
     id: "privacidade",
     title: "Política de privacidade",
     intro:
-      "Esta política explica, em linguagem simples, quais dados o Baseline guarda, por que guarda e como você controla tudo. O app é feito para crianças e adolescentes: coletamos o mínimo e nunca usamos dados para publicidade.",
+      "Esta política explica, em linguagem simples, quais dados o Baseline guarda, por que guarda e como você controla tudo. O app é usado por adultos e por crianças e adolescentes acompanhados por um adulto: coletamos o mínimo e nunca usamos dados para publicidade.",
     sections: [
       {
         title: "Quem cuida dos dados",
@@ -36,7 +36,8 @@ export const LEGAL_DOCS: Record<LegalId, LegalDoc> = {
       {
         title: "Quem usa o app",
         blocks: [
-          "A conta é sempre de um adulto: mãe, pai ou responsável legal. Crianças e adolescentes de 6 a 17 anos treinam pelo perfil que esse adulto cria. Eles não têm login, e-mail, perfil público nem conversa com outras pessoas.",
+          "A conta é sempre de um adulto, a partir de 18 anos. Ele pode ter o próprio perfil de treino e também criar perfis para crianças e adolescentes de 6 a 17 anos pelos quais é responsável legal.",
+          "Crianças e adolescentes treinam pelo perfil criado pelo adulto. Eles não têm login, e-mail, perfil público nem conversa com outras pessoas.",
         ],
       },
       {
@@ -44,11 +45,11 @@ export const LEGAL_DOCS: Record<LegalId, LegalDoc> = {
         blocks: [
           {
             list: [
-              "Do responsável: e-mail e senha. A senha fica protegida pelo serviço de login e ninguém da equipe consegue lê-la.",
-              "De cada atleta: apelido, ano de nascimento, nível, posição (opcional) e meta de treinos por semana.",
+              "Da conta: e-mail e senha. A senha fica protegida pelo serviço de login e ninguém da equipe consegue lê-la.",
+              "De cada perfil de treino: apelido, ano de nascimento, nível, posição (opcional), meta de treinos por semana e se é o perfil do próprio adulto.",
               "Treinos: data, duração, quantos exercícios foram feitos, como foi (de 1 a 5) e se algo doeu, só como sim ou não, sem detalhes de saúde.",
               "Testes de habilidade: data e resultados.",
-              "Autorizações: versão do termo aceito e datas de aceite e de revogação.",
+              "Consentimentos e autorizações: versão do termo aceito e datas de aceite e de revogação.",
             ],
           },
         ],
@@ -57,7 +58,7 @@ export const LEGAL_DOCS: Record<LegalId, LegalDoc> = {
         title: "O que não coletamos",
         blocks: [
           "Nome completo, data de nascimento completa, foto, voz, escola, endereço, localização, contatos e identificador de publicidade.",
-          "No aparelho ficam só o PIN da Área do responsável, guardado de forma embaralhada, e qual foi o último perfil aberto.",
+          "No aparelho ficam só o PIN da tela Conta (usado quando há perfis de crianças ou adolescentes), guardado de forma embaralhada, e qual foi o último perfil aberto.",
         ],
       },
       {
@@ -65,8 +66,8 @@ export const LEGAL_DOCS: Record<LegalId, LegalDoc> = {
         blocks: [
           {
             list: [
-              "Mostrar treinos e testes adequados à idade e ao nível de cada atleta.",
-              "Registrar a evolução, para o atleta e o responsável acompanharem.",
+              "Mostrar treinos e testes adequados à idade e ao nível de cada perfil.",
+              "Registrar a evolução, para quem treina e para o adulto responsável acompanharem.",
               "Manter a conta funcionando e segura.",
               "Cumprir obrigações legais.",
             ],
@@ -77,8 +78,13 @@ export const LEGAL_DOCS: Record<LegalId, LegalDoc> = {
       {
         title: "Base legal",
         blocks: [
-          "Os dados dos atletas são tratados com o consentimento específico e em destaque de um dos pais ou do responsável legal, dado para cada atleta (art. 14, § 1º, da LGPD), sempre no melhor interesse da criança e do adolescente.",
-          "Os dados da conta do responsável são tratados para cumprir os termos de uso e obrigações legais (art. 7º, incisos II e V, da LGPD).",
+          {
+            list: [
+              "Perfis de crianças e adolescentes: consentimento específico e em destaque de um dos pais ou do responsável legal, dado para cada perfil (art. 14, § 1º, da LGPD), sempre no melhor interesse da criança e do adolescente.",
+              "Perfil do próprio adulto: consentimento do titular, inclusive para a resposta sobre dor, que é dado de saúde (art. 7º, I, e art. 11, I, da LGPD).",
+              "Dados da conta: cumprimento dos termos de uso e de obrigações legais (art. 7º, incisos II e V, da LGPD).",
+            ],
+          },
         ],
       },
       {
@@ -87,8 +93,9 @@ export const LEGAL_DOCS: Record<LegalId, LegalDoc> = {
           "Não vendemos nem cedemos dados. Alguns serviços são necessários para o app funcionar:",
           {
             list: [
-              "Supabase: guarda o banco de dados e faz o login, seguindo nossas instruções. [Confirmar a região dos servidores ao criar o projeto.]",
+              "Supabase: guarda o banco de dados e faz o login, seguindo nossas instruções. [Confirmar a região dos servidores do projeto.]",
               "YouTube (Google): os vídeos dos exercícios abrem no modo sem cookies. Ao tocar um vídeo, o YouTube recebe dados técnicos da conexão, como o endereço IP, conforme a política de privacidade do Google.",
+              "Vercel: hospeda a versão web do app.",
               "Google Play: distribui o app no Android.",
             ],
           },
@@ -105,9 +112,9 @@ export const LEGAL_DOCS: Record<LegalId, LegalDoc> = {
           "Guardamos os dados enquanto a conta existir.",
           {
             list: [
-              "Revogar a autorização de um atleta bloqueia o perfil: ele não treina nem registra nada até uma nova autorização. Os registros anteriores ficam guardados, sem uso, até você autorizar de novo ou excluir o perfil.",
-              "Excluir um perfil apaga na hora o perfil, as autorizações, os treinos e os testes daquele atleta.",
-              "Excluir a conta apaga na hora todos os dados da família.",
+              "Revogar o consentimento ou a autorização de um perfil bloqueia esse perfil: ele não treina nem registra nada até um novo aceite. Os registros anteriores ficam guardados, sem uso, até um novo aceite ou a exclusão do perfil.",
+              "Excluir um perfil apaga na hora o perfil, os aceites, os treinos e os testes dele.",
+              "Excluir a conta apaga na hora todos os dados da conta.",
             ],
           },
           `Cópias de segurança do provedor são substituídas automaticamente em até ${BACKUP_WINDOW}. Depois da exclusão, só mantemos algum dado se uma lei exigir, e apenas pelo prazo exigido.`,
@@ -117,18 +124,18 @@ export const LEGAL_DOCS: Record<LegalId, LegalDoc> = {
         title: "Seus direitos",
         blocks: [
           "Pela LGPD (art. 18), você pode confirmar se tratamos dados, acessar, corrigir, pedir anonimização, bloqueio ou eliminação, levar os dados para outro serviço, saber com quem compartilhamos e revogar o consentimento.",
-          `Na Área do responsável você faz quase tudo sozinho: corrigir perfis, baixar uma cópia dos dados, revogar autorizações, excluir perfis e excluir a conta. Para outros pedidos, escreva para ${CONTACT}. Você também pode reclamar à Autoridade Nacional de Proteção de Dados (ANPD).`,
+          `Na tela Conta você faz quase tudo sozinho: corrigir perfis, baixar uma cópia dos dados, revogar consentimentos e autorizações, excluir perfis e excluir a conta. Para outros pedidos, escreva para ${CONTACT}. Você também pode reclamar à Autoridade Nacional de Proteção de Dados (ANPD).`,
         ],
       },
       {
         title: "Segurança",
         blocks: [
-          "As conexões são cifradas, e regras no banco de dados garantem que cada família acesse só os próprios dados. O PIN impede que a criança mude autorizações ou exclua dados no aparelho, mas não substitui a senha da conta: guarde bem os dois.",
+          "As conexões são cifradas, e regras no banco de dados garantem que cada conta acesse só os próprios dados. Quando a conta tem perfis de crianças ou adolescentes, o PIN impede que eles mudem autorizações ou excluam dados no aparelho, mas não substitui a senha da conta: guarde bem os dois.",
         ],
       },
       {
         title: "Mudanças nesta política",
-        blocks: ["Quando esta política mudar, a versão será atualizada. Se a mudança afetar os dados dos atletas, pediremos uma nova autorização antes de continuar."],
+        blocks: ["Quando esta política mudar, a versão será atualizada. Se a mudança afetar os dados dos perfis, pediremos um novo aceite antes de continuar."],
       },
     ],
   },
@@ -136,11 +143,14 @@ export const LEGAL_DOCS: Record<LegalId, LegalDoc> = {
   termos: {
     id: "termos",
     title: "Termos de uso",
-    intro: "Estes termos explicam as regras de uso do Baseline. Ao criar a conta, você declara ser maior de 18 anos e responsável legal pelos atletas que cadastrar.",
+    intro:
+      "Estes termos explicam as regras de uso do Baseline. Ao criar a conta, você declara ter 18 anos ou mais. Ao cadastrar uma criança ou adolescente, declara ser mãe, pai ou responsável legal por ele.",
     sections: [
       {
         title: "O que é o Baseline",
-        blocks: [`O Baseline é um app de treinos de basquete para crianças e adolescentes de 6 a 17 anos, mantido pelo ${ORG} (CNPJ ${CNPJ}). [Confirmar se o uso é gratuito.]`],
+        blocks: [
+          `O Baseline é um app de treinos de basquete para adultos e para crianças e adolescentes de 6 a 17 anos acompanhados por um adulto, mantido pelo ${ORG} (CNPJ ${CNPJ}). [Confirmar se o uso é gratuito.]`,
+        ],
       },
       {
         title: "Sua conta",
@@ -148,8 +158,8 @@ export const LEGAL_DOCS: Record<LegalId, LegalDoc> = {
           {
             list: [
               "Use um e-mail que só você acessa e guarde a senha e o PIN.",
-              "Cadastre apenas atletas pelos quais você é responsável legal, com dados corretos.",
-              "Você responde pelo uso dos perfis que criar.",
+              "Cadastre perfis de crianças e adolescentes apenas se você for responsável legal por eles, com dados corretos.",
+              "Você responde pelo uso da conta e dos perfis que criar.",
             ],
           },
         ],
@@ -160,8 +170,9 @@ export const LEGAL_DOCS: Record<LegalId, LegalDoc> = {
           {
             list: [
               "Crianças e adolescentes devem treinar com um adulto por perto, em local seguro, com piso firme e espaço livre.",
+              "Adultos devem treinar dentro dos próprios limites, com aquecimento e em local seguro.",
               "Os treinos não substituem avaliação médica nem acompanhamento de profissional de educação física. Em caso de doença, lesão ou dúvida, procure orientação antes de começar.",
-              "Se algo doer, o atleta deve parar na hora e avisar um adulto.",
+              "Se algo doer, pare na hora. Crianças e adolescentes devem avisar um adulto.",
             ],
           },
           "Os treinos e testes são elaborados e validados por profissional de educação física [nome e registro no CREF a preencher].",
@@ -173,7 +184,7 @@ export const LEGAL_DOCS: Record<LegalId, LegalDoc> = {
       },
       {
         title: "Uso permitido",
-        blocks: ["O app é para uso pessoal e familiar. Não é permitido copiar, vender ou redistribuir os treinos e o conteúdo do Baseline, nem tentar acessar dados de outras famílias."],
+        blocks: ["O app é para uso pessoal e familiar. Não é permitido copiar, vender ou redistribuir os treinos e o conteúdo do Baseline, nem tentar acessar dados de outras contas."],
       },
       {
         title: "Responsabilidades",
@@ -181,11 +192,11 @@ export const LEGAL_DOCS: Record<LegalId, LegalDoc> = {
       },
       {
         title: "Encerramento",
-        blocks: ["Você pode excluir a conta a qualquer momento na Área do responsável. Podemos suspender contas usadas contra estes termos ou contra a lei, com aviso sempre que possível."],
+        blocks: ["Você pode excluir a conta a qualquer momento na tela Conta. Podemos suspender contas usadas contra estes termos ou contra a lei, com aviso sempre que possível."],
       },
       {
         title: "Mudanças e contato",
-        blocks: [`Se estes termos mudarem, avisaremos no app. Dúvidas: ${CONTACT}.`, "Vale a lei brasileira. Questões podem ser levadas ao foro do domicílio do responsável."],
+        blocks: [`Se estes termos mudarem, avisaremos no app. Dúvidas: ${CONTACT}.`, "Vale a lei brasileira. Questões podem ser levadas ao foro do domicílio do usuário."],
       },
     ],
   },
@@ -193,11 +204,16 @@ export const LEGAL_DOCS: Record<LegalId, LegalDoc> = {
   "excluir-conta": {
     id: "excluir-conta",
     title: "Excluir conta e dados",
-    intro: "Você pode excluir a conta do Baseline e todos os dados da família quando quiser. A exclusão é imediata e não dá para desfazer.",
+    intro: "Você pode excluir a conta do Baseline e todos os dados dela quando quiser. A exclusão é imediata e não dá para desfazer.",
     sections: [
       {
         title: "Pelo app",
-        blocks: [{ ordered: true, list: ["Abra o Baseline e toque em Área do responsável.", "Digite o PIN.", "Toque em Excluir conta e dados e confirme."] }],
+        blocks: [
+          {
+            ordered: true,
+            list: ["Abra o Baseline e toque em Conta.", "Se a conta tiver perfis de crianças ou adolescentes, digite o PIN.", "Toque em Excluir conta e dados e confirme."],
+          },
+        ],
       },
       {
         title: "Sem o app instalado",
@@ -210,13 +226,13 @@ export const LEGAL_DOCS: Record<LegalId, LegalDoc> = {
       {
         title: "O que é apagado",
         blocks: [
-          { list: ["A conta do responsável (e-mail e senha).", "Todos os perfis de atleta e as autorizações.", "Todos os treinos e testes registrados."] },
+          { list: ["A conta (e-mail e senha).", "Todos os perfis de treino, os consentimentos e as autorizações.", "Todos os treinos e testes registrados."] },
           `O PIN e o último perfil aberto ficam só no aparelho e somem ao sair da conta ou desinstalar o app. Cópias de segurança do provedor são substituídas em até ${BACKUP_WINDOW}.`,
         ],
       },
       {
-        title: "Excluir só um atleta",
-        blocks: ["Na Área do responsável, toque no nome do atleta e depois em Excluir perfil. A conta e os outros atletas continuam."],
+        title: "Excluir só um perfil",
+        blocks: ["Na tela Conta, toque no perfil e depois em Excluir perfil. A conta e os outros perfis continuam."],
       },
     ],
   },

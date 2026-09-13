@@ -12,6 +12,8 @@ export interface Athlete {
   position: Position | null;
   /** Treinos por semana definidos pelo responsável (1 a 7). */
   weekly_goal: number;
+  /** Perfil do próprio dono da conta (18+). Os demais são de crianças e adolescentes. */
+  is_self: boolean;
   created_at: string;
 }
 

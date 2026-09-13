@@ -327,7 +327,11 @@ function Finish({
           <Segmented label="Algo doeu durante o treino?" options={DISCOMFORT} value={discomfort} onChange={setDiscomfort} />
         </div>
       </Group>
-      {discomfort === "sim" && <Notice tone="error">Pare de treinar e conte para um adulto agora. Se a dor continuar, procure um médico.</Notice>}
+      {discomfort === "sim" && (
+        <Notice tone="error">
+          {athlete.is_self ? "Pare de treinar agora." : "Pare de treinar e conte para um adulto agora."} Se a dor continuar, procure um médico.
+        </Notice>
+      )}
       {error && <Notice tone="error">{error}</Notice>}
       <div className="stack bottom-cta">
         <PrimaryButton onClick={() => void save()} disabled={busy}>

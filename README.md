@@ -1,6 +1,6 @@
 # Baseline by Arvoredo
 
-App de treinos de basquete para crianças e adolescentes. O responsável cria a conta e o perfil de cada atleta; o atleta treina, registra e acompanha a própria evolução.
+App de treinos de basquete para adultos e para crianças e adolescentes. A conta é de um adulto, que pode treinar pelo próprio perfil e criar perfis para os menores que acompanha. Cada perfil treina, registra e acompanha a própria evolução.
 
 Stack: Vite + TypeScript + React, empacotado para Android com Capacitor. Dados no Supabase.
 
@@ -16,7 +16,7 @@ npm run dev
 
 1. Criar um projeto novo, região São Paulo (não usar o projeto do app pessoal).
 2. Em **Authentication**, deixar ativo o login por e-mail e senha, com confirmação de e-mail.
-3. Rodar no SQL Editor, em ordem, os arquivos de `supabase/migrations/` (`0001_fundacao.sql`, `0002_treinos.sql`, `0003_evolucao.sql`, `0004_privacidade.sql`).
+3. Rodar no SQL Editor, em ordem, os arquivos de `supabase/migrations/` (`0001_fundacao.sql`, `0002_treinos.sql`, `0003_evolucao.sql`, `0004_privacidade.sql`, `0005_adultos.sql`).
 4. Copiar a Project URL e a chave pública para `.env.local`.
 
 ## Android

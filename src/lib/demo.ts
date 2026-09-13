@@ -1,7 +1,7 @@
 import type { Session } from "@supabase/supabase-js";
 import type { Athlete, AthletePatch, Consent, NewAthleteInput, NewSessionInput, NewTestInput, SkillTestRecord, TrainingSession } from "./types";
-import { CONSENT_VERSION } from "./consent";
-import { MAX_AGE, MIN_AGE, ageThisYear } from "./age";
+import { CONSENT_VERSION, SELF_CONSENT_VERSION } from "./consent";
+import { ADULT_MIN_AGE, MAX_AGE, MIN_AGE, ageThisYear } from "./age";
 import { localIsoDate } from "./dates";
 
 // Modo demonstração: sessão, atletas, treinos e testes ficam só neste navegador, sem servidor.
@@ -78,7 +78,7 @@ export function demoLoad(): DemoData {
   const data = read<Partial<DemoData>>(DATA_KEY, {});
   return {
     // Perfis criados antes da meta semanal existir recebem a meta padrão, como faz o banco.
-    athletes: (data.athletes ?? []).map((athlete) => ({ ...athlete, weekly_goal: athlete.weekly_goal ?? DEFAULT_WEEKLY_GOAL })),
+    athletes: (data.athletes ?? []).map((athlete) => ({ ...athlete, weekly_goal: athlete.weekly_goal ?? DEFAULT_WEEKLY_GOAL, is_self: athlete.is_self ?? false })),
     consents: data.consents ?? [],
     sessions: data.sessions ?? [],
     tests: data.tests ?? [],
@@ -98,10 +98,33 @@ export function demoCreateAthlete(guardianId: string, input: NewAthleteInput): A
     level: input.level,
     position: input.position,
     weekly_goal: DEFAULT_WEEKLY_GOAL,
+    is_self: false,
     created_at: now,
   };
   data.athletes.push(athlete);
   data.consents.unshift({ id: crypto.randomUUID(), athlete_id: athlete.id, document_version: CONSENT_VERSION, accepted_at: now, revoked_at: null });
+  write(DATA_KEY, data);
+  return athlete;
+}
+
+export function demoCreateSelf(guardianId: string, input: NewAthleteInput): Athlete {
+  if (ageThisYear(input.birthYear) < ADULT_MIN_AGE) throw new Error("perfil proprio exige 18 anos ou mais");
+  const data = demoLoad();
+  if (data.athletes.some((a) => a.guardian_id === guardianId && a.is_self)) throw new Error("athletes_one_self_per_account");
+  const now = new Date().toISOString();
+  const athlete: Athlete = {
+    id: crypto.randomUUID(),
+    guardian_id: guardianId,
+    nickname: input.nickname,
+    birth_year: input.birthYear,
+    level: input.level,
+    position: input.position,
+    weekly_goal: DEFAULT_WEEKLY_GOAL,
+    is_self: true,
+    created_at: now,
+  };
+  data.athletes.push(athlete);
+  data.consents.unshift({ id: crypto.randomUUID(), athlete_id: athlete.id, document_version: SELF_CONSENT_VERSION, accepted_at: now, revoked_at: null });
   write(DATA_KEY, data);
   return athlete;
 }
@@ -119,10 +142,10 @@ export function demoRevoke(athleteId: string): void {
   write(DATA_KEY, data);
 }
 
-export function demoAuthorize(athleteId: string): void {
+export function demoAuthorize(athleteId: string, documentVersion: string): void {
   const data = demoLoad();
-  if (data.consents.some((c) => c.athlete_id === athleteId && c.document_version === CONSENT_VERSION && !c.revoked_at)) return;
-  data.consents.unshift({ id: crypto.randomUUID(), athlete_id: athleteId, document_version: CONSENT_VERSION, accepted_at: new Date().toISOString(), revoked_at: null });
+  if (data.consents.some((c) => c.athlete_id === athleteId && c.document_version === documentVersion && !c.revoked_at)) return;
+  data.consents.unshift({ id: crypto.randomUUID(), athlete_id: athleteId, document_version: documentVersion, accepted_at: new Date().toISOString(), revoked_at: null });
   write(DATA_KEY, data);
 }
 

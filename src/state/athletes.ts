@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { isDemo, requireSupabase } from "../lib/supabase";
-import { demoAuthorize, demoCreateAthlete, demoDeleteAthlete, demoLoad, demoRevoke, demoUpdateAthlete } from "../lib/demo";
-import { CONSENT_VERSION } from "../lib/consent";
+import { demoAuthorize, demoCreateAthlete, demoCreateSelf, demoDeleteAthlete, demoLoad, demoRevoke, demoUpdateAthlete } from "../lib/demo";
+import { CONSENT_VERSION, SELF_CONSENT_VERSION, consentVersionFor } from "../lib/consent";
 import type { Athlete, AthletePatch, Consent, NewAthleteInput } from "../lib/types";
 
 export function useAthletes(guardianId: string) {
@@ -11,7 +11,7 @@ export function useAthletes(guardianId: string) {
   const [error, setError] = useState<string | null>(null);
 
   // `loading` só vale para a primeira carga: recarregar depois de salvar não pode trocar a tela
-  // pela de carregamento (isso trancava de novo a Área do responsável).
+  // pela de carregamento (isso trancava de novo a tela Conta).
   const reload = useCallback(async () => {
     if (isDemo) {
       const data = demoLoad();
@@ -31,9 +31,9 @@ export function useAthletes(guardianId: string) {
         .order("accepted_at", { ascending: false }),
     ]);
     if (athletesRes.error || consentsRes.error) {
-      setError("Não foi possível carregar os atletas. Confira a internet e tente de novo.");
+      setError("Não foi possível carregar os perfis. Confira a internet e tente de novo.");
     } else {
-      setAthletes(athletesRes.data as Athlete[]);
+      setAthletes((athletesRes.data as Athlete[]).map((a) => ({ ...a, is_self: Boolean(a.is_self) })));
       setConsents(consentsRes.data as Consent[]);
       setError(null);
     }
@@ -44,7 +44,7 @@ export function useAthletes(guardianId: string) {
     void reload();
   }, [reload]);
 
-  // Atleta e autorização são gravados juntos pela função do banco: nunca existe perfil sem autorização.
+  // Perfil e aceite são gravados juntos pela função do banco: nunca existe perfil sem aceite.
   const create = useCallback(
     async (input: NewAthleteInput): Promise<Athlete> => {
       if (isDemo) {
@@ -66,6 +66,27 @@ export function useAthletes(guardianId: string) {
     [guardianId, reload],
   );
 
+  const createSelf = useCallback(
+    async (input: NewAthleteInput): Promise<Athlete> => {
+      if (isDemo) {
+        const athlete = demoCreateSelf(guardianId, input);
+        await reload();
+        return athlete;
+      }
+      const { data, error: rpcError } = await requireSupabase().rpc("create_self_profile_with_consent", {
+        p_nickname: input.nickname,
+        p_birth_year: input.birthYear,
+        p_level: input.level,
+        p_position: input.position,
+        p_document_version: SELF_CONSENT_VERSION,
+      });
+      if (rpcError) throw rpcError;
+      await reload();
+      return data as Athlete;
+    },
+    [guardianId, reload],
+  );
+
   const update = useCallback(
     async (athleteId: string, patch: AthletePatch): Promise<void> => {
       if (isDemo) {
@@ -79,7 +100,7 @@ export function useAthletes(guardianId: string) {
     [reload],
   );
 
-  // Revogar não apaga nada: o perfil fica bloqueado até nova autorização ou exclusão.
+  // Revogar não apaga nada: o perfil fica bloqueado até novo aceite ou exclusão.
   const revoke = useCallback(
     async (athleteId: string): Promise<void> => {
       if (isDemo) {
@@ -97,16 +118,17 @@ export function useAthletes(guardianId: string) {
     [reload],
   );
 
-  // Nova autorização é um registro novo: o histórico de aceites e revogações fica preservado.
+  // Novo aceite é um registro novo: o histórico de aceites e revogações fica preservado.
   const authorize = useCallback(
-    async (athleteId: string): Promise<void> => {
+    async (athlete: Athlete): Promise<void> => {
+      const documentVersion = consentVersionFor(athlete);
       if (isDemo) {
-        demoAuthorize(athleteId);
+        demoAuthorize(athlete.id, documentVersion);
       } else {
         const { error: insertError } = await requireSupabase().from("consents").insert({
           guardian_id: guardianId,
-          athlete_id: athleteId,
-          document_version: CONSENT_VERSION,
+          athlete_id: athlete.id,
+          document_version: documentVersion,
           guardian_declaration: true,
         });
         if (insertError) throw insertError;
@@ -116,7 +138,7 @@ export function useAthletes(guardianId: string) {
     [guardianId, reload],
   );
 
-  // Apaga o perfil; autorizações, treinos e testes saem junto (on delete cascade no banco).
+  // Apaga o perfil; aceites, treinos e testes saem junto (on delete cascade no banco).
   const remove = useCallback(
     async (athleteId: string): Promise<void> => {
       if (isDemo) {
@@ -130,5 +152,5 @@ export function useAthletes(guardianId: string) {
     [reload],
   );
 
-  return { athletes, consents, loading, error, reload, create, update, revoke, authorize, remove };
+  return { athletes, consents, loading, error, reload, create, createSelf, update, revoke, authorize, remove };
 }

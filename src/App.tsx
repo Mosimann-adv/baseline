@@ -5,10 +5,12 @@ import { useSessions } from "./state/sessions";
 import { useTests } from "./state/tests";
 import { isSupabaseConfigured } from "./lib/supabase";
 import { activeConsent } from "./lib/consent";
+import { hasPin } from "./lib/pin";
 import { programById } from "./content/programs";
 import { LEGAL_DOCS, legalIdFromHash, type LegalId } from "./content/legal";
 import { AuthFlow } from "./screens/AuthScreens";
 import { NewAthlete } from "./screens/NewAthlete";
+import { ProfileChoice } from "./screens/ProfileChoice";
 import { WhoTrains } from "./screens/WhoTrains";
 import { AthleteHome } from "./screens/AthleteHome";
 import { ProgramDetail } from "./screens/ProgramDetail";
@@ -18,11 +20,15 @@ import { TestSession } from "./screens/TestSession";
 import { GuardianArea } from "./screens/GuardianArea";
 import { LegalScreen } from "./screens/LegalScreen";
 import { Notice, PrimaryButton, Screen } from "./components/ui";
+import type { Athlete } from "./lib/types";
+
+type Origin = "first" | "account";
 
 type View =
   | { name: "picker" }
-  | { name: "guardian" }
-  | { name: "newAthlete" }
+  | { name: "account" }
+  | { name: "newSelf"; from: Origin }
+  | { name: "newAthlete"; from: Origin }
   | { name: "athlete"; athleteId: string }
   | { name: "program"; athleteId: string; programId: string }
   | { name: "training"; athleteId: string; programId: string }
@@ -100,13 +106,18 @@ function Family({ guardianId, email }: { guardianId: string; email: string }) {
     );
   }
 
-  // Logo depois do cadastro o adulto ainda está com o aparelho: o primeiro atleta não pede PIN.
-  if (family.athletes.length === 0) {
+  const canTrain = (athlete: Athlete) => Boolean(activeConsent(family.consents, athlete));
+  const backTo = (from: Origin): View => (from === "first" ? { name: "picker" } : { name: "account" });
+
+  if (view.name === "newSelf") {
+    const from = view.from;
     return (
       <NewAthlete
-        first
+        kind="self"
+        first={from === "first"}
+        onBack={() => setView(backTo(from))}
         onCreate={async (input) => {
-          const athlete = await family.create(input);
+          const athlete = await family.createSelf(input);
           setView({ name: "athlete", athleteId: athlete.id });
           return athlete;
         }}
@@ -114,28 +125,38 @@ function Family({ guardianId, email }: { guardianId: string; email: string }) {
     );
   }
 
-  const isAuthorized = (athleteId: string) => Boolean(activeConsent(family.consents, athleteId));
-
-  const toPicker = () => {
-    localStorage.removeItem(lastAthleteKey(guardianId));
-    setView({ name: "picker" });
-  };
-
   if (view.name === "newAthlete") {
+    const from = view.from;
     return (
       <NewAthlete
-        first={false}
-        onBack={() => setView({ name: "guardian" })}
+        kind="minor"
+        first={from === "first"}
+        onBack={() => setView(backTo(from))}
         onCreate={async (input) => {
           const athlete = await family.create(input);
-          setView({ name: "picker" });
+          if (from === "first") {
+            // Logo depois do cadastro o adulto ainda está com o aparelho: o primeiro perfil não pede PIN.
+            setView({ name: "athlete", athleteId: athlete.id });
+          } else {
+            // Primeiro menor numa conta sem PIN: a tela Conta passa a pedir e oferece criar o PIN.
+            setView(hasPin(guardianId) ? { name: "picker" } : { name: "account" });
+          }
           return athlete;
         }}
       />
     );
   }
 
-  if (view.name === "guardian") {
+  if (family.athletes.length === 0) {
+    return <ProfileChoice onSelf={() => setView({ name: "newSelf", from: "first" })} onMinor={() => setView({ name: "newAthlete", from: "first" })} />;
+  }
+
+  const toPicker = () => {
+    localStorage.removeItem(lastAthleteKey(guardianId));
+    setView({ name: "picker" });
+  };
+
+  if (view.name === "account") {
     return (
       <GuardianArea
         guardianId={guardianId}
@@ -145,7 +166,8 @@ function Family({ guardianId, email }: { guardianId: string; email: string }) {
         sessions={training.sessions}
         tests={skill.tests}
         onBack={() => setView({ name: "picker" })}
-        onAddAthlete={() => setView({ name: "newAthlete" })}
+        onAddAthlete={() => setView({ name: "newAthlete", from: "account" })}
+        onAddSelf={() => setView({ name: "newSelf", from: "account" })}
         onUpdate={family.update}
         onRevoke={family.revoke}
         onAuthorize={family.authorize}
@@ -158,8 +180,8 @@ function Family({ guardianId, email }: { guardianId: string; email: string }) {
   }
 
   if (view.name !== "picker") {
-    // Perfil sem autorização ativa não abre: cai na escolha de atleta, onde aparece bloqueado.
-    const athlete = family.athletes.find((a) => a.id === view.athleteId && isAuthorized(a.id));
+    // Perfil sem aceite ativo não abre: cai na escolha de perfil, onde aparece bloqueado.
+    const athlete = family.athletes.find((a) => a.id === view.athleteId && canTrain(a));
     if (athlete) {
       const athleteId = athlete.id;
       const sessions = training.sessions.filter((s) => s.athlete_id === athleteId);
@@ -197,9 +219,9 @@ function Family({ guardianId, email }: { guardianId: string; email: string }) {
   return (
     <WhoTrains
       athletes={family.athletes}
-      isLocked={(athleteId) => !isAuthorized(athleteId)}
+      isLocked={(athlete) => !canTrain(athlete)}
       onPick={(athleteId) => setView({ name: "athlete", athleteId })}
-      onGuardian={() => setView({ name: "guardian" })}
+      onAccount={() => setView({ name: "account" })}
     />
   );
 }

@@ -195,7 +195,9 @@ export function programById(id: string): Program | undefined {
 
 /** Treinos da faixa etária; os do nível do atleta primeiro. */
 export function programsFor(band: AgeBandId, level: Level): Program[] {
-  const ofBand = PROGRAMS.filter((program) => program.bands.includes(band));
+  // Na v1 a faixa Adulto usa os programas de 15–17 (ver contentBand em lib/age.ts).
+  const target = band === "adulto" ? "15-17" : band;
+  const ofBand = PROGRAMS.filter((program) => program.bands.includes(target));
   const forLevel = ofBand.filter((program) => program.levels.includes(level));
   return forLevel.length > 0 ? forLevel : ofBand;
 }

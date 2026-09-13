@@ -105,7 +105,7 @@ export function AthleteHome({
         </Group>
       ) : (
         <Group header="Treinos">
-          <p className="row-note">Peça para o responsável conferir o ano de nascimento no seu perfil.</p>
+          <p className="row-note">Confira o ano de nascimento do perfil na tela Conta.</p>
         </Group>
       )}
 

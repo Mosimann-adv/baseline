@@ -1,4 +1,4 @@
-import type { AgeBandId } from "../lib/age";
+import { contentBand, type AgeBandId } from "../lib/age";
 import type { SkillTestDef } from "../lib/types";
 
 // RASCUNHO — protocolos pendentes de validação por profissional de educação física.
@@ -86,7 +86,8 @@ export const SKILL_TESTS: SkillTestDef[] = [
 ];
 
 export function testsFor(band: AgeBandId): SkillTestDef[] {
-  return SKILL_TESTS.filter((test) => test.bands.includes(band));
+  const target = contentBand(band);
+  return SKILL_TESTS.filter((test) => test.bands.includes(target));
 }
 
 export function formatTestValue(test: SkillTestDef, value: number): string {

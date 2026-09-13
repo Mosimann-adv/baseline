@@ -1,13 +1,19 @@
 # AGENTS.md — Baseline by Arvoredo
 
-App de treinos de basquete para crianças (a partir de 6 anos) e adolescentes. Nome público: **Baseline**.
+App de treinos de basquete para adultos e para crianças (a partir de 6 anos) e adolescentes acompanhados por um adulto. Nome público: **Baseline**.
 
 > **Vai continuar o desenvolvimento?** Leia primeiro `docs/CONTINUIDADE.md`: estado atual, padrões do código, próximos passos e pendências.
 
 ## Regras que não mudam sem pedido explícito
 
-1. **A conta é sempre do responsável.** Crianças não criam login, não informam e-mail e não têm perfil público.
-2. **Nenhum dado de atleta sem autorização registrada.** Todo perfil nasce pela função `create_athlete_with_consent`, que grava o atleta e a autorização (com a versão do termo) na mesma transação.
+1. **A conta é sempre de um adulto (18+).**
+   - Ele pode ter um perfil próprio de treino (`athletes.is_self`, no máximo um por conta).
+   - Ele pode criar perfis de crianças e adolescentes (6–17).
+   - Crianças não criam login, não informam e-mail e não têm perfil público.
+2. **Nenhum perfil sem aceite registrado.** Perfil e aceite são gravados na mesma transação.
+   - Perfil de menor: `create_athlete_with_consent`, com a autorização do responsável (`CONSENT_VERSION`).
+   - Perfil próprio: `create_self_profile_with_consent`, com o consentimento do titular (`SELF_CONSENT_VERSION`), porque "algo doeu?" é dado de saúde.
+   - O PIN da tela Conta só é pedido quando a conta tem perfil de menor.
 3. **Coleta mínima.** Apelido, ano de nascimento, nível e posição. Nada de nome completo, data de nascimento completa, foto, escola, localização, contatos ou chat.
 4. **Sem anúncios, sem identificador de publicidade e sem ferramentas de análise de terceiros** (política de Famílias do Google Play).
 5. **Dor e lesão são dados sensíveis.** No máximo “algo doeu?”, com orientação para avisar um adulto. Não guardar diagnóstico nem detalhe clínico.
@@ -39,5 +45,6 @@ App de treinos de basquete para crianças (a partir de 6 anos) e adolescentes. N
 | 9–11 | Drible com as duas mãos, bandeja, passe | Bola 5, cesta 2,60 m |
 | 12–14 | Arremesso, mão fraca, físico com peso do corpo | Bola 6, cesta 3,05 m |
 | 15–17 | Velocidade, salto, força com supervisão | Bola 7 (masc.) ou 6 (fem.), cesta 3,05 m |
+| Adulto (18+) | Na v1, os mesmos treinos e testes de 15–17 (`contentBand`) | Bola 7 (masc.) ou 6 (fem.), cesta 3,05 m |
 
 Sprint e salto só a partir de 12 anos. Nunca comparar atletas entre si.
