@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { useAuth } from "./state/auth";
 import { useAthletes } from "./state/athletes";
 import { useSessions } from "./state/sessions";
@@ -23,6 +23,7 @@ import { TestSession } from "./screens/TestSession";
 import { GuardianArea } from "./screens/GuardianArea";
 import { LegalScreen } from "./screens/LegalScreen";
 import { ConfirmParent } from "./screens/ConfirmParent";
+import { TabBar, type TabId } from "./components/TabBar";
 import { Notice, PrimaryButton, Screen } from "./components/ui";
 import type { Athlete } from "./lib/types";
 
@@ -100,9 +101,14 @@ function Family({ guardianId, email }: { guardianId: string; email: string }) {
     const saved = localStorage.getItem(lastAthleteKey(guardianId));
     return saved ? { name: "athlete", athleteId: saved } : { name: "picker" };
   });
+  // Memória do último atleta aberto: mantém as abas funcionando na tela "Quem vai treinar?".
+  const [lastAthleteId, setLastAthleteId] = useState<string | null>(() => localStorage.getItem(lastAthleteKey(guardianId)));
 
   useEffect(() => {
-    if ("athleteId" in view) localStorage.setItem(lastAthleteKey(guardianId), view.athleteId);
+    if ("athleteId" in view) {
+      localStorage.setItem(lastAthleteKey(guardianId), view.athleteId);
+      setLastAthleteId(view.athleteId);
+    }
   }, [view, guardianId]);
 
   useEffect(() => {
@@ -213,6 +219,26 @@ function Family({ guardianId, email }: { guardianId: string; email: string }) {
     setView({ name: "picker" });
   };
 
+  // Abas do rodapé: só existem com um atleta válido em memória.
+  const tabAthlete = family.athletes.find((a) => a.id === lastAthleteId && canTrain(a));
+  const onTab = (tab: TabId) => {
+    if (!tabAthlete) return;
+    if (tab === "profile") {
+      toPicker();
+      return;
+    }
+    setView(tab === "progress" ? { name: "progress", athleteId: tabAthlete.id } : { name: "athlete", athleteId: tabAthlete.id });
+  };
+  const withTabs = (node: ReactNode, current: TabId): ReactNode =>
+    tabAthlete ? (
+      <>
+        <div className="has-tabbar">{node}</div>
+        <TabBar current={current} onSelect={onTab} />
+      </>
+    ) : (
+      node
+    );
+
   if (view.name === "account") {
     return (
       <GuardianArea
@@ -259,28 +285,30 @@ function Family({ guardianId, email }: { guardianId: string; email: string }) {
           return <ProgramDetail program={program} onBack={home} onStart={() => setView({ name: "training", athleteId, programId: program.id })} />;
         }
       } else if (view.name === "progress") {
-        return <Progress athlete={athlete} sessions={sessions} tests={tests} onBack={home} onStartTests={() => setView({ name: "tests", athleteId })} />;
+        return withTabs(
+          <Progress athlete={athlete} sessions={sessions} tests={tests} onBack={home} onStartTests={() => setView({ name: "tests", athleteId })} />,
+          "progress",
+        );
       } else if (view.name === "tests") {
         return <TestSession athlete={athlete} tests={tests} onBack={() => setView({ name: "progress", athleteId })} onSave={skill.create} />;
       } else {
-        return (
+        return withTabs(
           <AthleteHome
             athlete={athlete}
             sessions={sessions}
             tests={tests}
             pending={pending}
-            onSwitch={toPicker}
             onOpenProgram={(programId) => setView({ name: "program", athleteId, programId })}
-            onOpenProgress={() => setView({ name: "progress", athleteId })}
             onStartTests={() => setView({ name: "tests", athleteId })}
             onRetryPending={retry}
-          />
+          />,
+          "trainings",
         );
       }
     }
   }
 
-  return (
+  return withTabs(
     <WhoTrains
       athletes={family.athletes}
       isLocked={(athlete) => !canTrain(athlete)}
@@ -293,7 +321,8 @@ function Family({ guardianId, email }: { guardianId: string; email: string }) {
       }
       onPick={(athleteId) => setView({ name: "athlete", athleteId })}
       onAccount={() => setView({ name: "account" })}
-    />
+    />,
+    "profile",
   );
 }
 

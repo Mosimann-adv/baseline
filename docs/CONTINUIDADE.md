@@ -69,6 +69,9 @@ Leia nesta ordem:
 | **Sem PIN** na tela Conta | Pedido do dono: "Nao tem nada que demande tanta restrição"; ficam só as confirmações em dois passos |
 | **Conta própria a partir de 16 anos** (2026-09-13; simplificada no mesmo dia) | Cadastro: e-mail, senha e “tenho 16 anos ou mais”. Sem ano de nascimento e sem e-mail de responsável no login. Idade fica no perfil. Contas teen antigas seguem válidas. |
 | **App gratuito na v1; Apoie o Arvoredo na tela Conta** (2026-09-13) | Sem anúncio, sem compra no treino. Doação opcional no estilo do site (Pix CNPJ `56660275000106`, QR, WhatsApp). Cotas Bola / Uniforme / Cesta para empresas no site. Captação principal continua fora da loja (incentivo, patrocínio). |
+| **Visual alinhado ao site do Instituto** (2026-09-13) | Cores oficiais do kit (Maré `#133358`, Oceano, Coral), Poppins embutida (self-host, ~24 KB), botão primário pill com virada para amarelo, labels uppercase, canto "onda", transições de tela e números animados. Escopo só de estilo; fonte do sistema saiu. |
+| **Rodapé de abas: Treinos · Evolução · Perfil** (2026-09-13) | Pedido do dono. "Perfil" reutiliza a tela "Quem vai treinar?" (troca de perfil e Conta); abas só existem com atleta válido; botão voltar físico não troca de aba; treinos filtráveis por chips de categoria. |
+| **5 programas de ball handling para casa** (rascunho) | Pedido do dono: o mais útil é o que se treina em casa, sem cesta. Só vídeos já conferidos; validação do profissional pendente. |
 
 ## 4. Estado atual
 
@@ -83,6 +86,7 @@ Leia nesta ordem:
 | `f0dc858` | Adultos: perfil próprio, tela "Quem vai treinar?", faixa Adulto, consentimento do titular; migração 0005 |
 | `8774ff6` | Remove o PIN; textos legais na versão `rascunho-3` |
 | (este) | Fila offline; esqueci a senha; conta 16–17; projeto Android Capacitor (`br.org.arvoredo.baseline`); senha para excluir a conta; conversão 16/18 sem migrar histórico; rascunho dos formulários do Play em `docs/GOOGLE_PLAY.md`. Migração 0006. |
+| (próximo) | Visual alinhado ao site do Instituto (cores do kit, Poppins embutida, botão pill, onda, transições); rodapé de abas Treinos/Evolução/Perfil; treinos filtráveis por categoria; 5 programas de ball handling para casa; vídeo do treino repete o trecho (`start`) e pula introdução; suíte Vitest (`npm test`, 46 testes). |
 
 Etapas do `README.md`:
 1. Fundação — pronta.
@@ -95,7 +99,7 @@ Etapas do `README.md`:
 
 **Banco:** migrações 0001–0005 aplicadas. **0006 ainda não:** o dono precisa colar `supabase/migrations/0006_conta_16.sql` no SQL Editor antes de adolescentes 16–17 criarem conta no site real.
 
-**Verificação feita:** `npm run build` e `npm run build:demo` passam, o que inclui `tsc --noEmit`. **Não existe suíte de testes.**
+**Verificação feita:** `npm test` (46 testes em `*.test.ts` ao lado dos arquivos), `npm run build` e `npm run build:demo` passam, o que inclui `tsc --noEmit`.
 
 **Não conferido:**
 - Nenhuma tela das etapas 3 e 4, nem de adultos e sem PIN, foi aberta em navegador por um agente: a automação de navegador travou nesta máquina.
@@ -190,7 +194,8 @@ npx vite preview --outDir dist-demo   # servir a demo localmente
 src/
   main.tsx              faixa "demonstração" quando VITE_DEMO=1; AuthProvider + App
   App.tsx               navegação por estado (union View, sem router) e rotas públicas por hash
-  components/ui.tsx     Screen, Group, Field, SwitchRow, Segmented, PrimaryButton, PlainButton, Notice
+  components/ui.tsx     Screen, Group, Field, SwitchRow, Segmented, PrimaryButton, PlainButton, Notice, CountUp
+  components/TabBar.tsx rodapé de abas do atleta: Treinos · Evolução · Perfil ("Quem vai treinar?")
   state/
     auth.tsx            sessão do adulto dono da conta: signUp, signIn, signOut, deleteAccount
     athletes.ts         perfis + aceites: create (menor, RPC), createSelf (adulto, RPC), update, revoke, authorize, remove
@@ -213,7 +218,7 @@ src/
     account.ts          adult vs teen; meta da sessão; idade manda sobre o tipo gravado
     native.ts           botão voltar, tela ligada, compartilhar arquivo e texto no Android
   content/
-    programs.ts         11 programas por faixa e nível; VIDEOS com IDs verificados
+    programs.ts         16 programas por faixa e nível (11 + 5 de ball handling para casa, rascunho); VIDEOS com IDs verificados; start pula introdução
     tests.ts            7 testes de habilidade; sprint e salto só a partir de 12 anos
     legal.ts            política, termos e página de exclusão (LEGAL_VERSION)
     support.ts          CNPJ, Pix, WhatsApp, Instagram, URLs do site (Apoie o Arvoredo)
@@ -304,7 +309,7 @@ Não há mais item de código da v1 além da revisão jurídica, da validação 
   - nome e CREF do profissional de educação física.
   Já preenchidos: CNPJ, endereço de treino, região São Paulo do Supabase, prazo de 15 dias úteis para exclusão por WhatsApp, app gratuito.
 - [x] CNPJ do Instituto preenchido (`56.660.275/0001-06`); app descrito como gratuito; Apoie o Arvoredo na tela Conta.
-- [ ] Validação dos 11 programas e dos 7 testes por profissional de educação física, inclusive o uso deles para adultos.
+- [ ] Validação dos 16 programas e dos 7 testes por profissional de educação física, inclusive o uso deles para adultos e dos 5 novos de ball handling em casa.
 - [ ] Vídeos: **40 de 44 exercícios** têm vídeo conferido; lista em `docs/VIDEOS.md`. Sem vídeo: bola em volta da cintura, polichinelo, pular num pé só, equilíbrio de cegonha.
 - [ ] Copiar `docs/GOOGLE_PLAY.md` no Play Console.
 

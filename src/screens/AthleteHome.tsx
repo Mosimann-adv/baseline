@@ -1,18 +1,17 @@
+import { useState } from "react";
 import { Group, PrimaryButton, Screen } from "../components/ui";
 import { ageThisYear, bandFor } from "../lib/age";
 import { formatDayMonth, startOfWeekIso } from "../lib/dates";
 import { goalStreak, isTestDue } from "../lib/progress";
 import { CATEGORY_LABELS, programById, programMinutes, programsFor } from "../content/programs";
-import type { Athlete, SkillTestRecord, TrainingSession } from "../lib/types";
+import type { Athlete, Category, SkillTestRecord, TrainingSession } from "../lib/types";
 
 export function AthleteHome({
   athlete,
   sessions,
   tests,
   pending,
-  onSwitch,
   onOpenProgram,
-  onOpenProgress,
   onStartTests,
   onRetryPending,
 }: {
@@ -20,15 +19,16 @@ export function AthleteHome({
   sessions: TrainingSession[];
   tests: SkillTestRecord[];
   pending: { count: number; blocked: boolean; error: string | null };
-  onSwitch: () => void;
   onOpenProgram: (programId: string) => void;
-  onOpenProgress: () => void;
   onStartTests: () => void;
   onRetryPending: () => void;
 }) {
   const age = ageThisYear(athlete.birth_year);
   const band = bandFor(age);
   const programs = band ? programsFor(band.id, athlete.level) : [];
+  const [category, setCategory] = useState<Category | "all">("all");
+  const categories = [...new Set(programs.map((program) => program.category))];
+  const visible = category === "all" ? programs : programs.filter((program) => program.category === category);
   const goal = athlete.weekly_goal;
   const weekStart = startOfWeekIso();
   const thisWeek = sessions.filter((s) => s.performed_on >= weekStart);
@@ -43,7 +43,7 @@ export function AthleteHome({
   const suggestion = [...programs].sort((a, b) => (lastDone.get(a.id) ?? "").localeCompare(lastDone.get(b.id) ?? ""))[0];
 
   return (
-    <Screen eyebrow={band ? `${band.label} · ${age} anos` : `${age} anos`} title={`Oi, ${athlete.nickname}`} onBack={onSwitch}>
+    <Screen eyebrow={band ? `${band.label} · ${age} anos` : `${age} anos`} title={`Oi, ${athlete.nickname}`}>
       {pending.count > 0 && (
         <section className={`due-card ${pending.blocked ? "blocked" : "pending"}`}>
           <div>
@@ -100,29 +100,34 @@ export function AthleteHome({
         </section>
       )}
 
-      <Group>
-        <button type="button" className="row row-nav" onClick={onOpenProgress}>
-          <span className="row-label">
-            Minha evolução
-            <small>Testes, conquistas e todos os treinos</small>
-          </span>
-        </button>
-      </Group>
-
       {band ? (
-        <Group header="Treinos para você" footer={`Faixa ${band.label}: ${band.focus.toLowerCase()}.`}>
-          {programs.map((program) => (
-            <button key={program.id} type="button" className="row row-nav" onClick={() => onOpenProgram(program.id)}>
-              <span className="row-label">
-                {program.title}
-                <small>
-                  {CATEGORY_LABELS[program.category]} · {programMinutes(program)} min
-                  {lastDone.has(program.id) ? ` · feito em ${formatDayMonth(lastDone.get(program.id)!)}` : ""}
-                </small>
-              </span>
-            </button>
-          ))}
-        </Group>
+        <>
+          {categories.length > 1 && (
+            <div className="chips" role="group" aria-label="Filtrar treinos por categoria">
+              <button type="button" className={`chip${category === "all" ? " active" : ""}`} onClick={() => setCategory("all")}>
+                Todos
+              </button>
+              {categories.map((id) => (
+                <button key={id} type="button" className={`chip${category === id ? " active" : ""}`} onClick={() => setCategory(id)}>
+                  {CATEGORY_LABELS[id]}
+                </button>
+              ))}
+            </div>
+          )}
+          <Group header="Treinos para você" footer={`Faixa ${band.label}: ${band.focus.toLowerCase()}.`}>
+            {visible.map((program) => (
+              <button key={program.id} type="button" className="row row-nav" onClick={() => onOpenProgram(program.id)}>
+                <span className="row-label">
+                  {program.title}
+                  <small>
+                    {CATEGORY_LABELS[program.category]} · {programMinutes(program)} min
+                    {lastDone.has(program.id) ? ` · feito em ${formatDayMonth(lastDone.get(program.id)!)}` : ""}
+                  </small>
+                </span>
+              </button>
+            ))}
+          </Group>
+        </>
       ) : (
         <Group header="Treinos">
           <p className="row-note">Confira o ano de nascimento do perfil na tela Conta.</p>

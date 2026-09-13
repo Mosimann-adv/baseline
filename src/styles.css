@@ -164,6 +164,37 @@ button.row:active { background: var(--fill); }
 .notice.error { background: rgba(217, 105, 83, 0.16); color: var(--coral-soft); }
 .notice.success { background: rgba(238, 160, 71, 0.14); }
 
+/* ---------- Rodapé de navegação (Treinos · Evolução · Perfil) ---------- */
+.tabbar {
+  position: fixed; bottom: 0; left: 0; right: 0; z-index: 20;
+  display: flex; gap: 4px; max-width: 640px; margin: 0 auto;
+  padding: 6px 10px calc(6px + var(--safe-bottom));
+  background: rgba(19, 51, 88, 0.94);
+  -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px);
+  box-shadow: 0 -1px 0 var(--separator);
+}
+.tab {
+  flex: 1; display: grid; justify-items: center; gap: 2px; min-height: 52px; padding: 6px 4px;
+  border: 0; background: none; color: var(--text-3); font-size: 11px; font-weight: 600;
+}
+.tab svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.tab.active { color: var(--yellow); }
+.tab:active { opacity: 0.7; }
+.has-tabbar .screen { padding-bottom: calc(96px + var(--safe-bottom)); }
+
+/* ---------- Filtro por categoria ---------- */
+.chips {
+  display: flex; gap: 8px; margin: 4px 0 8px; padding: 2px 4px;
+  overflow-x: auto; scrollbar-width: none; -webkit-overflow-scrolling: touch;
+}
+.chips::-webkit-scrollbar { display: none; }
+.chip {
+  flex: 0 0 auto; min-height: 36px; padding: 0 16px; border: 0; border-radius: 999px;
+  background: var(--fill); color: var(--text-2); font-size: 14px; font-weight: 500;
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+.chip.active { background: var(--yellow); color: var(--navy-deep); font-weight: 600; }
+
 /* ---------- Boas-vindas ---------- */
 .welcome {
   min-height: 100dvh; max-width: 480px; margin: 0 auto; display: flex; flex-direction: column; justify-content: center; gap: 16px;
