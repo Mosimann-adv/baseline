@@ -2,15 +2,17 @@ import { useEffect, useState, type FormEvent } from "react";
 import { Field, Group, Notice, PrimaryButton, Screen, Segmented, SwitchRow } from "../components/ui";
 import { useAuth } from "../state/auth";
 import { ageThisYear, allowedBirthYears, bandFor, selfBirthYears } from "../lib/age";
-import { activeConsent, consentPointsFor, consentVersionFor } from "../lib/consent";
+import { activeConsent, consentPointsFor, consentVersionFor, TEEN_CONSENT_VERSION } from "../lib/consent";
 import { localIsoDate } from "../lib/dates";
 import { friendlyError } from "../lib/errors";
 import { collectFamilyData, saveJsonFile } from "../lib/exportData";
 import { LEVELS, POSITIONS } from "../lib/profile";
 import { canCreateMinorProfiles, type AccountKind } from "../lib/account";
+import { countAthleteRows } from "../lib/counts";
+import { shareText } from "../lib/native";
 import type { ParentStatus } from "../lib/parentConfirm";
 import { LEGAL_DOCS, type LegalId } from "../content/legal";
-import { INSTITUTE_CNPJ, INSTITUTE_NAME, PIX_KEY, SUPPORT } from "../content/support";
+import { APP_WEB, INSTITUTE_CNPJ, INSTITUTE_NAME, PIX_KEY, SUPPORT, appPublicUrl } from "../content/support";
 
 import { LegalScreen } from "./LegalScreen";
 import type { Athlete, AthletePatch, Consent, Level, Position, SkillTestRecord, TrainingSession } from "../lib/types";
@@ -71,6 +73,8 @@ function AccountSettings({
   const [exporting, setExporting] = useState(false);
   const [exportNote, setExportNote] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
+  const [shareNote, setShareNote] = useState<string | null>(null);
+  const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -92,6 +96,7 @@ function AccountSettings({
         onUpdate={(patch) => onUpdate(selected.id, patch)}
         onRevoke={() => onRevoke(selected.id)}
         onAuthorize={() => onAuthorize(selected)}
+        guardianId={guardianId}
         onDelete={async () => {
           await onDeleteAthlete(selected.id);
           setSub(null);
@@ -108,10 +113,31 @@ function AccountSettings({
     setBusy(true);
     setError(null);
     try {
-      await deleteAccount();
+      await deleteAccount(password);
     } catch (err) {
       setError(friendlyError(err));
       setBusy(false);
+    }
+  }
+
+  async function shareParent() {
+    setShareNote(null);
+    const url = appPublicUrl("confirmar-responsavel");
+    const text = [
+      "Confirme a conta no Baseline.",
+      "",
+      `Abra: ${url}`,
+      parent.code ? `Código: ${parent.code}` : null,
+      parent.parentEmail ? `Use o e-mail ${parent.parentEmail}.` : null,
+    ]
+      .filter(Boolean)
+      .join("\n");
+    try {
+      const result = await shareText("Confirmar Baseline", text);
+      if (result === "copied") setShareNote("Texto copiado. Envie no WhatsApp ou no e-mail do responsável.");
+      onRefreshParent();
+    } catch (err) {
+      setError(friendlyError(err));
     }
   }
 
@@ -156,22 +182,16 @@ function AccountSettings({
           <div>
             <p className="subtitle">Confirmação do responsável</p>
             <p>
-              Peça para {parent.parentEmail ?? "o responsável"} abrir no site do Baseline a página{" "}
-              <strong>#/confirmar-responsavel</strong> e digitar o código <strong>{parent.code ?? "—"}</strong>.
+              Peça para {parent.parentEmail ?? "o responsável"} abrir {APP_WEB.replace("https://", "")}/#/confirmar-responsavel e
+              digitar o código <strong>{parent.code ?? "—"}</strong>.
             </p>
           </div>
-          <button
-            type="button"
-            className="secondary-button"
-            onClick={() => {
-              if (parent.code) void navigator.clipboard.writeText(parent.code).catch(() => undefined);
-              onRefreshParent();
-            }}
-          >
-            Copiar código
+          <button type="button" className="secondary-button" onClick={() => void shareParent()}>
+            Enviar ao responsável
           </button>
         </section>
       )}
+      {shareNote && <Notice tone="success">{shareNote}</Notice>}
       {accountKind === "teen" && parent.confirmed && (
         <Notice tone="success">Responsável confirmado{parent.parentEmail ? ` (${parent.parentEmail})` : ""}.</Notice>
       )}
@@ -272,14 +292,25 @@ function AccountSettings({
         </button>
       </Group>
 
-      <Group header="Excluir conta" footer="Apaga a conta, todos os perfis, os aceites e todos os registros. Não dá para desfazer.">
+      <Group header="Excluir conta" footer="Apaga a conta, todos os perfis, os aceites e todos os registros. Não dá para desfazer. Pedimos a senha para uma criança no aparelho não apagar tudo por engano.">
         {confirming ? (
           <>
-            <p className="row-note">Tem certeza? Tudo desta conta será apagado agora.</p>
-            <button type="button" className="row row-action destructive" disabled={busy} onClick={() => void removeEverything()}>
+            <p className="row-note">Digite a senha desta conta para confirmar. Tudo será apagado agora.</p>
+            <Group>
+              <Field id="delete-password" label="Senha" type="password" autoComplete="current-password" value={password} onChange={setPassword} />
+            </Group>
+            <button type="button" className="row row-action destructive" disabled={busy || password.length < 1} onClick={() => void removeEverything()}>
               {busy ? "Excluindo…" : "Excluir tudo definitivamente"}
             </button>
-            <button type="button" className="row row-action" disabled={busy} onClick={() => setConfirming(false)}>
+            <button
+              type="button"
+              className="row row-action"
+              disabled={busy}
+              onClick={() => {
+                setConfirming(false);
+                setPassword("");
+              }}
+            >
               Cancelar
             </button>
           </>
@@ -297,8 +328,9 @@ function AccountSettings({
 function ProfileSettings({
   athlete,
   consents,
-  sessionCount,
-  testCount,
+  sessionCount: initialSessions,
+  testCount: initialTests,
+  guardianId,
   onBack,
   onUpdate,
   onRevoke,
@@ -309,6 +341,7 @@ function ProfileSettings({
   consents: Consent[];
   sessionCount: number;
   testCount: number;
+  guardianId: string;
   onBack: () => void;
   onUpdate: (patch: AthletePatch) => Promise<void>;
   onRevoke: () => Promise<void>;
@@ -326,6 +359,15 @@ function ProfileSettings({
   const [busy, setBusy] = useState<"save" | "consent" | "delete" | null>(null);
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [sessionCount, setSessionCount] = useState(initialSessions);
+  const [testCount, setTestCount] = useState(initialTests);
+
+  useEffect(() => {
+    void countAthleteRows(guardianId, athlete.id).then((counts) => {
+      setSessionCount(counts.sessions);
+      setTestCount(counts.tests);
+    });
+  }, [guardianId, athlete.id]);
 
   const self = athlete.is_self;
   const age = ageThisYear(athlete.birth_year);
@@ -366,6 +408,19 @@ function ProfileSettings({
 
   return (
     <Screen eyebrow={self ? `Seu perfil · ${age} anos` : band ? `${band.label} · ${age} anos` : `${age} anos`} title={athlete.nickname} onBack={onBack}>
+      {!self && age >= 16 && age < 18 && (
+        <Notice>
+          {athlete.nickname} já pode ter conta própria (a partir de 16, com você confirmando). O histórico fica neste perfil até vocês decidirem apagá-lo — não migra sozinho.
+        </Notice>
+      )}
+      {!self && age >= 18 && (
+        <Notice>
+          {athlete.nickname} já é adulto. O perfil continua nesta conta e os treinos passaram à faixa Adulto. Se quiser conta própria, cria um login novo; os treinos daqui não migram sozinhos.
+        </Notice>
+      )}
+      {self && age >= 18 && !active && consents.some((c) => c.document_version === TEEN_CONSENT_VERSION) && (
+        <Notice>Você completou 18 anos. Dê o consentimento de adulto para continuar treinando.</Notice>
+      )}
       <form onSubmit={save} className="stack">
         <Group header="Perfil" footer="Corrija os dados quando precisar. O nível e a idade mudam os treinos e testes sugeridos.">
           <Field id="edit-nickname" label="Apelido" value={nickname} onChange={setNickname} maxLength={24} autoComplete="off" />

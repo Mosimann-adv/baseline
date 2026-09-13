@@ -68,7 +68,8 @@ begin
   end if;
   select * into v_row from public.parent_confirmations where user_id = (select auth.uid());
   if not found then
-    return jsonb_build_object('parent_email', null, 'confirmed', true, 'code', null);
+    -- Sem registro = adolescente ainda não pediu confirmação. Adultos não usam esta função.
+    return jsonb_build_object('parent_email', null, 'confirmed', false, 'code', null);
   end if;
   return jsonb_build_object(
     'parent_email', v_row.parent_email,

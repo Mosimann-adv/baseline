@@ -82,14 +82,14 @@ Leia nesta ordem:
 | `aae6fd2`, `94a9b77`, `793555b` | Supabase e Vercel registrados; `.env.production`; build ignora variáveis vazias |
 | `f0dc858` | Adultos: perfil próprio, tela "Quem vai treinar?", faixa Adulto, consentimento do titular; migração 0005 |
 | `8774ff6` | Remove o PIN; textos legais na versão `rascunho-3` |
-| (este) | Fila offline de treinos e testes; esqueci a senha por código; conta 16–17 com confirmação do responsável; plugins Capacitor (voltar, compartilhar, tela ligada). Migração 0006. Textos legais `rascunho-5`. |
+| (este) | Fila offline; esqueci a senha; conta 16–17; projeto Android Capacitor (`br.org.arvoredo.baseline`); senha para excluir a conta; conversão 16/18 sem migrar histórico; rascunho dos formulários do Play em `docs/GOOGLE_PLAY.md`. Migração 0006. |
 
 Etapas do `README.md`:
 1. Fundação — pronta.
 2. Treino — pronta.
 3. Evolução — pronta.
-4. Privacidade e loja — parte do app pronta; formulários do Google Play pendentes.
-5. Teste e publicação — não começou.
+4. Privacidade e loja — parte do app pronta; rascunho dos formulários em `docs/GOOGLE_PLAY.md` (preencher no Console).
+5. Teste e publicação — falta conta de organização, AAB assinado e a migração 0006 no banco real.
 
 **No ar:** https://baseline-six-sigma.vercel.app/ — o commit desta etapa entra no próximo deploy automático, **depois** de o dono rodar a migração 0006.
 
@@ -209,8 +209,9 @@ src/
     errors.ts           mensagens amigáveis a partir de erros do Supabase
     offlineQueue.ts     fila de treinos e testes no localStorage; UUID no cliente
     parentConfirm.ts    código e e-mail do responsável (16–17)
-    account.ts          adult vs teen; meta da sessão
-    native.ts           botão voltar, tela ligada e compartilhar no Android
+    counts.ts           contagem exata de treinos e testes por perfil (além do recorte de 300)
+    account.ts          adult vs teen; meta da sessão; idade manda sobre o tipo gravado
+    native.ts           botão voltar, tela ligada, compartilhar arquivo e texto no Android
   content/
     programs.ts         11 programas por faixa e nível; VIDEOS com IDs verificados
     tests.ts            7 testes de habilidade; sprint e salto só a partir de 12 anos
@@ -266,11 +267,15 @@ supabase/migrations/    0001 fundação · 0002 treinos · 0003 evolução · 00
 
 ### 10.2 Código (ordem combinada)
 
-1. **Fila offline para treinos e testes** — feita. UUID no cliente, fila no `localStorage`, reenvio em `online` e ao reabrir, `23505` = já enviado, recusa por RLS mantém o item com o motivo na tela do perfil. Demo não usa fila.
-2. **Esqueci a senha** — feita. Código OTP por e-mail (`signInWithOtp` + `verifyOtp`), sem deep link; depois o usuário define senha nova.
-3. **Conta a partir de 16 anos** — feita no app. Rodar a migração **0006** no Supabase antes de usar no site real. Termo teen ainda é rascunho jurídico.
-4. **Projeto Android (Capacitor).** Plugins no `package.json` (`@capacitor/app`, `filesystem`, `share`, keep-awake). Falta `npx cap add android` na máquina com JDK 21 / Android Studio, confirmar o `appId` `br.org.arvoredo.baseline`, ícones/splash.
-5. **Formulários do Google Play:** Segurança dos dados, público-alvo (Famílias, público misto), classificação de conteúdo, URL da política.
+1. **Fila offline para treinos e testes** — feita.
+2. **Esqueci a senha** — feita.
+3. **Conta a partir de 16 anos** — feita no app. Rodar a migração **0006** no Supabase antes de usar no site real.
+4. **Projeto Android (Capacitor)** — pasta `android/` no repositório, `appId` `br.org.arvoredo.baseline`, sem `AD_ID`, sem backup na nuvem, ícone da marca. Falta JDK 21 / Android Studio na máquina do dono para `npm run android:sync` e gerar o AAB.
+5. **Formulários do Google Play** — rascunho em `docs/GOOGLE_PLAY.md`. Preencher no Console (dono).
+6. **Senha para excluir a conta** — feita (alternativa combinada ao PIN).
+7. **Conversão 16/18** — feita como aviso, sem migrar histórico: o perfil de menor permanece na conta do responsável; a pessoa pode criar login próprio se quiser. Aos 18, o adolescente vira adulto pela idade e precisa do termo de adulto para seguir treinando.
+
+Não há mais item de código da v1 além de conteúdo (vídeos, revisão jurídica, validação do profissional).
 
 ### 10.3 Captação de recursos (decidida em 2026-09-13)
 
@@ -289,26 +294,27 @@ supabase/migrations/    0001 fundação · 0002 treinos · 0003 evolução · 00
 - [ ] Testar de ponta a ponta no site real (seção 10.1).
 - [ ] SMTP próprio no Supabase antes de abrir para outras famílias.
 - [ ] (Opcional) Apagar as variáveis vazias `VITE_SUPABASE_*` na Vercel.
-- [ ] JDK 21 / Android Studio.
+- [x] Projeto Android Capacitor no repositório (`android/`, `appId` `br.org.arvoredo.baseline`).
+- [ ] JDK 21 / Android Studio na máquina do dono, para gerar o AAB.
 - [ ] Conta de organização no Google Play (Instituto Arvoredo, D-U-N-S).
-- [ ] Confirmar o `appId`.
-- [ ] Revisão jurídica de `src/lib/consent.ts` (termo de menores e de adultos) e `src/content/legal.ts`. Preencher os trechos entre colchetes:
+- [x] `appId` definido (`br.org.arvoredo.baseline`); permanente depois da primeira publicação.
+- [ ] Revisão jurídica de `src/lib/consent.ts` e `src/content/legal.ts`. Preencher os trechos entre colchetes:
   - e-mail de privacidade e nome do encarregado;
   - prazo das cópias de segurança do provedor;
   - prazo para atender pedido de exclusão por e-mail;
   - região do Supabase;
-  - nome e CREF do profissional de educação física;
-  - fluxo de conta aos 16 (e-mail do responsável e dado de saúde).
+  - nome e CREF do profissional de educação física.
 - [x] CNPJ do Instituto preenchido (`56.660.275/0001-06`); app descrito como gratuito; Apoie o Arvoredo na tela Conta.
 - [ ] Validação dos 11 programas e dos 7 testes por profissional de educação física, inclusive o uso deles para adultos.
-- [ ] Vídeos: só **9 dos 44 exercícios** têm vídeo; os IDs novos precisam ser escolhidos e verificados.
+- [ ] Vídeos: só **9 dos 44 exercícios** têm vídeo; lista em `docs/VIDEOS.md`.
+- [ ] Copiar `docs/GOOGLE_PLAY.md` no Play Console.
 
 ## 12. Riscos e questões em aberto
 
-- **Sem PIN:** uma criança com o aparelho do adulto consegue abrir a Conta e, confirmando duas vezes, revogar aceites ou excluir perfis e a conta. Se incomodar, a alternativa combinada é pedir a **senha da conta** só para excluir a conta, sem voltar ao PIN.
+- **Sem PIN:** uma criança com o aparelho do adulto ainda abre a Conta. **Excluir a conta pede a senha.** Revogar aceite e excluir perfil continuam só com confirmação em dois passos.
 - **Revogação guarda os registros** até novo aceite ou exclusão do perfil. A revisão jurídica pode preferir exclusão automática após um prazo.
-- **Menor que completa 16 ou 18 anos:** hoje o perfil de menor continua no responsável mesmo depois dos 18 (só a faixa de treino muda). Com a conta a partir de 16 (decidida, não implementada), falta definir a conversão: convite para conta própria, permanência no responsável, ou os dois.
+- **Menor que completa 16 ou 18 anos:** o perfil continua no responsável. O app avisa que a pessoa pode criar conta própria; o histórico **não migra**. Aos 18, conta de adolescente passa a ser adulta pela idade e o termo de adulto precisa ser aceito de novo.
 - **Faixa Adulto:** reaproveita o conteúdo de 15–17. Treinos específicos para adultos dependem do profissional de educação física.
-- **Contagens com limite:** `useSessions` carrega no máximo 300 treinos, então as contagens da Conta podem ficar abaixo do real. A cópia de dados busca tudo, até 1000 linhas por consulta.
+- **Contagens com limite:** a lista da Evolução carrega no máximo 300 treinos; a tela Conta usa a contagem exata no banco.
 - **Idade por ano:** calculada como `ano atual − ano de nascimento`, no app e no banco.
 - **Comparação só consigo mesmo:** conquistas e testes nunca comparam pessoas. Mantenha assim.

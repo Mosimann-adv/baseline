@@ -22,7 +22,7 @@ interface AuthValue {
   verifyPasswordCode: (email: string, token: string) => Promise<void>;
   updatePassword: (password: string) => Promise<void>;
   signOut: () => Promise<void>;
-  deleteAccount: () => Promise<void>;
+  deleteAccount: (password: string) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthValue | null>(null);
@@ -100,12 +100,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           await requireSupabase().auth.signOut();
         }
       },
-      async deleteAccount() {
+      async deleteAccount(password: string) {
         if (isDemo) {
           demoDeleteAccount();
           setSession(null);
         } else {
           const client = requireSupabase();
+          const email = session?.user.email;
+          if (!email) throw new Error("Entre de novo para excluir a conta.");
+          const { error: authError } = await client.auth.signInWithPassword({ email, password });
+          if (authError) throw authError;
           const { error } = await client.rpc("delete_my_account");
           if (error) throw error;
           await client.auth.signOut();

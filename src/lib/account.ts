@@ -25,9 +25,10 @@ export function metaFromSession(session: Session | null): AccountMeta {
   const birthYear = typeof data.birth_year === "number" ? data.birth_year : Number(data.birth_year) || null;
   const parentEmail = typeof data.parent_email === "string" ? data.parent_email : null;
   const stored = data.account_kind === "teen" || data.account_kind === "adult" ? data.account_kind : null;
-  const inferred = birthYear ? kindFromBirthYear(birthYear) : "adult";
+  // A idade manda: quem cadastrou aos 17 vira adulto no ano em que completa 18.
+  const inferred = birthYear ? kindFromBirthYear(birthYear) : null;
   return {
-    kind: stored ?? inferred ?? "adult",
+    kind: inferred ?? stored ?? "adult",
     birthYear,
     parentEmail,
   };

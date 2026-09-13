@@ -216,7 +216,7 @@ export const LEGAL_DOCS: Record<LegalId, LegalDoc> = {
         blocks: [
           {
             ordered: true,
-            list: ["Abra o Baseline e toque em Conta.", "Toque em Excluir conta e dados e confirme."],
+            list: ["Abra o Baseline e toque em Conta.", "Toque em Excluir conta e dados, digite a senha da conta e confirme."],
           },
         ],
       },

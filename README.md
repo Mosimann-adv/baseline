@@ -32,7 +32,7 @@ npm run android:sync   # build + copia para o projeto Android
 npm run android:open   # abre no Android Studio
 ```
 
-Requer JDK 21 (o Android Studio já traz um em `jbr`).
+Requer JDK 21 (o Android Studio já traz um em `jbr`). O projeto `android/` já está no repositório (`appId` `br.org.arvoredo.baseline`). Formulários da loja: `docs/GOOGLE_PLAY.md`.
 
 ## Etapas
 

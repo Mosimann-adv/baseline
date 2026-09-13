@@ -17,18 +17,22 @@ function sixDigits(): string {
   return String(100000 + Math.floor(Math.random() * 900000));
 }
 
+function fromRow(kind: AccountKind | undefined, row: { parent_email?: string | null; confirmed?: boolean; code?: string | null } | null): ParentStatus {
+  if (!row) return fallback(kind);
+  const confirmed = kind === "teen" ? Boolean(row.confirmed) : true;
+  return {
+    parentEmail: row.parent_email ?? null,
+    confirmed,
+    code: confirmed ? null : (row.code ?? null),
+  };
+}
+
 export async function loadParentStatus(userId: string, kind?: AccountKind): Promise<ParentStatus> {
   if (isDemo) return demoParentStatus(userId);
   try {
     const { data, error } = await requireSupabase().rpc("parent_confirmation_status");
     if (error) return fallback(kind);
-    const row = data as { parent_email?: string; confirmed?: boolean; code?: string | null } | null;
-    if (!row) return fallback(kind);
-    return {
-      parentEmail: row.parent_email ?? null,
-      confirmed: Boolean(row.confirmed),
-      code: row.code ?? null,
-    };
+    return fromRow(kind, data as { parent_email?: string; confirmed?: boolean; code?: string | null } | null);
   } catch {
     return fallback(kind);
   }
@@ -43,12 +47,7 @@ export async function registerParentEmail(userId: string, parentEmail: string): 
     p_code: code,
   });
   if (error) throw error;
-  const row = data as { parent_email?: string; confirmed?: boolean; code?: string | null } | null;
-  return {
-    parentEmail: row?.parent_email ?? email,
-    confirmed: Boolean(row?.confirmed),
-    code: row?.code ?? code,
-  };
+  return fromRow("teen", (data as { parent_email?: string; confirmed?: boolean; code?: string | null } | null) ?? { parent_email: email, confirmed: false, code });
 }
 
 /** Página pública: o responsável confirma com o e-mail dele e o código do adolescente. */

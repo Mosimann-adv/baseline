@@ -14,7 +14,7 @@ App de treinos de basquete para adultos e para crianças (a partir de 6 anos) e 
 2. **Nenhum perfil sem aceite registrado.** Perfil e aceite são gravados na mesma transação.
    - Perfil de menor: `create_athlete_with_consent`, com a autorização do responsável (`CONSENT_VERSION`).
    - Perfil próprio: `create_self_profile_with_consent`, com o consentimento do titular (`SELF_CONSENT_VERSION`), porque "algo doeu?" é dado de saúde.
-   - Não há PIN na tela Conta (decisão do dono em 2026-09-12). As ações sem volta pedem confirmação em dois passos.
+   - Não há PIN na tela Conta (decisão do dono em 2026-09-12). Excluir a conta pede a senha. As outras ações sem volta pedem confirmação em dois passos.
 3. **Coleta mínima.** Apelido, ano de nascimento, nível e posição. Nada de nome completo, data de nascimento completa, foto, escola, localização, contatos ou chat.
 4. **Sem anúncios, sem identificador de publicidade e sem ferramentas de análise de terceiros** (política de Famílias do Google Play).
 5. **Dor e lesão são dados sensíveis.** No máximo "algo doeu?", com orientação para parar. Para menores, orientar também a avisar um adulto. Não guardar diagnóstico nem detalhe clínico.

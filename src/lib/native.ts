@@ -50,3 +50,28 @@ export async function shareJsonFile(fileName: string, contents: string): Promise
     throw err;
   }
 }
+
+/** Texto para o responsável (código + página). No celular abre o compartilhar; no computador copia. */
+export async function shareText(title: string, text: string): Promise<"shared" | "copied" | "cancelled"> {
+  try {
+    if (isNative) {
+      const { Share } = await import("@capacitor/share");
+      await Share.share({ title, text, dialogTitle: title });
+      return "shared";
+    }
+    if (typeof navigator !== "undefined" && navigator.share) {
+      await navigator.share({ title, text });
+      return "shared";
+    }
+    await navigator.clipboard.writeText(text);
+    return "copied";
+  } catch (err) {
+    if (err instanceof Error && /cancel|abort/i.test(err.message)) return "cancelled";
+    try {
+      await navigator.clipboard.writeText(text);
+      return "copied";
+    } catch {
+      throw err;
+    }
+  }
+}
