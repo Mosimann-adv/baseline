@@ -13,7 +13,7 @@ function previewSrc(video: NonNullable<Drill["video"]>): string {
 }
 
 export function ProgramDetail({ program, onBack, onStart }: { program: Program; onBack: () => void; onStart: () => void }) {
-  const [openId, setOpenId] = useState<string | null>(program.drills[0]?.id ?? null);
+  const [openId, setOpenId] = useState<string | null>(null);
   const listRef = useRef<HTMLDivElement>(null);
 
   const scrollToList = () => {
