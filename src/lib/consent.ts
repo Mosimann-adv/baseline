@@ -26,16 +26,16 @@ export const SELF_CONSENT_POINTS: readonly string[] = [
   "Você pode revogar este consentimento e apagar tudo a qualquer momento na tela Conta.",
 ];
 
-/** Adolescente 16–17 com conta própria: consentimento do titular + e-mail do responsável confirmando. */
-export const TEEN_CONSENT_VERSION = "2026-09-teen-rascunho-1";
+/** Adolescente 16–17 no perfil próprio: consentimento do titular (declaração de 16+ na conta). */
+export const TEEN_CONSENT_VERSION = "2026-09-teen-rascunho-2";
 
 export const TEEN_CONSENT_POINTS: readonly string[] = [
-  "Você tem 16 ou 17 anos e cria a própria conta. Um responsável legal confirma pelo e-mail dele.",
-  "Guardamos seu apelido, ano de nascimento, nível, posição, meta de treinos e o e-mail do responsável.",
-  "Seus treinos e testes, incluindo se algo doeu (só sim ou não), servem apenas para mostrar sua evolução. “Algo doeu?” é um dado de saúde: você consente e o responsável confirma.",
+  "Você tem 16 ou 17 anos e treina no seu próprio perfil. Na conta, você declarou ter 16 anos ou mais.",
+  "Guardamos seu apelido, ano de nascimento, nível, posição e meta de treinos.",
+  "Seus treinos e testes, incluindo se algo doeu (só sim ou não), servem apenas para mostrar sua evolução. “Algo doeu?” é um dado de saúde: você consente.",
   "Não mostramos anúncios, não vendemos dados e não usamos ferramentas de análise de terceiros.",
   "Os vídeos de treino abrem pelo YouTube no modo sem cookies.",
-  "Você ou o responsável podem revogar o aceite e apagar a conta a qualquer momento.",
+  "Você pode revogar o aceite e apagar a conta a qualquer momento na tela Conta.",
 ];
 
 export function isTeenSelf(athlete: Pick<Athlete, "is_self" | "birth_year">): boolean {

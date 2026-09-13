@@ -18,7 +18,7 @@ export function NewAthlete({
 }: {
   kind: ProfileKind;
   first: boolean;
-  /** Ano já informado no cadastro da conta: o perfil próprio não pede de novo. */
+  /** Ano já gravado na conta (contas antigas). O perfil próprio não pede de novo. */
   lockedBirthYear?: number | null;
   onBack?: () => void;
   onCreate: (input: NewAthleteInput) => Promise<Athlete>;

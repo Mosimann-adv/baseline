@@ -2,7 +2,7 @@ import { INSTITUTE_CNPJ, INSTITUTE_NAME } from "./support";
 
 // RASCUNHO — pendente de revisão jurídica. Encarregado, e-mail de privacidade e CREF ainda faltam.
 // Mudou o texto de forma relevante? Troque LEGAL_VERSION.
-export const LEGAL_VERSION = "2026-09-rascunho-6";
+export const LEGAL_VERSION = "2026-09-rascunho-7";
 
 const ORG = INSTITUTE_NAME;
 const CNPJ = INSTITUTE_CNPJ;
@@ -39,7 +39,7 @@ export const LEGAL_DOCS: Record<LegalId, LegalDoc> = {
       {
         title: "Quem usa o app",
         blocks: [
-          "A conta é a partir de 16 anos. De 16 a 17 anos, o adolescente cria o próprio login e um responsável legal confirma pelo e-mail. A partir de 18 anos, a conta é de um adulto, que também pode criar perfis para crianças e adolescentes de 6 a 17 anos pelos quais é responsável legal.",
+          "A conta é a partir de 16 anos: quem cria declara ter 16 anos ou mais, com e-mail e senha. A idade de treino fica no perfil, não no cadastro da conta. A partir de 18 anos no perfil próprio, a mesma conta pode criar perfis para crianças e adolescentes de 6 a 17 anos pelos quais a pessoa é responsável legal.",
           "Quem tem menos de 16 anos não cria login: treina só pelo perfil criado pelo responsável. Crianças e adolescentes nesse caso não têm e-mail, perfil público nem conversa com outras pessoas.",
         ],
       },
@@ -48,9 +48,9 @@ export const LEGAL_DOCS: Record<LegalId, LegalDoc> = {
         blocks: [
           {
             list: [
-              "Da conta: e-mail e senha. A senha fica protegida pelo serviço de login e ninguém da equipe consegue lê-la.",
+              "Da conta: e-mail, senha e a declaração de ter 16 anos ou mais. A senha fica protegida pelo serviço de login e ninguém da equipe consegue lê-la.",
               "De cada perfil de treino: apelido, ano de nascimento, nível, posição (opcional), meta de treinos por semana e se é o perfil do próprio dono da conta.",
-              "Da conta de adolescente (16–17): e-mail do responsável e a confirmação dele.",
+              "Da conta de adolescente (16–17) criada no modelo anterior: e-mail do responsável e a confirmação dele, se existirem.",
               "Treinos: data, duração, quantos exercícios foram feitos, como foi (de 1 a 5) e se algo doeu, só como sim ou não, sem detalhes de saúde.",
               "Testes de habilidade: data e resultados.",
               "Consentimentos e autorizações: versão do termo aceito e datas de aceite e de revogação.",
@@ -86,8 +86,8 @@ export const LEGAL_DOCS: Record<LegalId, LegalDoc> = {
             list: [
               "Perfis de crianças e adolescentes: consentimento específico e em destaque de um dos pais ou do responsável legal, dado para cada perfil (art. 14, § 1º, da LGPD), sempre no melhor interesse da criança e do adolescente.",
               "Perfil próprio de adulto: consentimento do titular, inclusive para a resposta sobre dor, que é dado de saúde (art. 7º, I, e art. 11, I, da LGPD).",
-              "Conta de adolescente 16–17: consentimento do titular e confirmação do responsável legal pelo e-mail, também para a resposta sobre dor.",
-              "Dados da conta: cumprimento dos termos de uso e de obrigações legais (art. 7º, incisos II e V, da LGPD).",
+              "Perfil próprio de 16–17 anos: consentimento do titular, inclusive para a resposta sobre dor (art. 7º, I, e art. 11, I, da LGPD).",
+              "Conta: declaração de ter 16 anos ou mais, cumprimento dos termos de uso e de obrigações legais (art. 7º, incisos I, II e V, da LGPD).",
             ],
           },
         ],
@@ -149,7 +149,7 @@ export const LEGAL_DOCS: Record<LegalId, LegalDoc> = {
     id: "termos",
     title: "Termos de uso",
     intro:
-      "Estes termos explicam as regras de uso do Baseline. Ao criar a conta, você declara ter 16 anos ou mais. De 16 a 17 anos, um responsável legal confirma a conta. Ao cadastrar uma criança ou adolescente, o titular da conta declara ser mãe, pai ou responsável legal por ele.",
+      "Estes termos explicam as regras de uso do Baseline. Ao criar a conta, você declara ter 16 anos ou mais. Ao cadastrar uma criança ou adolescente, o titular da conta declara ser mãe, pai ou responsável legal por ele.",
     sections: [
       {
         title: "O que é o Baseline",
@@ -163,7 +163,7 @@ export const LEGAL_DOCS: Record<LegalId, LegalDoc> = {
         blocks: [
           {
             list: [
-              "Use um e-mail que só você acessa e guarde bem a senha.",
+              "Use um e-mail que só você acessa e guarde bem a senha. Declare com verdade que tem 16 anos ou mais.",
               "Cadastre perfis de crianças e adolescentes apenas se você for responsável legal por eles, com dados corretos.",
               "Você responde pelo uso da conta e dos perfis que criar.",
             ],

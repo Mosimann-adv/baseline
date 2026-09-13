@@ -8,9 +8,6 @@ import { metaFromSession } from "../lib/account";
 export interface SignUpInput {
   email: string;
   password: string;
-  birthYear: number;
-  kind: AccountKind;
-  parentEmail?: string;
 }
 
 interface AuthValue {
@@ -48,7 +45,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       loading,
       async signUp(input) {
         if (isDemo) {
-          setSession(demoSignIn(input.email, { birthYear: input.birthYear, parentEmail: input.parentEmail, kind: input.kind }));
+          setSession(demoSignIn(input.email, { kind: "adult" }));
           return { needsConfirmation: false };
         }
         const { data, error } = await requireSupabase().auth.signUp({
@@ -56,9 +53,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           password: input.password,
           options: {
             data: {
-              birth_year: input.birthYear,
-              parent_email: input.parentEmail ?? null,
-              account_kind: input.kind,
+              declared_16: true,
+              account_kind: "adult",
             },
           },
         });

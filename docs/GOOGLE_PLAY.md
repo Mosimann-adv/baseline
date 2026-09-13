@@ -71,7 +71,7 @@ Baseline é o app de treinos de basquete do Instituto Arvoredo.
 
 Treinos guiados com vídeo na tela, registro de como foi o treino, testes a cada 4 semanas e evolução só com você mesmo — sem ranking e sem comparar pessoas.
 
-A conta é a partir de 16 anos. De 16 a 17, um responsável confirma. Crianças a partir de 6 anos treinam pelo perfil criado pelo responsável. Adultos também treinam.
+A conta é a partir de 16 anos: quem cria declara ter 16 anos ou mais. Crianças a partir de 6 anos treinam pelo perfil criado pelo responsável. Adultos também treinam.
 
 O app é gratuito. Sem anúncios. Na tela Conta há um Apoie o Arvoredo (Pix), opcional, para o Instituto.
 

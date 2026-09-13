@@ -6,11 +6,12 @@ App de treinos de basquete para adultos e para crianças (a partir de 6 anos) e 
 
 ## Regras que não mudam sem pedido explícito
 
-1. **A conta é a partir de 16 anos.**
-   - 18+: adulto, com perfil próprio (`athletes.is_self`, no máximo um por conta) e, se quiser, perfis de crianças e adolescentes (6–17).
-   - 16–17: o adolescente cria o próprio login; o responsável confirma pelo e-mail e um código (`#/confirmar-responsavel`). Sem a confirmação o perfil próprio fica bloqueado. Essa conta **não** cria perfis de outras crianças.
+1. **A conta é a partir de 16 anos.** No cadastro a pessoa declara “tenho 16 anos ou mais”. Não pedimos ano de nascimento nem e-mail de responsável no login (decisão de 2026-09-13).
+   - A idade fica no **perfil de treino**.
+   - Perfil próprio (`athletes.is_self`, no máximo um por conta): 16+; usa `TEEN_CONSENT_VERSION` se a idade do perfil for 16–17 e `SELF_CONSENT_VERSION` se for 18+.
+   - A mesma conta pode criar perfis de crianças e adolescentes (6–17), com autorização do responsável.
    - Menores de 16 não criam login: só treinam pelo perfil criado pelo responsável.
-   - Perfil próprio de 16–17 usa `TEEN_CONSENT_VERSION`; o de 18+ usa `SELF_CONSENT_VERSION`.
+   - Contas antigas com `account_kind = teen` e confirmação de responsável (`#/confirmar-responsavel`) continuam válidas.
 2. **Nenhum perfil sem aceite registrado.** Perfil e aceite são gravados na mesma transação.
    - Perfil de menor: `create_athlete_with_consent`, com a autorização do responsável (`CONSENT_VERSION`).
    - Perfil próprio: `create_self_profile_with_consent`, com o consentimento do titular (`SELF_CONSENT_VERSION`), porque "algo doeu?" é dado de saúde.

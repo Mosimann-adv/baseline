@@ -13,11 +13,11 @@ Leia nesta ordem:
 
 - **O que é:** app de treinos de basquete para **adultos** e para **crianças (6+) e adolescentes** acompanhados por um adulto. Nome público **Baseline**; marca **Baseline by Arvoredo**.
 - **Quem mantém:** Instituto Arvoredo. A publicação no Google Play será por **conta de organização** do Instituto, que exige número D-U-N-S.
-- **Modelo de conta:** a conta é a partir de **16 anos**, com login por e-mail e senha.
-  - 18+: o adulto pode ter **um perfil próprio de treino** (`athletes.is_self = true`) e criar **perfis de crianças e adolescentes** (6–17).
-  - 16–17: o adolescente cria o próprio login; o responsável confirma pelo e-mail e um código na página pública `#/confirmar-responsavel`. Sem a confirmação o perfil próprio fica bloqueado. Essa conta não cria perfis de outras crianças.
+- **Modelo de conta:** a conta é a partir de **16 anos**, com e-mail, senha e a declaração **“tenho 16 anos ou mais”**. Sem ano de nascimento e sem e-mail de responsável no cadastro (decisão 2026-09-13).
+  - A idade fica no perfil de treino. Quem cria um perfil próprio e quem cria perfil de criança usa a mesma conta.
   - Menores de 16 treinam só pelo perfil criado pelo responsável, sem login.
   - Conta sem perfis abre na tela **"Quem vai treinar?"**.
+  - Contas antigas 16–17 com confirmação de responsável continuam no código (`#/confirmar-responsavel`).
 - **Tela Conta** (componente `GuardianArea.tsx`, nome antigo "Área do responsável"):
   - abre direto, **sem PIN**;
   - é onde se criam e corrigem perfis, se revogam e renovam aceites, se baixa a cópia dos dados, se lêem os textos legais, se apoia o Instituto (Pix) e se sai da conta ou a exclui;
@@ -67,7 +67,7 @@ Leia nesta ordem:
 | Faixa Adulto reaproveita treinos e testes de 15–17 na v1 | Opção recomendada, escolhida pelo dono |
 | Perfil próprio do adulto também exige consentimento (`SELF_CONSENT_VERSION`) | "Algo doeu?" é dado de saúde (LGPD art. 11, I); decisão técnica comunicada ao dono |
 | **Sem PIN** na tela Conta | Pedido do dono: "Nao tem nada que demande tanta restrição"; ficam só as confirmações em dois passos |
-| **Conta própria a partir de 16 anos** (2026-09-13; no código nesta etapa) | O corte de 18+ estava rígido. ECA Digital usa 16 como marco; 16–17 cria login com e-mail do responsável confirmando; <16 só por perfil do responsável. Termo `TEEN_CONSENT_VERSION` ainda é rascunho jurídico. |
+| **Conta própria a partir de 16 anos** (2026-09-13; simplificada no mesmo dia) | Cadastro: e-mail, senha e “tenho 16 anos ou mais”. Sem ano de nascimento e sem e-mail de responsável no login. Idade fica no perfil. Contas teen antigas seguem válidas. |
 | **App gratuito na v1; Apoie o Arvoredo na tela Conta** (2026-09-13) | Sem anúncio, sem compra no treino. Doação opcional no estilo do site (Pix CNPJ `56660275000106`, QR, WhatsApp). Cotas Bola / Uniforme / Cesta para empresas no site. Captação principal continua fora da loja (incentivo, patrocínio). |
 
 ## 4. Estado atual

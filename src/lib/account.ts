@@ -1,7 +1,7 @@
 import type { Session } from "@supabase/supabase-js";
 import { ageThisYear } from "./age";
 
-/** Conta própria a partir desta idade, com e-mail do responsável confirmando (16–17). */
+/** Conta própria a partir desta idade, com declaração no cadastro. */
 export const ACCOUNT_MIN_AGE = 16;
 export const ADULT_ACCOUNT_AGE = 18;
 

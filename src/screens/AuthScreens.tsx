@@ -2,8 +2,6 @@ import { useState, type FormEvent } from "react";
 import { useAuth } from "../state/auth";
 import { friendlyError } from "../lib/errors";
 import { isDemo } from "../lib/supabase";
-import { ageThisYear, selfBirthYears } from "../lib/age";
-import { kindFromBirthYear } from "../lib/account";
 import { LEGAL_DOCS, type LegalId } from "../content/legal";
 import { LegalScreen } from "./LegalScreen";
 import { Field, Group, Notice, PlainButton, PrimaryButton, Screen, SwitchRow } from "../components/ui";
@@ -57,25 +55,11 @@ function Welcome({ onSignIn, onSignUp, onDoc }: { onSignIn: () => void; onSignUp
       <h1 className="large-title">Baseline</h1>
       <p className="welcome-sub">Treinos de basquete guiados, com vídeo, para você e para as crianças e adolescentes que você acompanha.</p>
       <div className="welcome-actions">
-        {isDemo && (
-          <>
-            <PrimaryButton onClick={() => enterDemo("adult")}>Explorar como adulto</PrimaryButton>
-            <PlainButton onClick={() => enterDemo("teen")}>Explorar como 16 anos</PlainButton>
-          </>
-        )}
+        {isDemo && <PrimaryButton onClick={() => enterDemo("adult")}>Explorar</PrimaryButton>}
         {isDemo ? <PlainButton onClick={onSignUp}>Criar conta vazia</PlainButton> : <PrimaryButton onClick={onSignUp}>Criar conta</PrimaryButton>}
         <PlainButton onClick={onSignIn}>Já tenho conta</PlainButton>
       </div>
-      {isDemo && (
-        <p className="fine">
-          Na demonstração de 16 anos o responsável confirma em{" "}
-          <button type="button" className="inline-link" onClick={() => (window.location.hash = "/confirmar-responsavel")}>
-            confirmar responsável
-          </button>{" "}
-          com o e-mail mae@exemplo.com e o código 482193.
-        </p>
-      )}
-      <p className="fine">A conta é a partir de 16 anos. De 16 a 17, um responsável confirma por e-mail. Quem tem menos de 16 treina pelo perfil criado pelo responsável.</p>
+      <p className="fine">A conta é a partir de 16 anos. Quem tem menos de 16 treina pelo perfil criado pelo responsável.</p>
       <p className="fine legal-links">
         <button type="button" className="inline-link" onClick={() => onDoc("privacidade")}>
           Política de privacidade
@@ -240,38 +224,24 @@ function NewPassword({ onBack }: { onBack: () => void }) {
 
 function SignUp({ onBack, onSwitch }: { onBack: () => void; onSwitch: () => void }) {
   const { signUp } = useAuth();
-  const years = selfBirthYears();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [birthYear, setBirthYear] = useState<number | null>(null);
-  const [parentEmail, setParentEmail] = useState("");
   const [isOldEnough, setIsOldEnough] = useState(false);
-  const [parentOk, setParentOk] = useState(false);
   const [acceptsTerms, setAcceptsTerms] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [sentTo, setSentTo] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [reading, setReading] = useState<LegalId | null>(null);
 
-  const kind = birthYear ? kindFromBirthYear(birthYear) : null;
-  const tooYoung = birthYear !== null && ageThisYear(birthYear) < 16;
-  const teen = kind === "teen";
-  const parentReady = !teen || (parentEmail.includes("@") && parentOk);
-  const ready = email.includes("@") && password.length >= 8 && kind !== null && isOldEnough && parentReady && acceptsTerms;
+  const ready = email.includes("@") && password.length >= 8 && isOldEnough && acceptsTerms;
 
   async function submit(e: FormEvent) {
     e.preventDefault();
-    if (!ready || birthYear === null || !kind) return;
+    if (!ready) return;
     setBusy(true);
     setError(null);
     try {
-      const { needsConfirmation } = await signUp({
-        email: email.trim(),
-        password,
-        birthYear,
-        kind,
-        parentEmail: teen ? parentEmail.trim().toLowerCase() : undefined,
-      });
+      const { needsConfirmation } = await signUp({ email: email.trim(), password });
       if (needsConfirmation) setSentTo(email.trim());
     } catch (err) {
       setError(friendlyError(err));
@@ -287,7 +257,6 @@ function SignUp({ onBack, onSwitch }: { onBack: () => void; onSwitch: () => void
       <Screen title="Confirme o e-mail" onBack={onBack}>
         <div className="stack">
           <Notice tone="success">Enviamos um link para {sentTo}. Toque nele para confirmar a conta e depois entre com seu e-mail e senha.</Notice>
-          {teen && <Notice>Depois de entrar, o responsável ainda confirma com o e-mail {parentEmail.trim().toLowerCase()} e um código que o app mostra.</Notice>}
           <PrimaryButton onClick={onSwitch}>Já confirmei, entrar</PrimaryButton>
         </div>
       </Screen>
@@ -300,46 +269,9 @@ function SignUp({ onBack, onSwitch }: { onBack: () => void; onSwitch: () => void
         <Group footer="A senha precisa ter pelo menos 8 caracteres.">
           <Field id="signup-email" label="E-mail" type="email" inputMode="email" autoComplete="email" value={email} onChange={setEmail} placeholder="voce@exemplo.com" />
           <Field id="signup-password" label="Senha" type="password" autoComplete="new-password" value={password} onChange={setPassword} />
-          <label className="row" htmlFor="signup-year">
-            <span className="row-label">Ano de nascimento</span>
-            <select
-              id="signup-year"
-              className="row-select"
-              value={birthYear ?? ""}
-              onChange={(e) => setBirthYear(e.target.value ? Number(e.target.value) : null)}
-            >
-              <option value="">Escolher</option>
-              {years.map((year) => (
-                <option key={year} value={year}>
-                  {year}
-                </option>
-              ))}
-            </select>
-          </label>
         </Group>
 
-        {tooYoung && (
-          <Notice tone="error">Quem tem menos de 16 anos não cria conta. Peça para a mãe, o pai ou o responsável criar a conta e o seu perfil de treino.</Notice>
-        )}
-
-        {teen && (
-          <Group header="Responsável" footer="O responsável recebe um código no app, neste aparelho, e confirma na página pública. Sem essa confirmação o perfil de treino fica bloqueado.">
-            <Field
-              id="signup-parent"
-              label="E-mail do responsável"
-              type="email"
-              inputMode="email"
-              autoComplete="off"
-              value={parentEmail}
-              onChange={setParentEmail}
-              placeholder="responsavel@exemplo.com"
-            />
-            <SwitchRow id="signup-parent-ok" label="Meu responsável legal autoriza esta conta" checked={parentOk} onChange={setParentOk} />
-          </Group>
-        )}
-
         <Group
-          header="Declarações"
           footer={
             <>
               Leia antes de aceitar:{" "}
@@ -350,16 +282,11 @@ function SignUp({ onBack, onSwitch }: { onBack: () => void; onSwitch: () => void
               <button type="button" className="inline-link" onClick={() => setReading("privacidade")}>
                 Política de privacidade
               </button>
-              . Textos em revisão antes do lançamento.
+              .
             </>
           }
         >
-          <SwitchRow
-            id="signup-age"
-            label={teen ? "Tenho 16 ou 17 anos" : "Tenho 18 anos ou mais"}
-            checked={isOldEnough}
-            onChange={setIsOldEnough}
-          />
+          <SwitchRow id="signup-age" label="Tenho 16 anos ou mais" checked={isOldEnough} onChange={setIsOldEnough} />
           <SwitchRow id="signup-terms" label="Li e aceito os Termos de uso e a Política de privacidade" checked={acceptsTerms} onChange={setAcceptsTerms} />
         </Group>
         {error && <Notice tone="error">{error}</Notice>}
