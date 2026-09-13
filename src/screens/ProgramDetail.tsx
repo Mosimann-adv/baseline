@@ -1,29 +1,90 @@
-import { Group, PrimaryButton, Screen } from "../components/ui";
+import { useRef, useState } from "react";
+import { Group, PlainButton, PrimaryButton, Screen } from "../components/ui";
 import { CATEGORY_LABELS, programMinutes } from "../content/programs";
-import type { Program } from "../lib/types";
+import type { Drill, Program } from "../lib/types";
+
+const YOUTUBE_NOCOOKIE = "https://www.youtube-nocookie.com";
+
+function previewSrc(video: NonNullable<Drill["video"]>): string {
+  const params = new URLSearchParams({ rel: "0", playsinline: "1" });
+  if (video.start) params.set("start", String(video.start));
+  if (video.end) params.set("end", String(video.end));
+  return `${YOUTUBE_NOCOOKIE}/embed/${video.id}?${params.toString()}`;
+}
 
 export function ProgramDetail({ program, onBack, onStart }: { program: Program; onBack: () => void; onStart: () => void }) {
+  const [openId, setOpenId] = useState<string | null>(program.drills[0]?.id ?? null);
+  const listRef = useRef<HTMLDivElement>(null);
+
+  const scrollToList = () => {
+    listRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+  };
+
   return (
     <Screen eyebrow={`${CATEGORY_LABELS[program.category]} · ${programMinutes(program)} min`} title={program.title} onBack={onBack}>
       <p className="lead">{program.summary}</p>
       <Group header="Material">
         <p className="row-note">{program.equipment}</p>
       </Group>
-      <Group header={`${program.drills.length} exercícios`} footer="Conteúdo em validação por profissional de educação física.">
-        {program.drills.map((drill) => (
-          <div key={drill.id} className="row drill-row">
-            <span className="row-label">
-              {drill.name}
-              <small>{drill.cue}</small>
-            </span>
-            <span className="row-value">
-              {drill.seconds} s{drill.video ? " · vídeo" : ""}
-            </span>
-          </div>
-        ))}
-      </Group>
-      <div className="bottom-cta">
+      <div ref={listRef} className="drill-list-anchor">
+        <Group header={`${program.drills.length} exercícios`} footer="Toque em um exercício para ver a dica e o vídeo antes de começar. Conteúdo em validação por profissional de educação física.">
+          {program.drills.map((drill, index) => {
+            const open = openId === drill.id;
+            return (
+              <div key={drill.id} className="drill-item">
+                <button
+                  type="button"
+                  className="row drill-row"
+                  aria-expanded={open}
+                  onClick={() => setOpenId(open ? null : drill.id)}
+                >
+                  <span className="row-label">
+                    {index + 1}. {drill.name}
+                    <small>
+                      {drill.seconds} s{drill.restSeconds > 0 ? ` · descanso ${drill.restSeconds} s` : " · sem descanso"}
+                      {drill.video ? " · vídeo" : ""}
+                    </small>
+                  </span>
+                  <span className="row-value" aria-hidden="true">
+                    {open ? "−" : "+"}
+                  </span>
+                </button>
+                {open && (
+                  <div className="drill-preview">
+                    <p className="drill-cue">{drill.cue}</p>
+                    {drill.video ? (
+                      <div className="video-block">
+                        <div className="video-frame">
+                          <iframe
+                            src={previewSrc(drill.video)}
+                            title={drill.video.title}
+                            allow="encrypted-media; picture-in-picture"
+                            allowFullScreen
+                            referrerPolicy="strict-origin-when-cross-origin"
+                          />
+                        </div>
+                        <a
+                          className="plain-link"
+                          href={`https://www.youtube.com/watch?v=${drill.video.id}${drill.video.start ? `&t=${drill.video.start}s` : ""}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                        >
+                          Abrir no YouTube
+                        </a>
+                      </div>
+                    ) : (
+                      <p className="video-hint">Sem vídeo para este exercício — siga a dica acima.</p>
+                    )}
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </Group>
+      </div>
+      <div className="bottom-cta stack">
         <PrimaryButton onClick={onStart}>Começar treino</PrimaryButton>
+        <PlainButton onClick={scrollToList}>Ver exercícios antes</PlainButton>
       </div>
     </Screen>
   );

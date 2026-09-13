@@ -272,6 +272,20 @@ export function TrainingSession({
               {clock(left)}
             </p>
           )}
+          {state.phase === "ready" && (
+            <ol className="ready-list" aria-label="Você vai fazer">
+              {drills.map((item, i) => (
+                <li key={item.id}>
+                  <span>
+                    {i + 1}. {item.name}
+                  </span>
+                  <span className="ready-meta">
+                    {item.seconds} s{item.video ? " · vídeo" : ""}
+                  </span>
+                </li>
+              ))}
+            </ol>
+          )}
         </section>
       )}
 
