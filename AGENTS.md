@@ -6,11 +6,11 @@ App de treinos de basquete para adultos e para crianças (a partir de 6 anos) e 
 
 ## Regras que não mudam sem pedido explícito
 
-1. **A conta, na v1, é de um adulto (18+).** Código atual.
-   - Ele pode ter um perfil próprio de treino (`athletes.is_self`, no máximo um por conta).
-   - Ele pode criar perfis de crianças e adolescentes (6–17).
-   - Crianças não criam login, não informam e-mail e não têm perfil público.
-   - **Decidido em 2026-09-13, ainda não implementado:** conta própria a partir de 16 anos, com e-mail do responsável confirmando; menores de 16 continuam só como perfil criado pelo responsável. Não mude o cadastro para 16+ sem a revisão jurídica e uma etapa própria.
+1. **A conta é a partir de 16 anos.**
+   - 18+: adulto, com perfil próprio (`athletes.is_self`, no máximo um por conta) e, se quiser, perfis de crianças e adolescentes (6–17).
+   - 16–17: o adolescente cria o próprio login; o responsável confirma pelo e-mail e um código (`#/confirmar-responsavel`). Sem a confirmação o perfil próprio fica bloqueado. Essa conta **não** cria perfis de outras crianças.
+   - Menores de 16 não criam login: só treinam pelo perfil criado pelo responsável.
+   - Perfil próprio de 16–17 usa `TEEN_CONSENT_VERSION`; o de 18+ usa `SELF_CONSENT_VERSION`.
 2. **Nenhum perfil sem aceite registrado.** Perfil e aceite são gravados na mesma transação.
    - Perfil de menor: `create_athlete_with_consent`, com a autorização do responsável (`CONSENT_VERSION`).
    - Perfil próprio: `create_self_profile_with_consent`, com o consentimento do titular (`SELF_CONSENT_VERSION`), porque "algo doeu?" é dado de saúde.
@@ -30,10 +30,13 @@ App de treinos de basquete para adultos e para crianças (a partir de 6 anos) e 
 
 ## Estrutura
 
-- `src/state/auth.tsx` — sessão do adulto dono da conta (Supabase Auth).
+- `src/state/auth.tsx` — sessão do dono da conta (Supabase Auth), inclusive recuperação de senha por código.
 - `src/state/athletes.ts` — perfis (próprio e de menores) e aceites.
-- `src/lib/consent.ts` — textos e versões dos termos de aceite de menores e de adultos (**rascunho, pendente de revisão jurídica**).
+- `src/lib/consent.ts` — textos e versões dos termos de aceite de menores, de adultos e de adolescentes 16–17 (**rascunho, pendente de revisão jurídica**).
+- `src/lib/offlineQueue.ts` — fila de treinos e testes no aparelho, reenviada quando houver internet.
+- `src/lib/parentConfirm.ts` — e-mail e código do responsável na conta 16–17.
 - `src/screens/GuardianArea.tsx` — tela Conta (sem PIN). `src/screens/ProfileChoice.tsx` — "Quem vai treinar?".
+- `src/screens/ConfirmParent.tsx` — página pública `#/confirmar-responsavel`.
 - `src/content/legal.ts` — política de privacidade, termos de uso e página de exclusão (**rascunho; trechos entre colchetes a preencher**). Abrem sem login em `#/privacidade`, `#/termos` e `#/excluir-conta`.
 - `src/content/support.ts` — CNPJ, Pix, WhatsApp, Instagram e endereços do site do Instituto. A tela Conta usa esses dados no bloco "Apoie o Arvoredo".
 - `src/lib/exportData.ts` — cópia dos dados da conta em JSON.

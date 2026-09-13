@@ -5,6 +5,10 @@ import { useSessions } from "./state/sessions";
 import { useTests } from "./state/tests";
 import { isSupabaseConfigured } from "./lib/supabase";
 import { activeConsent } from "./lib/consent";
+import { canCreateMinorProfiles, metaFromSession } from "./lib/account";
+import { listenBackButton } from "./lib/native";
+import { pendingSummary } from "./lib/offlineQueue";
+import { loadParentStatus, registerParentEmail, type ParentStatus } from "./lib/parentConfirm";
 import { programById } from "./content/programs";
 import { LEGAL_DOCS, legalIdFromHash, type LegalId } from "./content/legal";
 import { AuthFlow } from "./screens/AuthScreens";
@@ -18,6 +22,7 @@ import { Progress } from "./screens/Progress";
 import { TestSession } from "./screens/TestSession";
 import { GuardianArea } from "./screens/GuardianArea";
 import { LegalScreen } from "./screens/LegalScreen";
+import { ConfirmParent } from "./screens/ConfirmParent";
 import { Notice, PrimaryButton, Screen } from "./components/ui";
 import type { Athlete } from "./lib/types";
 
@@ -36,11 +41,20 @@ type View =
 
 const lastAthleteKey = (guardianId: string) => `baseline.athlete.${guardianId}`;
 
+function publicRouteFromHash(hash: string): LegalId | "confirmar-responsavel" | null {
+  const id = hash.replace(/^#\/?/, "");
+  if (id === "confirmar-responsavel") return "confirmar-responsavel";
+  return legalIdFromHash(hash);
+}
+
 export default function App() {
   const { session, loading } = useAuth();
   const [publicDoc, closePublicDoc] = usePublicDoc();
 
-  // Endereços públicos (#/privacidade, #/termos, #/excluir-conta) abrem sem login: o Google Play exige os links.
+  // Endereços públicos (#/privacidade, #/termos, #/excluir-conta, #/confirmar-responsavel) abrem sem login.
+  if (publicDoc === "confirmar-responsavel") {
+    return <ConfirmParent onBack={closePublicDoc} />;
+  }
   if (publicDoc) {
     return (
       <LegalScreen doc={LEGAL_DOCS[publicDoc]} onBack={closePublicDoc}>
@@ -59,11 +73,11 @@ export default function App() {
   return <Family key={session.user.id} guardianId={session.user.id} email={session.user.email ?? ""} />;
 }
 
-function usePublicDoc(): [LegalId | null, () => void] {
-  const [doc, setDoc] = useState<LegalId | null>(() => legalIdFromHash(window.location.hash));
+function usePublicDoc(): [LegalId | "confirmar-responsavel" | null, () => void] {
+  const [doc, setDoc] = useState<LegalId | "confirmar-responsavel" | null>(() => publicRouteFromHash(window.location.hash));
 
   useEffect(() => {
-    const sync = () => setDoc(legalIdFromHash(window.location.hash));
+    const sync = () => setDoc(publicRouteFromHash(window.location.hash));
     window.addEventListener("hashchange", sync);
     return () => window.removeEventListener("hashchange", sync);
   }, []);
@@ -76,9 +90,12 @@ function usePublicDoc(): [LegalId | null, () => void] {
 }
 
 function Family({ guardianId, email }: { guardianId: string; email: string }) {
+  const { session } = useAuth();
+  const meta = metaFromSession(session);
   const family = useAthletes(guardianId);
   const training = useSessions(guardianId);
   const skill = useTests(guardianId);
+  const [parent, setParent] = useState<ParentStatus>({ parentEmail: meta.parentEmail, confirmed: meta.kind !== "teen", code: null });
   const [view, setView] = useState<View>(() => {
     const saved = localStorage.getItem(lastAthleteKey(guardianId));
     return saved ? { name: "athlete", athleteId: saved } : { name: "picker" };
@@ -91,6 +108,41 @@ function Family({ guardianId, email }: { guardianId: string; email: string }) {
   useEffect(() => {
     window.scrollTo(0, 0);
   }, [view.name]);
+
+  useEffect(() => {
+    if (meta.kind !== "teen") return;
+    void loadParentStatus(guardianId, meta.kind).then(async (status) => {
+      if (!status.confirmed && !status.code && meta.parentEmail) {
+        try {
+          setParent(await registerParentEmail(guardianId, meta.parentEmail));
+          return;
+        } catch {
+          setParent(status);
+          return;
+        }
+      }
+      setParent(status);
+    });
+  }, [guardianId, meta.kind, meta.parentEmail]);
+
+  useEffect(() => {
+    return listenBackButton(() => {
+      if (view.name === "picker") return false;
+      if (view.name === "account" || view.name === "athlete") {
+        setView({ name: "picker" });
+        return true;
+      }
+      if (view.name === "newSelf" || view.name === "newAthlete") {
+        setView(view.from === "first" ? { name: "picker" } : { name: "account" });
+        return true;
+      }
+      if ("athleteId" in view) {
+        setView({ name: "athlete", athleteId: view.athleteId });
+        return true;
+      }
+      return false;
+    });
+  }, [view]);
 
   if (family.loading || training.loading || skill.loading) return <Splash />;
   const loadError = family.error ?? training.error ?? skill.error;
@@ -105,8 +157,12 @@ function Family({ guardianId, email }: { guardianId: string; email: string }) {
     );
   }
 
-  const canTrain = (athlete: Athlete) => Boolean(activeConsent(family.consents, athlete));
+  const canTrain = (athlete: Athlete) => {
+    if (meta.kind === "teen" && athlete.is_self && !parent.confirmed) return false;
+    return Boolean(activeConsent(family.consents, athlete));
+  };
   const backTo = (from: Origin): View => (from === "first" ? { name: "picker" } : { name: "account" });
+  const allowMinors = canCreateMinorProfiles(meta.kind);
 
   if (view.name === "newSelf") {
     const from = view.from;
@@ -114,6 +170,7 @@ function Family({ guardianId, email }: { guardianId: string; email: string }) {
       <NewAthlete
         kind="self"
         first={from === "first"}
+        lockedBirthYear={meta.birthYear}
         onBack={() => setView(backTo(from))}
         onCreate={async (input) => {
           const athlete = await family.createSelf(input);
@@ -124,7 +181,7 @@ function Family({ guardianId, email }: { guardianId: string; email: string }) {
     );
   }
 
-  if (view.name === "newAthlete") {
+  if (view.name === "newAthlete" && allowMinors) {
     const from = view.from;
     return (
       <NewAthlete
@@ -142,7 +199,13 @@ function Family({ guardianId, email }: { guardianId: string; email: string }) {
   }
 
   if (family.athletes.length === 0) {
-    return <ProfileChoice onSelf={() => setView({ name: "newSelf", from: "first" })} onMinor={() => setView({ name: "newAthlete", from: "first" })} />;
+    return (
+      <ProfileChoice
+        kind={meta.kind}
+        onSelf={() => setView({ name: "newSelf", from: "first" })}
+        onMinor={() => setView({ name: "newAthlete", from: "first" })}
+      />
+    );
   }
 
   const toPicker = () => {
@@ -159,6 +222,9 @@ function Family({ guardianId, email }: { guardianId: string; email: string }) {
         consents={family.consents}
         sessions={training.sessions}
         tests={skill.tests}
+        accountKind={meta.kind}
+        parent={parent}
+        onRefreshParent={() => void loadParentStatus(guardianId, meta.kind).then(setParent)}
         onBack={() => setView({ name: "picker" })}
         onAddAthlete={() => setView({ name: "newAthlete", from: "account" })}
         onAddSelf={() => setView({ name: "newSelf", from: "account" })}
@@ -173,7 +239,7 @@ function Family({ guardianId, email }: { guardianId: string; email: string }) {
     );
   }
 
-  if (view.name !== "picker") {
+  if (view.name !== "picker" && "athleteId" in view) {
     // Perfil sem aceite ativo não abre: cai na escolha de perfil, onde aparece bloqueado.
     const athlete = family.athletes.find((a) => a.id === view.athleteId && canTrain(a));
     if (athlete) {
@@ -181,6 +247,8 @@ function Family({ guardianId, email }: { guardianId: string; email: string }) {
       const sessions = training.sessions.filter((s) => s.athlete_id === athleteId);
       const tests = skill.tests.filter((t) => t.athlete_id === athleteId);
       const home = () => setView({ name: "athlete", athleteId });
+      const pending = pendingSummary(guardianId, athleteId);
+      const retry = () => void Promise.all([training.sync(), skill.sync()]);
 
       if (view.name === "program" || view.name === "training") {
         const program = programById(view.programId);
@@ -200,10 +268,12 @@ function Family({ guardianId, email }: { guardianId: string; email: string }) {
             athlete={athlete}
             sessions={sessions}
             tests={tests}
+            pending={pending}
             onSwitch={toPicker}
             onOpenProgram={(programId) => setView({ name: "program", athleteId, programId })}
             onOpenProgress={() => setView({ name: "progress", athleteId })}
             onStartTests={() => setView({ name: "tests", athleteId })}
+            onRetryPending={retry}
           />
         );
       }
@@ -214,6 +284,13 @@ function Family({ guardianId, email }: { guardianId: string; email: string }) {
     <WhoTrains
       athletes={family.athletes}
       isLocked={(athlete) => !canTrain(athlete)}
+      lockLabel={(athlete) =>
+        meta.kind === "teen" && athlete.is_self && !parent.confirmed
+          ? "Aguardando o responsável"
+          : athlete.is_self
+            ? "Precisa de consentimento"
+            : "Precisa de autorização"
+      }
       onPick={(athleteId) => setView({ name: "athlete", athleteId })}
       onAccount={() => setView({ name: "account" })}
     />

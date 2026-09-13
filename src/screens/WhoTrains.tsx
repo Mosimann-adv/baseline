@@ -5,15 +5,17 @@ import type { Athlete } from "../lib/types";
 export function WhoTrains({
   athletes,
   isLocked,
+  lockLabel,
   onPick,
   onAccount,
 }: {
   athletes: Athlete[];
   isLocked: (athlete: Athlete) => boolean;
+  lockLabel?: (athlete: Athlete) => string;
   onPick: (id: string) => void;
   onAccount: () => void;
 }) {
-  // O perfil do próprio adulto vem primeiro. Criar e gerenciar perfis fica na tela Conta.
+  // O perfil do próprio dono da conta vem primeiro. Criar e gerenciar perfis fica na tela Conta.
   const ordered = [...athletes].sort((a, b) => Number(b.is_self) - Number(a.is_self));
 
   return (
@@ -24,9 +26,7 @@ export function WhoTrains({
           const band = bandFor(age);
           const locked = isLocked(athlete);
           const detail = locked
-            ? athlete.is_self
-              ? "Precisa de consentimento"
-              : "Precisa de autorização"
+            ? (lockLabel?.(athlete) ?? (athlete.is_self ? "Precisa de consentimento" : "Precisa de autorização"))
             : athlete.is_self
               ? "Você"
               : band

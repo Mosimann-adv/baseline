@@ -1,5 +1,6 @@
 import { isDemo, requireSupabase } from "./supabase";
 import { demoLoad } from "./demo";
+import { isNative, shareJsonFile } from "./native";
 import type { Athlete, SkillTestRecord, TrainingSession } from "./types";
 
 /** Cópia dos dados da família (portabilidade e acesso, art. 18 da LGPD). */
@@ -46,7 +47,15 @@ export async function collectFamilyData(guardianId: string, email: string) {
 
 /** Compartilha o arquivo quando o aparelho permite; senão, baixa. */
 export async function saveJsonFile(data: unknown, fileName: string): Promise<"shared" | "downloaded" | "cancelled"> {
-  const file = new File([JSON.stringify(data, null, 2)], fileName, { type: "application/json" });
+  const text = JSON.stringify(data, null, 2);
+  if (isNative) {
+    try {
+      return await shareJsonFile(fileName, text);
+    } catch {
+      // Cai no download da web view se o plugin falhar.
+    }
+  }
+  const file = new File([text], fileName, { type: "application/json" });
   if (navigator.canShare?.({ files: [file] })) {
     try {
       await navigator.share({ files: [file], title: "Dados do Baseline" });

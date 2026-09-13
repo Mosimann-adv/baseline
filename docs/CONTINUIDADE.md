@@ -13,11 +13,11 @@ Leia nesta ordem:
 
 - **O que é:** app de treinos de basquete para **adultos** e para **crianças (6+) e adolescentes** acompanhados por um adulto. Nome público **Baseline**; marca **Baseline by Arvoredo**.
 - **Quem mantém:** Instituto Arvoredo. A publicação no Google Play será por **conta de organização** do Instituto, que exige número D-U-N-S.
-- **Modelo de conta (v1 no ar):** a conta é de um **adulto (18+)**, com login por e-mail e senha.
-  - O adulto pode ter **um perfil próprio de treino** (`athletes.is_self = true`), com consentimento do titular.
-  - O adulto pode criar **perfis de crianças e adolescentes** (6–17), com autorização de responsável legal. Esses perfis não têm login, e-mail nem perfil público.
-  - Conta sem perfis abre na tela **"Quem vai treinar?"**, com as opções "Eu" e "Uma criança ou adolescente".
-  - **Decidido em 2026-09-13, ainda não no código:** conta própria a partir de **16 anos**, com e-mail do responsável confirmando. Menores de 16 continuam só como perfil criado pelo responsável. Implementar depois da revisão jurídica, como etapa própria (não misturar com a fila offline).
+- **Modelo de conta:** a conta é a partir de **16 anos**, com login por e-mail e senha.
+  - 18+: o adulto pode ter **um perfil próprio de treino** (`athletes.is_self = true`) e criar **perfis de crianças e adolescentes** (6–17).
+  - 16–17: o adolescente cria o próprio login; o responsável confirma pelo e-mail e um código na página pública `#/confirmar-responsavel`. Sem a confirmação o perfil próprio fica bloqueado. Essa conta não cria perfis de outras crianças.
+  - Menores de 16 treinam só pelo perfil criado pelo responsável, sem login.
+  - Conta sem perfis abre na tela **"Quem vai treinar?"**.
 - **Tela Conta** (componente `GuardianArea.tsx`, nome antigo "Área do responsável"):
   - abre direto, **sem PIN**;
   - é onde se criam e corrigem perfis, se revogam e renovam aceites, se baixa a cópia dos dados, se lêem os textos legais, se apoia o Instituto (Pix) e se sai da conta ou a exclui;
@@ -67,7 +67,7 @@ Leia nesta ordem:
 | Faixa Adulto reaproveita treinos e testes de 15–17 na v1 | Opção recomendada, escolhida pelo dono |
 | Perfil próprio do adulto também exige consentimento (`SELF_CONSENT_VERSION`) | "Algo doeu?" é dado de saúde (LGPD art. 11, I); decisão técnica comunicada ao dono |
 | **Sem PIN** na tela Conta | Pedido do dono: "Nao tem nada que demande tanta restrição"; ficam só as confirmações em dois passos |
-| **Conta própria a partir de 16 anos** (2026-09-13; ainda não no código) | O corte de 18+ estava rígido para o adolescente que já treina sozinho. ECA Digital usa 16 como marco em redes sociais; 16–17 cria login com e-mail do responsável confirmando; <16 só por perfil do responsável. Cadastro no ar continua 18+ até a revisão jurídica e a etapa própria. |
+| **Conta própria a partir de 16 anos** (2026-09-13; no código nesta etapa) | O corte de 18+ estava rígido. ECA Digital usa 16 como marco; 16–17 cria login com e-mail do responsável confirmando; <16 só por perfil do responsável. Termo `TEEN_CONSENT_VERSION` ainda é rascunho jurídico. |
 | **App gratuito na v1; Apoie o Arvoredo na tela Conta** (2026-09-13) | Sem anúncio, sem compra no treino. Doação opcional no estilo do site (Pix CNPJ `56660275000106`, QR, WhatsApp). Cotas Bola / Uniforme / Cesta para empresas no site. Captação principal continua fora da loja (incentivo, patrocínio). |
 
 ## 4. Estado atual
@@ -82,7 +82,7 @@ Leia nesta ordem:
 | `aae6fd2`, `94a9b77`, `793555b` | Supabase e Vercel registrados; `.env.production`; build ignora variáveis vazias |
 | `f0dc858` | Adultos: perfil próprio, tela "Quem vai treinar?", faixa Adulto, consentimento do titular; migração 0005 |
 | `8774ff6` | Remove o PIN; textos legais na versão `rascunho-3` |
-| (este) | Apoie o Arvoredo na tela Conta (Pix, QR, WhatsApp); app gratuito; conta a partir de 16 registrada como rumo; CNPJ nos termos (`rascunho-4`) |
+| (este) | Fila offline de treinos e testes; esqueci a senha por código; conta 16–17 com confirmação do responsável; plugins Capacitor (voltar, compartilhar, tela ligada). Migração 0006. Textos legais `rascunho-5`. |
 
 Etapas do `README.md`:
 1. Fundação — pronta.
@@ -91,9 +91,9 @@ Etapas do `README.md`:
 4. Privacidade e loja — parte do app pronta; formulários do Google Play pendentes.
 5. Teste e publicação — não começou.
 
-**No ar:** https://baseline-six-sigma.vercel.app/ com o commit `8774ff6`, conferido pelo conteúdo do bundle publicado.
+**No ar:** https://baseline-six-sigma.vercel.app/ — o commit desta etapa entra no próximo deploy automático, **depois** de o dono rodar a migração 0006.
 
-**Banco:** migrações 0001–0005 aplicadas e conferidas (seção 7).
+**Banco:** migrações 0001–0005 aplicadas. **0006 ainda não:** o dono precisa colar `supabase/migrations/0006_conta_16.sql` no SQL Editor antes de adolescentes 16–17 criarem conta no site real.
 
 **Verificação feita:** `npm run build` e `npm run build:demo` passam, o que inclui `tsc --noEmit`. **Não existe suíte de testes.**
 
@@ -149,7 +149,8 @@ npx vite preview --outDir dist-demo   # servir a demo localmente
 | `0002_treinos.sql` | `training_sessions` (sem update; `discomfort` booleano) |
 | `0003_evolucao.sql` | `athletes.weekly_goal` (1–7, padrão 3) e `skill_tests` (`results` jsonb `{id_do_teste: valor}`) |
 | `0004_privacidade.sql` | Unicidade do aceite só entre ativos; revogação definitiva por trigger; insert de treino e teste exige aceite ativo |
-| `0005_adultos.sql` | `athletes.is_self` (um por conta, imutável); ano de nascimento a partir de 1900; idade por tipo no cadastro e na correção (adulto 18+, menor 6–17); `create_self_profile_with_consent` |
+| `0005_adultos.sql` | `athletes.is_self` (um por conta, imutável); ano de nascimento a partir de 1900; idade por tipo no cadastro e na correção; `create_self_profile_with_consent` |
+| `0006_conta_16.sql` | Perfil próprio a partir de 16; tabela `parent_confirmations`; RPCs `parent_confirmation_status`, `register_parent_email`, `confirm_parent_code` |
 
 ### Como aplicar uma migração nova
 
@@ -200,27 +201,32 @@ src/
     demo.ts             backend falso em localStorage (baseline.demo.session / baseline.demo.data)
     types.ts            tipos de domínio (Athlete.is_self, AthletePatch, SkillTestRecord…)
     age.ts              faixas 6–8…15–17 e Adulto; contentBand; allowedBirthYears / adultBirthYears
-    consent.ts          termos de menor e de adulto (versões e pontos), activeConsent(consents, athlete)
+    consent.ts          termos de menor, adulto e adolescente 16–17
     progress.ts         semanas, sequência da meta, próxima data de teste, evolução por teste, conquistas
     exportData.ts       cópia JSON dos dados da conta (compartilhar ou baixar)
     dates.ts            datas locais (nunca toISOString para dia); semana começa na segunda
     profile.ts          opções de nível e posição
     errors.ts           mensagens amigáveis a partir de erros do Supabase
+    offlineQueue.ts     fila de treinos e testes no localStorage; UUID no cliente
+    parentConfirm.ts    código e e-mail do responsável (16–17)
+    account.ts          adult vs teen; meta da sessão
+    native.ts           botão voltar, tela ligada e compartilhar no Android
   content/
     programs.ts         11 programas por faixa e nível; VIDEOS com IDs verificados
     tests.ts            7 testes de habilidade; sprint e salto só a partir de 12 anos
     legal.ts            política, termos e página de exclusão (LEGAL_VERSION)
     support.ts          CNPJ, Pix, WhatsApp, Instagram, URLs do site (Apoie o Arvoredo)
   screens/
-    AuthScreens         boas-vindas, entrar, criar conta (declaração 18+ e aceite dos termos)
+    AuthScreens         boas-vindas, entrar, criar conta (16+), esqueci a senha por código
     ProfileChoice       "Quem vai treinar?" para conta sem perfis
-    NewAthlete          cria perfil: kind "self" (adulto) ou "minor" (com declaração de responsável)
+    NewAthlete          cria perfil: kind "self" (16+) ou "minor" (com declaração de responsável)
     WhoTrains           escolha de perfil; perfil sem aceite aparece bloqueado
     AthleteHome, ProgramDetail, TrainingSession, Progress, TestSession
-    GuardianArea        tela Conta (perfis, aceites, dados, Apoie o Arvoredo, textos legais, sair, excluir)
+    GuardianArea        tela Conta (perfis, aceites, dados, Apoie o Arvoredo, código do responsável, textos legais, sair, excluir)
+    ConfirmParent       página pública #/confirmar-responsavel
     LegalScreen         renderiza os textos de legal.ts
   styles.css            tokens de design (azul-marinho, laranja, amarelo, creme) e componentes
-supabase/migrations/    0001 fundação · 0002 treinos · 0003 evolução · 0004 privacidade · 0005 adultos
+supabase/migrations/    0001 fundação · 0002 treinos · 0003 evolução · 0004 privacidade · 0005 adultos · 0006 conta 16
 ```
 
 ### Padrões que o código segue
@@ -260,28 +266,11 @@ supabase/migrations/    0001 fundação · 0002 treinos · 0003 evolução · 00
 
 ### 10.2 Código (ordem combinada)
 
-1. **Fila offline para treinos e testes** (não começou).
-   - Gerar o `id` (UUID) no cliente e mandá-lo no insert, para o reenvio não duplicar.
-   - Fila no `localStorage` por conta. Tentar ao salvar, no evento `online` e ao reabrir.
-   - Erro `23505`/`duplicate key` significa **já enviado**. Trate isso antes do `friendlyError`, que traduz "duplicate key" como mensagem de aceite.
-   - Recusa por RLS (aceite revogado no meio do caminho): manter o item e mostrar o motivo.
-   - Mostrar pendentes na tela do perfil. O modo demo não precisa de fila.
-2. **Projeto Android (Capacitor).**
-   - JDK 21 (a máquina tem só Java 1.8; o Android Studio traz um em `jbr`).
-   - `npx cap add android`, depois `npm run android:sync` e `npm run android:open`.
-   - Confirmar o `appId` `br.org.arvoredo.baseline`, que fica **permanente** após a primeira publicação.
-   - Ícones e splash com `@capacitor/assets`.
-   - Botão voltar com `@capacitor/app` (`backButton`) chamando o `onBack` da tela.
-   - Cópia de dados com `@capacitor/filesystem` + `@capacitor/share`.
-   - Testar vídeo `youtube-nocookie` no WebView (origem `https://localhost`), tela ligada (Wake Lock ou `@capacitor-community/keep-awake`) e vibração.
-3. **"Esqueci a senha"** (não existe; hoje `detectSessionInUrl: false`). Avaliar código OTP por e-mail, que evita deep link.
-4. **Formulários do Google Play:** Segurança dos dados, público-alvo (Famílias, público misto), classificação de conteúdo, URL da política.
-5. **Conta a partir de 16 anos** (decidido; não começou).
-   - 16–17 cria login, com e-mail do responsável confirmando.
-   - Menor de 16 continua só como perfil criado pelo responsável, sem login.
-   - "Algo doeu?" continua dado de saúde: o termo de 16–17 e o fluxo de confirmação do responsável passam pela revisão jurídica **antes** do código.
-   - Aos 16 ou aos 18, decidir o que acontece com perfil de menor já existente (virar conta própria ou continuar no responsável).
-   - Não misturar essa etapa com a fila offline.
+1. **Fila offline para treinos e testes** — feita. UUID no cliente, fila no `localStorage`, reenvio em `online` e ao reabrir, `23505` = já enviado, recusa por RLS mantém o item com o motivo na tela do perfil. Demo não usa fila.
+2. **Esqueci a senha** — feita. Código OTP por e-mail (`signInWithOtp` + `verifyOtp`), sem deep link; depois o usuário define senha nova.
+3. **Conta a partir de 16 anos** — feita no app. Rodar a migração **0006** no Supabase antes de usar no site real. Termo teen ainda é rascunho jurídico.
+4. **Projeto Android (Capacitor).** Plugins no `package.json` (`@capacitor/app`, `filesystem`, `share`, keep-awake). Falta `npx cap add android` na máquina com JDK 21 / Android Studio, confirmar o `appId` `br.org.arvoredo.baseline`, ícones/splash.
+5. **Formulários do Google Play:** Segurança dos dados, público-alvo (Famílias, público misto), classificação de conteúdo, URL da política.
 
 ### 10.3 Captação de recursos (decidida em 2026-09-13)
 
@@ -295,6 +284,7 @@ supabase/migrations/    0001 fundação · 0002 treinos · 0003 evolução · 00
 
 - [x] Projeto Supabase criado e migrações 0001–0005 aplicadas.
 - [x] Deploy web na Vercel funcionando com o Supabase.
+- [ ] Rodar a migração 0006 (`supabase/migrations/0006_conta_16.sql`) no SQL Editor.
 - [ ] Confirmar a URL Configuration no Supabase (seção 10.1).
 - [ ] Testar de ponta a ponta no site real (seção 10.1).
 - [ ] SMTP próprio no Supabase antes de abrir para outras famílias.

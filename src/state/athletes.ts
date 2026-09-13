@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { isDemo, requireSupabase } from "../lib/supabase";
 import { demoAuthorize, demoCreateAthlete, demoCreateSelf, demoDeleteAthlete, demoLoad, demoRevoke, demoUpdateAthlete } from "../lib/demo";
-import { CONSENT_VERSION, SELF_CONSENT_VERSION, consentVersionFor } from "../lib/consent";
+import { CONSENT_VERSION, consentVersionFor } from "../lib/consent";
 import type { Athlete, AthletePatch, Consent, NewAthleteInput } from "../lib/types";
 
 export function useAthletes(guardianId: string) {
@@ -73,12 +73,13 @@ export function useAthletes(guardianId: string) {
         await reload();
         return athlete;
       }
+      const version = consentVersionFor({ is_self: true, birth_year: input.birthYear });
       const { data, error: rpcError } = await requireSupabase().rpc("create_self_profile_with_consent", {
         p_nickname: input.nickname,
         p_birth_year: input.birthYear,
         p_level: input.level,
         p_position: input.position,
-        p_document_version: SELF_CONSENT_VERSION,
+        p_document_version: version,
       });
       if (rpcError) throw rpcError;
       await reload();

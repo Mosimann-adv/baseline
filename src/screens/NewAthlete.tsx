@@ -1,29 +1,32 @@
 import { useState, type FormEvent } from "react";
 import { Field, Group, Notice, PrimaryButton, Screen, Segmented, SwitchRow } from "../components/ui";
-import { adultBirthYears, ageThisYear, allowedBirthYears, bandFor } from "../lib/age";
-import { CONSENT_POINTS, CONSENT_VERSION, SELF_CONSENT_POINTS, SELF_CONSENT_VERSION } from "../lib/consent";
+import { ageThisYear, allowedBirthYears, bandFor, selfBirthYears } from "../lib/age";
+import { CONSENT_POINTS, CONSENT_VERSION, SELF_CONSENT_VERSION, TEEN_CONSENT_VERSION, consentPointsFor } from "../lib/consent";
 import { friendlyError } from "../lib/errors";
 import { LEVELS, POSITIONS } from "../lib/profile";
 import type { Athlete, Level, NewAthleteInput, Position } from "../lib/types";
 
-/** "self": perfil do próprio adulto. "minor": criança ou adolescente, com autorização do responsável. */
+/** "self": perfil do próprio dono da conta (16+). "minor": criança ou adolescente, com autorização do responsável. */
 export type ProfileKind = "self" | "minor";
 
 export function NewAthlete({
   kind,
   first,
+  lockedBirthYear,
   onBack,
   onCreate,
 }: {
   kind: ProfileKind;
   first: boolean;
+  /** Ano já informado no cadastro da conta: o perfil próprio não pede de novo. */
+  lockedBirthYear?: number | null;
   onBack?: () => void;
   onCreate: (input: NewAthleteInput) => Promise<Athlete>;
 }) {
   const self = kind === "self";
-  const years = self ? adultBirthYears() : allowedBirthYears();
+  const years = self ? selfBirthYears() : allowedBirthYears();
   const [nickname, setNickname] = useState("");
-  const [birthYear, setBirthYear] = useState<number | null>(null);
+  const [birthYear, setBirthYear] = useState<number | null>(lockedBirthYear ?? null);
   const [level, setLevel] = useState<Level>("iniciante");
   const [position, setPosition] = useState<Position | null>(null);
   const [isGuardian, setIsGuardian] = useState(false);
@@ -33,6 +36,9 @@ export function NewAthlete({
 
   const band = birthYear === null ? null : bandFor(ageThisYear(birthYear));
   const displayName = nickname.trim() || "o atleta";
+  const draft = { is_self: self, birth_year: birthYear ?? 2000 };
+  const points = consentPointsFor(draft);
+  const teen = self && birthYear !== null && ageThisYear(birthYear) < 18;
   const ready = nickname.trim().length > 0 && birthYear !== null && consent && (self || isGuardian);
 
   async function submit(e: FormEvent) {
@@ -62,6 +68,7 @@ export function NewAthlete({
               id="athlete-year"
               className="row-select"
               value={birthYear ?? ""}
+              disabled={Boolean(lockedBirthYear)}
               onChange={(e) => setBirthYear(e.target.value ? Number(e.target.value) : null)}
             >
               <option value="">Escolher</option>
@@ -93,11 +100,11 @@ export function NewAthlete({
 
         {self ? (
           <Group
-            header="Seu consentimento"
-            footer={`Versão do termo: ${SELF_CONSENT_VERSION}. Treine dentro dos seus limites; em caso de doença, lesão ou dúvida, procure orientação antes de começar.`}
+            header={teen ? "Seu consentimento (16–17 anos)" : "Seu consentimento"}
+            footer={`Versão do termo: ${teen ? TEEN_CONSENT_VERSION : SELF_CONSENT_VERSION}. Treine dentro dos seus limites; em caso de doença, lesão ou dúvida, procure orientação antes de começar.`}
           >
             <ul className="consent-list">
-              {SELF_CONSENT_POINTS.map((point) => (
+              {points.map((point) => (
                 <li key={point}>{point}</li>
               ))}
             </ul>

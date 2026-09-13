@@ -1,17 +1,49 @@
 import { useState, type FormEvent } from "react";
 import { useAuth } from "../state/auth";
 import { friendlyError } from "../lib/errors";
+import { ageThisYear, selfBirthYears } from "../lib/age";
+import { kindFromBirthYear } from "../lib/account";
 import { LEGAL_DOCS, type LegalId } from "../content/legal";
 import { LegalScreen } from "./LegalScreen";
 import { Field, Group, Notice, PlainButton, PrimaryButton, Screen, SwitchRow } from "../components/ui";
 
-type Mode = "welcome" | "signin" | "signup";
+type Mode = "welcome" | "signin" | "signup" | "forgot" | "code" | "newpass";
 
 export function AuthFlow() {
   const [mode, setMode] = useState<Mode>("welcome");
   const [doc, setDoc] = useState<LegalId | null>(null);
-  if (mode === "signin") return <SignIn onBack={() => setMode("welcome")} onSwitch={() => setMode("signup")} />;
+  const [recoverEmail, setRecoverEmail] = useState("");
+  if (mode === "signin") {
+    return (
+      <SignIn
+        onBack={() => setMode("welcome")}
+        onSwitch={() => setMode("signup")}
+        onForgot={() => setMode("forgot")}
+      />
+    );
+  }
   if (mode === "signup") return <SignUp onBack={() => setMode("welcome")} onSwitch={() => setMode("signin")} />;
+  if (mode === "forgot") {
+    return (
+      <ForgotPassword
+        onBack={() => setMode("signin")}
+        onSent={(email) => {
+          setRecoverEmail(email);
+          setMode("code");
+        }}
+      />
+    );
+  }
+  if (mode === "code") {
+    return (
+      <EnterCode
+        email={recoverEmail}
+        onBack={() => setMode("forgot")}
+        onVerified={() => setMode("newpass")}
+      />
+    );
+  }
+  if (mode === "newpass") return <NewPassword onBack={() => setMode("signin")} />;
   if (doc) return <LegalScreen doc={LEGAL_DOCS[doc]} onBack={() => setDoc(null)} />;
   return <Welcome onSignIn={() => setMode("signin")} onSignUp={() => setMode("signup")} onDoc={setDoc} />;
 }
@@ -26,7 +58,7 @@ function Welcome({ onSignIn, onSignUp, onDoc }: { onSignIn: () => void; onSignUp
         <PrimaryButton onClick={onSignUp}>Criar conta</PrimaryButton>
         <PlainButton onClick={onSignIn}>Já tenho conta</PlainButton>
       </div>
-      <p className="fine">A conta é de um adulto, a partir de 18 anos. Você treina pelo seu perfil e pode criar perfis para crianças e adolescentes.</p>
+      <p className="fine">A conta é a partir de 16 anos. De 16 a 17, um responsável confirma por e-mail. Quem tem menos de 16 treina pelo perfil criado pelo responsável.</p>
       <p className="fine legal-links">
         <button type="button" className="inline-link" onClick={() => onDoc("privacidade")}>
           Política de privacidade
@@ -39,7 +71,7 @@ function Welcome({ onSignIn, onSignUp, onDoc }: { onSignIn: () => void; onSignUp
   );
 }
 
-function SignIn({ onBack, onSwitch }: { onBack: () => void; onSwitch: () => void }) {
+function SignIn({ onBack, onSwitch, onForgot }: { onBack: () => void; onSwitch: () => void; onForgot: () => void }) {
   const { signIn } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -69,7 +101,121 @@ function SignIn({ onBack, onSwitch }: { onBack: () => void; onSwitch: () => void
         <PrimaryButton type="submit" disabled={busy || !email || !password}>
           {busy ? "Entrando…" : "Entrar"}
         </PrimaryButton>
+        <PlainButton onClick={onForgot}>Esqueci a senha</PlainButton>
         <PlainButton onClick={onSwitch}>Criar conta</PlainButton>
+      </form>
+    </Screen>
+  );
+}
+
+function ForgotPassword({ onBack, onSent }: { onBack: () => void; onSent: (email: string) => void }) {
+  const { requestPasswordCode } = useAuth();
+  const [email, setEmail] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+
+  async function submit(e: FormEvent) {
+    e.preventDefault();
+    setBusy(true);
+    setError(null);
+    try {
+      await requestPasswordCode(email.trim());
+      onSent(email.trim());
+    } catch (err) {
+      setError(friendlyError(err));
+      setBusy(false);
+    }
+  }
+
+  return (
+    <Screen title="Esqueci a senha" onBack={onBack}>
+      <form onSubmit={submit} className="stack">
+        <Group footer="Enviamos um código de 6 dígitos para o e-mail da conta. Não é um link: você digita o código aqui.">
+          <Field id="recover-email" label="E-mail" type="email" inputMode="email" autoComplete="email" value={email} onChange={setEmail} placeholder="voce@exemplo.com" />
+        </Group>
+        {error && <Notice tone="error">{error}</Notice>}
+        <PrimaryButton type="submit" disabled={busy || !email.includes("@")}>
+          {busy ? "Enviando…" : "Enviar código"}
+        </PrimaryButton>
+      </form>
+    </Screen>
+  );
+}
+
+function EnterCode({ email, onBack, onVerified }: { email: string; onBack: () => void; onVerified: () => void }) {
+  const { verifyPasswordCode } = useAuth();
+  const [code, setCode] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+
+  async function submit(e: FormEvent) {
+    e.preventDefault();
+    setBusy(true);
+    setError(null);
+    try {
+      await verifyPasswordCode(email, code.trim());
+      onVerified();
+    } catch (err) {
+      setError(friendlyError(err));
+      setBusy(false);
+    }
+  }
+
+  return (
+    <Screen title="Código" onBack={onBack}>
+      <form onSubmit={submit} className="stack">
+        <Group footer={`Enviado para ${email}. O código vale por alguns minutos.`}>
+          <Field id="otp-code" label="Código" inputMode="numeric" autoComplete="one-time-code" value={code} onChange={setCode} maxLength={8} placeholder="000000" />
+        </Group>
+        {error && <Notice tone="error">{error}</Notice>}
+        <PrimaryButton type="submit" disabled={busy || code.trim().length < 6}>
+          {busy ? "Conferindo…" : "Continuar"}
+        </PrimaryButton>
+      </form>
+    </Screen>
+  );
+}
+
+function NewPassword({ onBack }: { onBack: () => void }) {
+  const { updatePassword } = useAuth();
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  const [done, setDone] = useState(false);
+  const [busy, setBusy] = useState(false);
+
+  async function submit(e: FormEvent) {
+    e.preventDefault();
+    setBusy(true);
+    setError(null);
+    try {
+      await updatePassword(password);
+      setDone(true);
+    } catch (err) {
+      setError(friendlyError(err));
+      setBusy(false);
+    }
+  }
+
+  if (done) {
+    return (
+      <Screen title="Senha nova" onBack={onBack}>
+        <div className="stack">
+          <Notice tone="success">Senha atualizada. Você já está na conta.</Notice>
+        </div>
+      </Screen>
+    );
+  }
+
+  return (
+    <Screen title="Nova senha" onBack={onBack}>
+      <form onSubmit={submit} className="stack">
+        <Group footer="A senha precisa ter pelo menos 8 caracteres.">
+          <Field id="new-password" label="Nova senha" type="password" autoComplete="new-password" value={password} onChange={setPassword} />
+        </Group>
+        {error && <Notice tone="error">{error}</Notice>}
+        <PrimaryButton type="submit" disabled={busy || password.length < 8}>
+          {busy ? "Salvando…" : "Salvar senha"}
+        </PrimaryButton>
       </form>
     </Screen>
   );
@@ -77,25 +223,38 @@ function SignIn({ onBack, onSwitch }: { onBack: () => void; onSwitch: () => void
 
 function SignUp({ onBack, onSwitch }: { onBack: () => void; onSwitch: () => void }) {
   const { signUp } = useAuth();
+  const years = selfBirthYears();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [isGuardian, setIsGuardian] = useState(false);
+  const [birthYear, setBirthYear] = useState<number | null>(null);
+  const [parentEmail, setParentEmail] = useState("");
+  const [isOldEnough, setIsOldEnough] = useState(false);
+  const [parentOk, setParentOk] = useState(false);
   const [acceptsTerms, setAcceptsTerms] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [sentTo, setSentTo] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
-  // O texto abre por cima do formulário sem desmontá-lo: o que já foi digitado continua lá na volta.
   const [reading, setReading] = useState<LegalId | null>(null);
 
-  const ready = email.includes("@") && password.length >= 8 && isGuardian && acceptsTerms;
+  const kind = birthYear ? kindFromBirthYear(birthYear) : null;
+  const tooYoung = birthYear !== null && ageThisYear(birthYear) < 16;
+  const teen = kind === "teen";
+  const parentReady = !teen || (parentEmail.includes("@") && parentOk);
+  const ready = email.includes("@") && password.length >= 8 && kind !== null && isOldEnough && parentReady && acceptsTerms;
 
   async function submit(e: FormEvent) {
     e.preventDefault();
-    if (!ready) return;
+    if (!ready || birthYear === null || !kind) return;
     setBusy(true);
     setError(null);
     try {
-      const { needsConfirmation } = await signUp(email.trim(), password);
+      const { needsConfirmation } = await signUp({
+        email: email.trim(),
+        password,
+        birthYear,
+        kind,
+        parentEmail: teen ? parentEmail.trim().toLowerCase() : undefined,
+      });
       if (needsConfirmation) setSentTo(email.trim());
     } catch (err) {
       setError(friendlyError(err));
@@ -111,6 +270,7 @@ function SignUp({ onBack, onSwitch }: { onBack: () => void; onSwitch: () => void
       <Screen title="Confirme o e-mail" onBack={onBack}>
         <div className="stack">
           <Notice tone="success">Enviamos um link para {sentTo}. Toque nele para confirmar a conta e depois entre com seu e-mail e senha.</Notice>
+          {teen && <Notice>Depois de entrar, o responsável ainda confirma com o e-mail {parentEmail.trim().toLowerCase()} e um código que o app mostra.</Notice>}
           <PrimaryButton onClick={onSwitch}>Já confirmei, entrar</PrimaryButton>
         </div>
       </Screen>
@@ -118,12 +278,49 @@ function SignUp({ onBack, onSwitch }: { onBack: () => void; onSwitch: () => void
   }
 
   return (
-    <Screen eyebrow="Conta de adulto" title="Criar conta" onBack={onBack}>
+    <Screen eyebrow="Sua conta" title="Criar conta" onBack={onBack}>
       <form onSubmit={submit} className="stack">
         <Group footer="A senha precisa ter pelo menos 8 caracteres.">
           <Field id="signup-email" label="E-mail" type="email" inputMode="email" autoComplete="email" value={email} onChange={setEmail} placeholder="voce@exemplo.com" />
           <Field id="signup-password" label="Senha" type="password" autoComplete="new-password" value={password} onChange={setPassword} />
+          <label className="row" htmlFor="signup-year">
+            <span className="row-label">Ano de nascimento</span>
+            <select
+              id="signup-year"
+              className="row-select"
+              value={birthYear ?? ""}
+              onChange={(e) => setBirthYear(e.target.value ? Number(e.target.value) : null)}
+            >
+              <option value="">Escolher</option>
+              {years.map((year) => (
+                <option key={year} value={year}>
+                  {year}
+                </option>
+              ))}
+            </select>
+          </label>
         </Group>
+
+        {tooYoung && (
+          <Notice tone="error">Quem tem menos de 16 anos não cria conta. Peça para a mãe, o pai ou o responsável criar a conta e o seu perfil de treino.</Notice>
+        )}
+
+        {teen && (
+          <Group header="Responsável" footer="O responsável recebe um código no app, neste aparelho, e confirma na página pública. Sem essa confirmação o perfil de treino fica bloqueado.">
+            <Field
+              id="signup-parent"
+              label="E-mail do responsável"
+              type="email"
+              inputMode="email"
+              autoComplete="off"
+              value={parentEmail}
+              onChange={setParentEmail}
+              placeholder="responsavel@exemplo.com"
+            />
+            <SwitchRow id="signup-parent-ok" label="Meu responsável legal autoriza esta conta" checked={parentOk} onChange={setParentOk} />
+          </Group>
+        )}
+
         <Group
           header="Declarações"
           footer={
@@ -141,10 +338,10 @@ function SignUp({ onBack, onSwitch }: { onBack: () => void; onSwitch: () => void
           }
         >
           <SwitchRow
-            id="signup-guardian"
-            label="Tenho 18 anos ou mais"
-            checked={isGuardian}
-            onChange={setIsGuardian}
+            id="signup-age"
+            label={teen ? "Tenho 16 ou 17 anos" : "Tenho 18 anos ou mais"}
+            checked={isOldEnough}
+            onChange={setIsOldEnough}
           />
           <SwitchRow id="signup-terms" label="Li e aceito os Termos de uso e a Política de privacidade" checked={acceptsTerms} onChange={setAcceptsTerms} />
         </Group>

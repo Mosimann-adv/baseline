@@ -1,6 +1,7 @@
 import { useEffect, useReducer, useRef, useState } from "react";
 import { Group, Notice, PlainButton, PrimaryButton, Segmented } from "../components/ui";
 import { friendlyError } from "../lib/errors";
+import { keepAwake } from "../lib/native";
 import type { Athlete, Drill, NewSessionInput, Program } from "../lib/types";
 
 type Phase = "ready" | "work" | "rest" | "done";
@@ -61,7 +62,12 @@ function run(state: RunState, action: Action): RunState {
 
 function useWakeLock(active: boolean) {
   useEffect(() => {
-    if (!active || !("wakeLock" in navigator)) return;
+    void keepAwake(active);
+    if (!active || !("wakeLock" in navigator)) {
+      return () => {
+        void keepAwake(false);
+      };
+    }
     let lock: WakeLockSentinel | null = null;
     let cancelled = false;
     const request = () =>
@@ -81,6 +87,7 @@ function useWakeLock(active: boolean) {
       cancelled = true;
       document.removeEventListener("visibilitychange", onVisible);
       void lock?.release();
+      void keepAwake(false);
     };
   }, [active]);
 }

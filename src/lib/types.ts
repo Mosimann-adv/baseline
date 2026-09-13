@@ -12,7 +12,7 @@ export interface Athlete {
   position: Position | null;
   /** Treinos por semana definidos pelo responsável (1 a 7). */
   weekly_goal: number;
-  /** Perfil do próprio dono da conta (18+). Os demais são de crianças e adolescentes. */
+  /** Perfil do próprio dono da conta (16+). Os demais são de crianças e adolescentes. */
   is_self: boolean;
   created_at: string;
 }
@@ -70,6 +70,9 @@ export interface TrainingSession {
   feeling: number | null;
   discomfort: boolean;
   created_at: string;
+  /** Só no aparelho: ainda não chegou no servidor. */
+  pending?: boolean;
+  pendingError?: string | null;
 }
 
 export interface NewSessionInput {
@@ -103,6 +106,8 @@ export interface SkillTestRecord {
   tested_on: string;
   results: Record<string, number>;
   created_at: string;
+  pending?: boolean;
+  pendingError?: string | null;
 }
 
 export interface NewTestInput {

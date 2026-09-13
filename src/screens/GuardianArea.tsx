@@ -1,12 +1,14 @@
 import { useEffect, useState, type FormEvent } from "react";
 import { Field, Group, Notice, PrimaryButton, Screen, Segmented, SwitchRow } from "../components/ui";
 import { useAuth } from "../state/auth";
-import { adultBirthYears, ageThisYear, allowedBirthYears, bandFor } from "../lib/age";
+import { ageThisYear, allowedBirthYears, bandFor, selfBirthYears } from "../lib/age";
 import { activeConsent, consentPointsFor, consentVersionFor } from "../lib/consent";
 import { localIsoDate } from "../lib/dates";
 import { friendlyError } from "../lib/errors";
 import { collectFamilyData, saveJsonFile } from "../lib/exportData";
 import { LEVELS, POSITIONS } from "../lib/profile";
+import { canCreateMinorProfiles, type AccountKind } from "../lib/account";
+import type { ParentStatus } from "../lib/parentConfirm";
 import { LEGAL_DOCS, type LegalId } from "../content/legal";
 import { INSTITUTE_CNPJ, INSTITUTE_NAME, PIX_KEY, SUPPORT } from "../content/support";
 
@@ -24,6 +26,9 @@ interface AccountProps {
   consents: Consent[];
   sessions: TrainingSession[];
   tests: SkillTestRecord[];
+  accountKind: AccountKind;
+  parent: ParentStatus;
+  onRefreshParent: () => void;
   onBack: () => void;
   onAddAthlete: () => void;
   onAddSelf: () => void;
@@ -48,6 +53,9 @@ function AccountSettings({
   consents,
   sessions,
   tests,
+  accountKind,
+  parent,
+  onRefreshParent,
   onBack,
   onAddAthlete,
   onAddSelf,
@@ -94,6 +102,7 @@ function AccountSettings({
 
   const hasSelf = athletes.some((a) => a.is_self);
   const ordered = [...athletes].sort((a, b) => Number(b.is_self) - Number(a.is_self));
+  const allowMinors = canCreateMinorProfiles(accountKind);
 
   async function removeEverything() {
     setBusy(true);
@@ -142,6 +151,31 @@ function AccountSettings({
 
   return (
     <Screen eyebrow="Baseline" title="Conta" onBack={onBack}>
+      {accountKind === "teen" && !parent.confirmed && (
+        <section className="due-card blocked">
+          <div>
+            <p className="subtitle">Confirmação do responsável</p>
+            <p>
+              Peça para {parent.parentEmail ?? "o responsável"} abrir no site do Baseline a página{" "}
+              <strong>#/confirmar-responsavel</strong> e digitar o código <strong>{parent.code ?? "—"}</strong>.
+            </p>
+          </div>
+          <button
+            type="button"
+            className="secondary-button"
+            onClick={() => {
+              if (parent.code) void navigator.clipboard.writeText(parent.code).catch(() => undefined);
+              onRefreshParent();
+            }}
+          >
+            Copiar código
+          </button>
+        </section>
+      )}
+      {accountKind === "teen" && parent.confirmed && (
+        <Notice tone="success">Responsável confirmado{parent.parentEmail ? ` (${parent.parentEmail})` : ""}.</Notice>
+      )}
+
       <Group header="Perfis de treino" footer="Toque em um perfil para corrigir os dados, mudar a meta semanal, revogar o aceite ou excluir.">
         {ordered.map((athlete) => {
           const active = activeConsent(consents, athlete);
@@ -169,9 +203,11 @@ function AccountSettings({
             Criar meu perfil de treino
           </button>
         )}
-        <button type="button" className="row row-action" onClick={onAddAthlete}>
-          Adicionar criança ou adolescente
-        </button>
+        {allowMinors && (
+          <button type="button" className="row row-action" onClick={onAddAthlete}>
+            Adicionar criança ou adolescente
+          </button>
+        )}
       </Group>
 
       <Group header="Privacidade e dados" footer="A cópia inclui a conta, os perfis, os aceites, os treinos e os testes. Guarde em local seguro.">
@@ -296,7 +332,7 @@ function ProfileSettings({
   const band = bandFor(age);
   const active = activeConsent(consents, athlete);
   const lastRevoked = consents.find((c) => c.revoked_at);
-  const years = self ? adultBirthYears() : allowedBirthYears();
+  const years = self ? selfBirthYears() : allowedBirthYears();
   const yearOptions = years.includes(athlete.birth_year) ? years : [...years, athlete.birth_year];
   const canAccept = agree && (self || agreeGuardian);
 

@@ -1,8 +1,9 @@
 import type { Session } from "@supabase/supabase-js";
 import type { Athlete, AthletePatch, Consent, NewAthleteInput, NewSessionInput, NewTestInput, SkillTestRecord, TrainingSession } from "./types";
-import { CONSENT_VERSION, SELF_CONSENT_VERSION } from "./consent";
-import { ADULT_MIN_AGE, MAX_AGE, MIN_AGE, ageThisYear } from "./age";
+import { CONSENT_VERSION, consentVersionFor } from "./consent";
+import { MAX_AGE, MIN_AGE, SELF_MIN_AGE, ageThisYear } from "./age";
 import { localIsoDate } from "./dates";
+import type { AccountKind } from "./account";
 
 // Modo demonstração: sessão, atletas, treinos e testes ficam só neste navegador, sem servidor.
 const SESSION_KEY = "baseline.demo.session";
@@ -10,11 +11,19 @@ const DATA_KEY = "baseline.demo.data";
 const DEMO_GUARDIAN_ID = "demo-guardian";
 const DEFAULT_WEEKLY_GOAL = 3;
 
+interface DemoParent {
+  userId: string;
+  parentEmail: string;
+  code: string;
+  confirmed: boolean;
+}
+
 interface DemoData {
   athletes: Athlete[];
   consents: Consent[];
   sessions: TrainingSession[];
   tests: SkillTestRecord[];
+  parent: DemoParent | null;
 }
 
 function read<T>(key: string, fallback: T): T {
@@ -46,7 +55,7 @@ export function demoSession(): Session | null {
   return read<Session | null>(SESSION_KEY, null);
 }
 
-export function demoSignIn(email: string): Session {
+export function demoSignIn(email: string, meta?: { birthYear?: number; parentEmail?: string; kind?: AccountKind }): Session {
   const session = {
     access_token: "demo",
     refresh_token: "demo",
@@ -57,7 +66,11 @@ export function demoSignIn(email: string): Session {
       email,
       aud: "authenticated",
       app_metadata: {},
-      user_metadata: {},
+      user_metadata: {
+        birth_year: meta?.birthYear ?? null,
+        parent_email: meta?.parentEmail ?? null,
+        account_kind: meta?.kind ?? "adult",
+      },
       created_at: new Date().toISOString(),
     },
   } as unknown as Session;
@@ -82,7 +95,35 @@ export function demoLoad(): DemoData {
     consents: data.consents ?? [],
     sessions: data.sessions ?? [],
     tests: data.tests ?? [],
+    parent: data.parent ?? null,
   };
+}
+
+export function demoParentStatus(userId: string) {
+  const parent = demoLoad().parent;
+  if (!parent || parent.userId !== userId) return { parentEmail: null, confirmed: false, code: null };
+  return {
+    parentEmail: parent.parentEmail,
+    confirmed: parent.confirmed,
+    code: parent.confirmed ? null : parent.code,
+  };
+}
+
+export function demoRegisterParent(userId: string, parentEmail: string, code: string) {
+  const data = demoLoad();
+  data.parent = { userId, parentEmail, code, confirmed: false };
+  write(DATA_KEY, data);
+  return { parentEmail, confirmed: false, code };
+}
+
+export function demoConfirmParent(parentEmail: string, code: string): boolean {
+  const data = demoLoad();
+  if (!data.parent) return false;
+  if (data.parent.parentEmail !== parentEmail.trim().toLowerCase()) return false;
+  if (data.parent.code !== code.trim()) return false;
+  data.parent = { ...data.parent, confirmed: true };
+  write(DATA_KEY, data);
+  return true;
 }
 
 export function demoCreateAthlete(guardianId: string, input: NewAthleteInput): Athlete {
@@ -108,7 +149,8 @@ export function demoCreateAthlete(guardianId: string, input: NewAthleteInput): A
 }
 
 export function demoCreateSelf(guardianId: string, input: NewAthleteInput): Athlete {
-  if (ageThisYear(input.birthYear) < ADULT_MIN_AGE) throw new Error("perfil proprio exige 18 anos ou mais");
+  const age = ageThisYear(input.birthYear);
+  if (age < SELF_MIN_AGE) throw new Error("perfil proprio exige 16 anos ou mais");
   const data = demoLoad();
   if (data.athletes.some((a) => a.guardian_id === guardianId && a.is_self)) throw new Error("athletes_one_self_per_account");
   const now = new Date().toISOString();
@@ -123,8 +165,9 @@ export function demoCreateSelf(guardianId: string, input: NewAthleteInput): Athl
     is_self: true,
     created_at: now,
   };
+  const version = consentVersionFor(athlete);
   data.athletes.push(athlete);
-  data.consents.unshift({ id: crypto.randomUUID(), athlete_id: athlete.id, document_version: SELF_CONSENT_VERSION, accepted_at: now, revoked_at: null });
+  data.consents.unshift({ id: crypto.randomUUID(), athlete_id: athlete.id, document_version: version, accepted_at: now, revoked_at: null });
   write(DATA_KEY, data);
   return athlete;
 }
@@ -156,6 +199,7 @@ export function demoDeleteAthlete(athleteId: string): void {
     consents: data.consents.filter((c) => c.athlete_id !== athleteId),
     sessions: data.sessions.filter((s) => s.athlete_id !== athleteId),
     tests: data.tests.filter((t) => t.athlete_id !== athleteId),
+    parent: data.parent,
   });
 }
 

@@ -2,12 +2,25 @@ import { createContext, useContext, useEffect, useMemo, useState, type ReactNode
 import type { Session } from "@supabase/supabase-js";
 import { isDemo, requireSupabase, supabase } from "../lib/supabase";
 import { demoDeleteAccount, demoSession, demoSignIn, demoSignOut } from "../lib/demo";
+import type { AccountKind } from "../lib/account";
+import { metaFromSession } from "../lib/account";
+
+export interface SignUpInput {
+  email: string;
+  password: string;
+  birthYear: number;
+  kind: AccountKind;
+  parentEmail?: string;
+}
 
 interface AuthValue {
   session: Session | null;
   loading: boolean;
-  signUp: (email: string, password: string) => Promise<{ needsConfirmation: boolean }>;
+  signUp: (input: SignUpInput) => Promise<{ needsConfirmation: boolean }>;
   signIn: (email: string, password: string) => Promise<void>;
+  requestPasswordCode: (email: string) => Promise<void>;
+  verifyPasswordCode: (email: string, token: string) => Promise<void>;
+  updatePassword: (password: string) => Promise<void>;
   signOut: () => Promise<void>;
   deleteAccount: () => Promise<void>;
 }
@@ -32,21 +45,51 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     () => ({
       session,
       loading,
-      async signUp(email, password) {
+      async signUp(input) {
         if (isDemo) {
-          setSession(demoSignIn(email));
+          setSession(demoSignIn(input.email, { birthYear: input.birthYear, parentEmail: input.parentEmail, kind: input.kind }));
           return { needsConfirmation: false };
         }
-        const { data, error } = await requireSupabase().auth.signUp({ email, password });
+        const { data, error } = await requireSupabase().auth.signUp({
+          email: input.email,
+          password: input.password,
+          options: {
+            data: {
+              birth_year: input.birthYear,
+              parent_email: input.parentEmail ?? null,
+              account_kind: input.kind,
+            },
+          },
+        });
         if (error) throw error;
         return { needsConfirmation: !data.session };
       },
       async signIn(email, password) {
         if (isDemo) {
-          setSession(demoSignIn(email));
+          const current = demoSession();
+          const meta = metaFromSession(current);
+          setSession(demoSignIn(email, { birthYear: meta.birthYear ?? undefined, parentEmail: meta.parentEmail ?? undefined, kind: meta.kind }));
           return;
         }
         const { error } = await requireSupabase().auth.signInWithPassword({ email, password });
+        if (error) throw error;
+      },
+      async requestPasswordCode(email) {
+        if (isDemo) return;
+        const { error } = await requireSupabase().auth.signInWithOtp({
+          email,
+          options: { shouldCreateUser: false },
+        });
+        if (error) throw error;
+      },
+      async verifyPasswordCode(email, token) {
+        if (isDemo) throw new Error("No modo demonstração não há recuperação de senha.");
+        const { error } = await requireSupabase().auth.verifyOtp({ email, token, type: "email" });
+        if (error) throw error;
+      },
+      async updatePassword(password) {
+        if (isDemo) return;
+        const { error } = await requireSupabase().auth.updateUser({ password });
         if (error) throw error;
       },
       async signOut() {

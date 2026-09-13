@@ -2,7 +2,7 @@ import { INSTITUTE_CNPJ, INSTITUTE_NAME } from "./support";
 
 // RASCUNHO — pendente de revisão jurídica. Trechos entre colchetes precisam ser preenchidos antes de publicar.
 // Mudou o texto de forma relevante? Troque LEGAL_VERSION.
-export const LEGAL_VERSION = "2026-09-rascunho-4";
+export const LEGAL_VERSION = "2026-09-rascunho-5";
 
 const ORG = INSTITUTE_NAME;
 const CNPJ = INSTITUTE_CNPJ;
@@ -26,7 +26,7 @@ export const LEGAL_DOCS: Record<LegalId, LegalDoc> = {
     id: "privacidade",
     title: "Política de privacidade",
     intro:
-      "Esta política explica, em linguagem simples, quais dados o Baseline guarda, por que guarda e como você controla tudo. O app é usado por adultos e por crianças e adolescentes acompanhados por um adulto: coletamos o mínimo e nunca usamos dados para publicidade.",
+      "Esta política explica, em linguagem simples, quais dados o Baseline guarda, por que guarda e como você controla tudo. O app é usado por adultos, por adolescentes a partir de 16 anos com conta própria e por crianças e adolescentes acompanhados por um responsável: coletamos o mínimo e nunca usamos dados para publicidade.",
     sections: [
       {
         title: "Quem cuida dos dados",
@@ -38,8 +38,8 @@ export const LEGAL_DOCS: Record<LegalId, LegalDoc> = {
       {
         title: "Quem usa o app",
         blocks: [
-          "A conta é sempre de um adulto, a partir de 18 anos. Ele pode ter o próprio perfil de treino e também criar perfis para crianças e adolescentes de 6 a 17 anos pelos quais é responsável legal.",
-          "Crianças e adolescentes treinam pelo perfil criado pelo adulto. Eles não têm login, e-mail, perfil público nem conversa com outras pessoas.",
+          "A conta é a partir de 16 anos. De 16 a 17 anos, o adolescente cria o próprio login e um responsável legal confirma pelo e-mail. A partir de 18 anos, a conta é de um adulto, que também pode criar perfis para crianças e adolescentes de 6 a 17 anos pelos quais é responsável legal.",
+          "Quem tem menos de 16 anos não cria login: treina só pelo perfil criado pelo responsável. Crianças e adolescentes nesse caso não têm e-mail, perfil público nem conversa com outras pessoas.",
         ],
       },
       {
@@ -48,7 +48,8 @@ export const LEGAL_DOCS: Record<LegalId, LegalDoc> = {
           {
             list: [
               "Da conta: e-mail e senha. A senha fica protegida pelo serviço de login e ninguém da equipe consegue lê-la.",
-              "De cada perfil de treino: apelido, ano de nascimento, nível, posição (opcional), meta de treinos por semana e se é o perfil do próprio adulto.",
+              "De cada perfil de treino: apelido, ano de nascimento, nível, posição (opcional), meta de treinos por semana e se é o perfil do próprio dono da conta.",
+              "Da conta de adolescente (16–17): e-mail do responsável e a confirmação dele.",
               "Treinos: data, duração, quantos exercícios foram feitos, como foi (de 1 a 5) e se algo doeu, só como sim ou não, sem detalhes de saúde.",
               "Testes de habilidade: data e resultados.",
               "Consentimentos e autorizações: versão do termo aceito e datas de aceite e de revogação.",
@@ -83,7 +84,8 @@ export const LEGAL_DOCS: Record<LegalId, LegalDoc> = {
           {
             list: [
               "Perfis de crianças e adolescentes: consentimento específico e em destaque de um dos pais ou do responsável legal, dado para cada perfil (art. 14, § 1º, da LGPD), sempre no melhor interesse da criança e do adolescente.",
-              "Perfil do próprio adulto: consentimento do titular, inclusive para a resposta sobre dor, que é dado de saúde (art. 7º, I, e art. 11, I, da LGPD).",
+              "Perfil próprio de adulto: consentimento do titular, inclusive para a resposta sobre dor, que é dado de saúde (art. 7º, I, e art. 11, I, da LGPD).",
+              "Conta de adolescente 16–17: consentimento do titular e confirmação do responsável legal pelo e-mail, também para a resposta sobre dor.",
               "Dados da conta: cumprimento dos termos de uso e de obrigações legais (art. 7º, incisos II e V, da LGPD).",
             ],
           },
@@ -146,12 +148,12 @@ export const LEGAL_DOCS: Record<LegalId, LegalDoc> = {
     id: "termos",
     title: "Termos de uso",
     intro:
-      "Estes termos explicam as regras de uso do Baseline. Ao criar a conta, você declara ter 18 anos ou mais. Ao cadastrar uma criança ou adolescente, declara ser mãe, pai ou responsável legal por ele.",
+      "Estes termos explicam as regras de uso do Baseline. Ao criar a conta, você declara ter 16 anos ou mais. De 16 a 17 anos, um responsável legal confirma a conta. Ao cadastrar uma criança ou adolescente, o titular da conta declara ser mãe, pai ou responsável legal por ele.",
     sections: [
       {
         title: "O que é o Baseline",
         blocks: [
-          `O Baseline é um app de treinos de basquete para adultos e para crianças e adolescentes de 6 a 17 anos acompanhados por um adulto, mantido pelo ${ORG} (CNPJ ${CNPJ}). O uso do app é gratuito.`,
+          `O Baseline é um app de treinos de basquete para adultos, para adolescentes a partir de 16 anos com conta própria e para crianças e adolescentes de 6 a 17 anos acompanhados por um responsável, mantido pelo ${ORG} (CNPJ ${CNPJ}). O uso do app é gratuito.`,
           "Quem quiser pode fazer uma doação opcional ao Instituto pela tela Conta (Pix) ou pelo site do Arvoredo. A doação não é cobrança pelo app, não desbloqueia treino e nunca aparece na tela em que a criança treina. Empresas que quiserem patrocinar falam com a coordenação pelo site.",
         ],
       },

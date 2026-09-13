@@ -9,18 +9,22 @@ export function AthleteHome({
   athlete,
   sessions,
   tests,
+  pending,
   onSwitch,
   onOpenProgram,
   onOpenProgress,
   onStartTests,
+  onRetryPending,
 }: {
   athlete: Athlete;
   sessions: TrainingSession[];
   tests: SkillTestRecord[];
+  pending: { count: number; blocked: boolean; error: string | null };
   onSwitch: () => void;
   onOpenProgram: (programId: string) => void;
   onOpenProgress: () => void;
   onStartTests: () => void;
+  onRetryPending: () => void;
 }) {
   const age = ageThisYear(athlete.birth_year);
   const band = bandFor(age);
@@ -40,6 +44,22 @@ export function AthleteHome({
 
   return (
     <Screen eyebrow={band ? `${band.label} · ${age} anos` : `${age} anos`} title={`Oi, ${athlete.nickname}`} onBack={onSwitch}>
+      {pending.count > 0 && (
+        <section className={`due-card ${pending.blocked ? "blocked" : "pending"}`}>
+          <div>
+            <p className="subtitle">{pending.blocked ? "Não enviado" : "Aguardando internet"}</p>
+            <p>
+              {pending.blocked
+                ? pending.error ?? "O aceite deste perfil foi revogado. O registro ficou neste aparelho."
+                : `${pending.count === 1 ? "1 registro" : `${pending.count} registros`} fica neste aparelho e sobe quando houver conexão.`}
+            </p>
+          </div>
+          <button type="button" className="secondary-button" onClick={onRetryPending}>
+            Tentar agora
+          </button>
+        </section>
+      )}
+
       <section className="goal-card" aria-label="Meta da semana">
         <div className="goal-head">
           <span>Meta da semana</span>
@@ -119,6 +139,7 @@ export function AthleteHome({
                 {programById(s.program_id)?.title ?? "Treino"}
                 <small>
                   {formatDayMonth(s.performed_on)} · {s.drills_done}/{s.drills_total} exercícios · {s.minutes} min
+                  {s.pending ? " · neste aparelho" : ""}
                 </small>
               </span>
             </div>

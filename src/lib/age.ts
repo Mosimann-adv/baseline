@@ -1,8 +1,9 @@
 /** Faixa dos perfis de crianças e adolescentes. */
 export const MIN_AGE = 6;
 export const MAX_AGE = 17;
-/** Perfil próprio do dono da conta. */
+/** Perfil próprio do dono da conta (adulto 18+ ou adolescente 16–17). */
 export const ADULT_MIN_AGE = 18;
+export const SELF_MIN_AGE = 16;
 const ADULT_MAX_AGE = 90;
 
 export type AgeBandId = "6-8" | "9-11" | "12-14" | "15-17" | "adulto";
@@ -48,4 +49,10 @@ export function allowedBirthYears(now = new Date()): number[] {
 export function adultBirthYears(now = new Date()): number[] {
   const year = now.getFullYear();
   return Array.from({ length: ADULT_MAX_AGE - ADULT_MIN_AGE + 1 }, (_, i) => year - ADULT_MIN_AGE - i);
+}
+
+/** Anos para perfil próprio: 16 a 90 (adolescente com conta própria e adulto). */
+export function selfBirthYears(now = new Date()): number[] {
+  const year = now.getFullYear();
+  return Array.from({ length: ADULT_MAX_AGE - SELF_MIN_AGE + 1 }, (_, i) => year - SELF_MIN_AGE - i);
 }
