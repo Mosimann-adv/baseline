@@ -1,12 +1,11 @@
 import { useEffect, useState, type FormEvent } from "react";
-import { Field, Group, Notice, PlainButton, PrimaryButton, Screen, Segmented, SwitchRow } from "../components/ui";
+import { Field, Group, Notice, PrimaryButton, Screen, Segmented, SwitchRow } from "../components/ui";
 import { useAuth } from "../state/auth";
 import { adultBirthYears, ageThisYear, allowedBirthYears, bandFor } from "../lib/age";
 import { activeConsent, consentPointsFor, consentVersionFor } from "../lib/consent";
 import { localIsoDate } from "../lib/dates";
 import { friendlyError } from "../lib/errors";
 import { collectFamilyData, saveJsonFile } from "../lib/exportData";
-import { checkPin, hasPin, savePin } from "../lib/pin";
 import { LEVELS, POSITIONS } from "../lib/profile";
 import { LEGAL_DOCS, type LegalId } from "../content/legal";
 import { LegalScreen } from "./LegalScreen";
@@ -32,67 +31,10 @@ interface AccountProps {
   onDeleteAthlete: (athleteId: string) => Promise<void>;
 }
 
-// Tela Conta. O PIN existe para proteger perfis de crianças e adolescentes:
-// conta só com o perfil do próprio adulto abre direto.
+// Tela Conta: abre direto, sem PIN (decisão do dono do projeto, 2026-09-12).
+// Ações sem volta (revogar, excluir perfil, excluir conta) continuam com confirmação em dois passos.
 export function GuardianArea(props: AccountProps) {
-  const needsPin = props.athletes.some((a) => !a.is_self);
-  const [unlocked, setUnlocked] = useState(false);
-  if (needsPin && !unlocked) return <PinGate guardianId={props.guardianId} onUnlock={() => setUnlocked(true)} onBack={props.onBack} />;
   return <AccountSettings {...props} />;
-}
-
-function PinGate({ guardianId, onUnlock, onBack }: { guardianId: string; onUnlock: () => void; onBack: () => void }) {
-  const { signOut } = useAuth();
-  const creating = !hasPin(guardianId);
-  const [pin, setPin] = useState("");
-  const [confirmPin, setConfirmPin] = useState("");
-  const [error, setError] = useState<string | null>(null);
-  const onlyDigits = (value: string) => value.replace(/\D/g, "").slice(0, 4);
-
-  async function submit(e: FormEvent) {
-    e.preventDefault();
-    setError(null);
-    if (!/^\d{4}$/.test(pin)) {
-      setError("O PIN tem 4 números.");
-      return;
-    }
-    if (creating) {
-      if (pin !== confirmPin) {
-        setError("Os dois PINs não são iguais.");
-        return;
-      }
-      await savePin(guardianId, pin);
-      onUnlock();
-      return;
-    }
-    if (await checkPin(guardianId, pin)) onUnlock();
-    else {
-      setError("PIN incorreto.");
-      setPin("");
-    }
-  }
-
-  return (
-    <Screen eyebrow="Só para adultos" title={creating ? "Crie um PIN" : "Digite o PIN"} onBack={onBack}>
-      <form onSubmit={submit} className="stack">
-        <Group
-          footer={
-            creating
-              ? "A conta tem perfis de crianças ou adolescentes. O PIN protege autorizações e dados deles neste aparelho. Não compartilhe com eles."
-              : "Esqueceu o PIN? Saia da conta e entre de novo com seu e-mail e senha para criar outro."
-          }
-        >
-          <Field id="guardian-pin" label="PIN" type="password" inputMode="numeric" maxLength={4} autoComplete="off" value={pin} onChange={(v) => setPin(onlyDigits(v))} />
-          {creating && (
-            <Field id="guardian-pin-confirm" label="Repita o PIN" type="password" inputMode="numeric" maxLength={4} autoComplete="off" value={confirmPin} onChange={(v) => setConfirmPin(onlyDigits(v))} />
-          )}
-        </Group>
-        {error && <Notice tone="error">{error}</Notice>}
-        <PrimaryButton type="submit">{creating ? "Salvar PIN" : "Entrar"}</PrimaryButton>
-        {!creating && <PlainButton onClick={() => void signOut()}>Esqueci o PIN, sair da conta</PlainButton>}
-      </form>
-    </Screen>
-  );
 }
 
 type Sub = { kind: "athlete"; id: string } | { kind: "doc"; id: LegalId } | null;
@@ -224,7 +166,7 @@ function AccountSettings({
       </Group>
       {exportNote && <Notice tone="success">{exportNote}</Notice>}
 
-      <Group header="Conta" footer="Ao sair, o PIN deste aparelho é apagado.">
+      <Group header="Conta">
         <div className="row">
           <span className="row-label">E-mail</span>
           <span className="row-value">{email}</span>

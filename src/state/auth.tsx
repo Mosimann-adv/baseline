@@ -2,7 +2,6 @@ import { createContext, useContext, useEffect, useMemo, useState, type ReactNode
 import type { Session } from "@supabase/supabase-js";
 import { isDemo, requireSupabase, supabase } from "../lib/supabase";
 import { demoDeleteAccount, demoSession, demoSignIn, demoSignOut } from "../lib/demo";
-import { clearPin } from "../lib/pin";
 
 interface AuthValue {
   session: Session | null;
@@ -50,19 +49,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const { error } = await requireSupabase().auth.signInWithPassword({ email, password });
         if (error) throw error;
       },
-      // Sair apaga o PIN do aparelho: é assim que um adulto que esqueceu o PIN recupera o acesso.
       async signOut() {
-        const guardianId = session?.user.id;
         if (isDemo) {
           demoSignOut();
           setSession(null);
         } else {
           await requireSupabase().auth.signOut();
         }
-        if (guardianId) clearPin(guardianId);
       },
       async deleteAccount() {
-        const guardianId = session?.user.id;
         if (isDemo) {
           demoDeleteAccount();
           setSession(null);
@@ -72,7 +67,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           if (error) throw error;
           await client.auth.signOut();
         }
-        if (guardianId) clearPin(guardianId);
       },
     }),
     [session, loading],

@@ -11,7 +11,7 @@ export function useAthletes(guardianId: string) {
   const [error, setError] = useState<string | null>(null);
 
   // `loading` só vale para a primeira carga: recarregar depois de salvar não pode trocar a tela
-  // pela de carregamento (isso trancava de novo a tela Conta).
+  // pela de carregamento (a tela aberta seria desmontada no meio da edição).
   const reload = useCallback(async () => {
     if (isDemo) {
       const data = demoLoad();

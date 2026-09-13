@@ -13,7 +13,7 @@ export function WhoTrains({
   onPick: (id: string) => void;
   onAccount: () => void;
 }) {
-  // O perfil do próprio adulto vem primeiro. Criar perfis fica só na tela Conta, que tem PIN quando há menores.
+  // O perfil do próprio adulto vem primeiro. Criar e gerenciar perfis fica na tela Conta.
   const ordered = [...athletes].sort((a, b) => Number(b.is_self) - Number(a.is_self));
 
   return (

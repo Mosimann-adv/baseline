@@ -1,6 +1,6 @@
 // RASCUNHO — pendente de revisão jurídica. Trechos entre colchetes precisam ser preenchidos antes de publicar.
 // Mudou o texto de forma relevante? Troque LEGAL_VERSION.
-export const LEGAL_VERSION = "2026-09-rascunho-2";
+export const LEGAL_VERSION = "2026-09-rascunho-3";
 
 const ORG = "Instituto Arvoredo";
 const CNPJ = "[CNPJ a preencher]";
@@ -58,7 +58,7 @@ export const LEGAL_DOCS: Record<LegalId, LegalDoc> = {
         title: "O que não coletamos",
         blocks: [
           "Nome completo, data de nascimento completa, foto, voz, escola, endereço, localização, contatos e identificador de publicidade.",
-          "No aparelho ficam só o PIN da tela Conta (usado quando há perfis de crianças ou adolescentes), guardado de forma embaralhada, e qual foi o último perfil aberto.",
+          "No aparelho fica só a indicação de qual foi o último perfil aberto.",
         ],
       },
       {
@@ -130,7 +130,7 @@ export const LEGAL_DOCS: Record<LegalId, LegalDoc> = {
       {
         title: "Segurança",
         blocks: [
-          "As conexões são cifradas, e regras no banco de dados garantem que cada conta acesse só os próprios dados. Quando a conta tem perfis de crianças ou adolescentes, o PIN impede que eles mudem autorizações ou excluam dados no aparelho, mas não substitui a senha da conta: guarde bem os dois.",
+          "As conexões são cifradas, e regras no banco de dados garantem que cada conta acesse só os próprios dados. Guarde bem a senha e, se crianças usam o seu aparelho, acompanhe o uso da tela Conta, onde ficam autorizações e exclusões.",
         ],
       },
       {
@@ -157,7 +157,7 @@ export const LEGAL_DOCS: Record<LegalId, LegalDoc> = {
         blocks: [
           {
             list: [
-              "Use um e-mail que só você acessa e guarde a senha e o PIN.",
+              "Use um e-mail que só você acessa e guarde bem a senha.",
               "Cadastre perfis de crianças e adolescentes apenas se você for responsável legal por eles, com dados corretos.",
               "Você responde pelo uso da conta e dos perfis que criar.",
             ],
@@ -211,7 +211,7 @@ export const LEGAL_DOCS: Record<LegalId, LegalDoc> = {
         blocks: [
           {
             ordered: true,
-            list: ["Abra o Baseline e toque em Conta.", "Se a conta tiver perfis de crianças ou adolescentes, digite o PIN.", "Toque em Excluir conta e dados e confirme."],
+            list: ["Abra o Baseline e toque em Conta.", "Toque em Excluir conta e dados e confirme."],
           },
         ],
       },
@@ -227,7 +227,7 @@ export const LEGAL_DOCS: Record<LegalId, LegalDoc> = {
         title: "O que é apagado",
         blocks: [
           { list: ["A conta (e-mail e senha).", "Todos os perfis de treino, os consentimentos e as autorizações.", "Todos os treinos e testes registrados."] },
-          `O PIN e o último perfil aberto ficam só no aparelho e somem ao sair da conta ou desinstalar o app. Cópias de segurança do provedor são substituídas em até ${BACKUP_WINDOW}.`,
+          `A indicação do último perfil aberto fica só no aparelho e some ao desinstalar o app ou limpar os dados do navegador. Cópias de segurança do provedor são substituídas em até ${BACKUP_WINDOW}.`,
         ],
       },
       {

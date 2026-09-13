@@ -5,7 +5,6 @@ import { useSessions } from "./state/sessions";
 import { useTests } from "./state/tests";
 import { isSupabaseConfigured } from "./lib/supabase";
 import { activeConsent } from "./lib/consent";
-import { hasPin } from "./lib/pin";
 import { programById } from "./content/programs";
 import { LEGAL_DOCS, legalIdFromHash, type LegalId } from "./content/legal";
 import { AuthFlow } from "./screens/AuthScreens";
@@ -134,13 +133,8 @@ function Family({ guardianId, email }: { guardianId: string; email: string }) {
         onBack={() => setView(backTo(from))}
         onCreate={async (input) => {
           const athlete = await family.create(input);
-          if (from === "first") {
-            // Logo depois do cadastro o adulto ainda está com o aparelho: o primeiro perfil não pede PIN.
-            setView({ name: "athlete", athleteId: athlete.id });
-          } else {
-            // Primeiro menor numa conta sem PIN: a tela Conta passa a pedir e oferece criar o PIN.
-            setView(hasPin(guardianId) ? { name: "picker" } : { name: "account" });
-          }
+          // Primeiro perfil da conta vai direto para o treino; os seguintes aparecem na escolha de perfil.
+          setView(from === "first" ? { name: "athlete", athleteId: athlete.id } : { name: "picker" });
           return athlete;
         }}
       />

@@ -13,7 +13,7 @@ Leia junto com `AGENTS.md` (regras que não mudam sem pedido explícito) e `READ
   - O adulto pode ter **um perfil próprio de treino** (`is_self`), com consentimento do titular.
   - O adulto pode criar **perfis de crianças e adolescentes** (6–17), com autorização do responsável. Esses perfis não têm login nem e-mail.
   - Conta nova começa pela tela "Quem vai treinar?" (Eu / Uma criança ou adolescente).
-- **Tela Conta** (antes "Área do responsável"; o componente continua `GuardianArea.tsx`): pede PIN de 4 dígitos **só quando a conta tem perfil de menor**. O PIN é só uma trava contra a criança no aparelho.
+- **Tela Conta** (antes "Área do responsável"; o componente continua `GuardianArea.tsx`): abre direto, **sem PIN**, por decisão do dono em 2026-09-12. As ações sem volta pedem confirmação em dois passos.
 - **Faixa Adulto:** na v1 usa os mesmos treinos e testes de 15–17 (`contentBand` em `src/lib/age.ts`).
 - **Escopo da v1:** não há área do treinador. O foco é o atleta:
   - treinos guiados com vídeo;
@@ -50,7 +50,8 @@ Leia junto com `AGENTS.md` (regras que não mudam sem pedido explícito) e `READ
 | `a5f1a3c` | Evolução: testes a cada 4 semanas, meta semanal, sequência de semanas e conquistas |
 | `0d1da1e` | Privacidade: política, termos, página de exclusão, revogar e renovar autorização, corrigir e excluir perfil, cópia dos dados; migração 0004; este documento |
 | `aae6fd2`, `94a9b77`, `793555b` | Registro do Supabase e da Vercel; `.env.production` com os valores públicos; build ignora variáveis vazias |
-| (este commit) | Adultos: perfil próprio de treino, tela inicial "Quem vai treinar?", PIN só com menores, faixa Adulto, consentimento do titular (`SELF_CONSENT_VERSION`), termo de menores na versão `rascunho-2`, textos legais na versão `rascunho-2`; migração 0005 |
+| `f0dc858` | Adultos: perfil próprio de treino, tela inicial "Quem vai treinar?", PIN só com menores, faixa Adulto, consentimento do titular (`SELF_CONSENT_VERSION`), termo de menores na versão `rascunho-2`, textos legais na versão `rascunho-2`; migração 0005 |
+| (este commit) | Remove o PIN: a tela Conta abre direto; `pin.ts` removido; textos legais na versão `rascunho-3` |
 
 Etapas do `README.md`:
 1. Fundação — pronta.
@@ -63,7 +64,7 @@ Etapas do `README.md`:
 
 As telas das etapas 3 e 4 **não foram conferidas no navegador**: a automação travou. Antes de avançar, abra o modo demo e percorra estes fluxos:
 - Evolução: meta, testes, conquistas, gráfico.
-- Área do responsável: corrigir perfil, revogar e renovar autorização, excluir perfil, baixar dados.
+- Tela Conta: corrigir perfil, revogar e renovar autorização, excluir perfil, baixar dados.
 - Textos legais.
 
 ## 4. Como rodar
@@ -88,7 +89,7 @@ src/
   App.tsx               navegação por estado (union View, sem router) e rotas públicas por hash
   components/ui.tsx     Screen, Group, Field, SwitchRow, Segmented, PrimaryButton, PlainButton, Notice
   state/
-    auth.tsx            sessão do responsável; signOut e deleteAccount apagam o PIN do aparelho
+    auth.tsx            sessão do adulto dono da conta: signUp, signIn, signOut, deleteAccount
     athletes.ts         perfis + autorizações: create (RPC), update, revoke, authorize, remove
     sessions.ts         treinos registrados (máx. 300 carregados)
     tests.ts            baterias de testes
@@ -98,7 +99,6 @@ src/
     types.ts            tipos de domínio
     age.ts              faixas 6–8, 9–11, 12–14, 15–17; allowedBirthYears
     consent.ts          CONSENT_VERSION, CONSENT_POINTS, activeConsent()
-    pin.ts              PIN com sal + SHA-256 no localStorage
     progress.ts         semanas, sequência da meta, próxima data de teste, evolução por teste, conquistas
     exportData.ts       cópia JSON da família (compartilhar ou baixar)
     dates.ts            datas locais (nunca toISOString para dia); semana começa na segunda
@@ -117,7 +117,7 @@ supabase/migrations/    0001 fundação · 0002 treinos · 0003 evolução · 00
 ### Padrões que o código segue
 
 - **Modo demo em toda operação de dados:** cada hook em `src/state/` tem um ramo `if (isDemo)` que chama `src/lib/demo.ts`. Toda função nova de dados precisa desse ramo.
-- **`loading` só na primeira carga.** Não volte a marcar `loading = true` num `reload`: o `App` troca a tela pelo splash, desmonta a Área do responsável e ela pede o PIN de novo.
+- **`loading` só na primeira carga.** Não volte a marcar `loading = true` num `reload`: o `App` troca a tela pelo splash e desmonta a tela aberta, por exemplo a Conta no meio de uma edição.
 - **Autorização manda no acesso.**
   - `activeConsent()` exige autorização **não revogada e da versão atual** do termo.
   - Sem ela, o perfil fica bloqueado na tela "Quem vai treinar?" e o banco recusa treinos e testes novos (policies da 0004).
@@ -146,7 +146,8 @@ supabase/migrations/    0001 fundação · 0002 treinos · 0003 evolução · 00
 
 **Projeto criado em 2026-09-12:** ref `szpmzcrxyisehrvwlene` (`https://szpmzcrxyisehrvwlene.supabase.co`).
 
-- **Migrações:** 0001–0004 aplicadas. **A 0005 (adultos) precisa ser rodada** no SQL Editor; sem ela, criar perfil próprio falha. A conferência das anteriores foi feita pela API pública:
+- **Migrações:** 0001–0005 aplicadas. A conferência foi feita pela API pública:
+  - `is_self` e `create_self_profile_with_consent` existem e recusam o acesso anônimo;
   - as 4 tabelas respondem "permission denied" ao acesso anônimo;
   - a coluna `weekly_goal` existe.
 - **Auth:** e-mail ativo, confirmação de e-mail obrigatória, cadastro aberto.
@@ -238,7 +239,7 @@ Formulários de Segurança dos dados, público-alvo (Famílias), classificação
 ## 10. Riscos e decisões em aberto
 
 - **Revogação guarda os registros** até o responsável autorizar de novo ou excluir o perfil. A revisão jurídica pode preferir exclusão automática após um prazo.
-- **Contagens com limite:** `useSessions` carrega no máximo 300 treinos, então as contagens da Área do responsável podem ficar abaixo do real em famílias muito ativas. A cópia de dados busca tudo, dentro do limite padrão de 1000 linhas por consulta do Supabase.
+- **Contagens com limite:** `useSessions` carrega no máximo 300 treinos, então as contagens da tela Conta podem ficar abaixo do real em famílias muito ativas. A cópia de dados busca tudo, dentro do limite padrão de 1000 linhas por consulta do Supabase.
 - **Idade por ano:** é calculada pela diferença de anos do calendário (`ano atual − ano de nascimento`), tanto no app quanto no banco.
 - **Comparação só consigo mesmo:** conquistas e testes nunca comparam atletas. Mantenha assim.
 - **Menor que completa 18 anos:** passa a receber a faixa Adulto, mas continua sendo perfil de menor, com autorização do responsável. Falta decidir se deve virar perfil próprio com conta própria.
