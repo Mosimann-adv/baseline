@@ -118,7 +118,7 @@ npx vite preview --outDir dist-demo   # servir a demo localmente
 
 ## 6. Demonstração (prévia pelo celular)
 
-- **Prévia navegável (privada, do dono):** https://claude.ai/code/artifact/22f74c46-a71c-45e8-a676-73c5bd4fbc47, versão 7, já sem PIN e com adultos.
+- **Prévia navegável:** modo demonstração (`npm run dev -- --mode demo`). Na tela inicial: **Explorar como adulto** (Rafa + Léo, com treinos e teste) e **Explorar como 16 anos** (Dani, aguardando responsável). Confirmação: `#/confirmar-responsavel`, e-mail `mae@exemplo.com`, código `482193`.
   - Publicada como Artifact do Claude Code a partir de `dist-demo/assets/*`, com uma página de entrada mínima.
   - O CSP da prévia provavelmente bloqueia o player do YouTube, e o download da cópia de dados não funciona dentro dela.
   - Dados antigos da demo podem aparecer como "Precisa de autorização" depois de trocas de versão do termo. É esperado; exclua a conta dentro da demo para recomeçar.

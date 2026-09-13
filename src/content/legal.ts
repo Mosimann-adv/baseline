@@ -8,6 +8,7 @@ const ORG = INSTITUTE_NAME;
 const CNPJ = INSTITUTE_CNPJ;
 const CONTACT = "[e-mail de privacidade a preencher]";
 const BACKUP_WINDOW = "[prazo a confirmar com o provedor]";
+const ADDRESS = "Escola de Educação Básica Intendente José Fernandes — Rod. João Gualberto Soares, 324, Ingleses Norte, Florianópolis/SC";
 
 export type LegalId = "privacidade" | "termos" | "excluir-conta";
 
@@ -31,8 +32,8 @@ export const LEGAL_DOCS: Record<LegalId, LegalDoc> = {
       {
         title: "Quem cuida dos dados",
         blocks: [
-          `O Baseline é mantido pelo ${ORG} (CNPJ ${CNPJ}), controlador dos dados nos termos da Lei Geral de Proteção de Dados (Lei 13.709/2018).`,
-          `Encarregado pelo tratamento de dados: [nome a preencher], pelo e-mail ${CONTACT}.`,
+          `O Baseline é mantido pelo ${ORG} (CNPJ ${CNPJ}), controlador dos dados nos termos da Lei Geral de Proteção de Dados (Lei 13.709/2018). Treinamos em ${ADDRESS}.`,
+          `Encarregado pelo tratamento de dados: [nome a preencher], pelo e-mail ${CONTACT}. Até lá, o canal público do Instituto é o WhatsApp (48) 9664-1051.`,
         ],
       },
       {

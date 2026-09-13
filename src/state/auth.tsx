@@ -1,7 +1,7 @@
 import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
 import type { Session } from "@supabase/supabase-js";
 import { isDemo, requireSupabase, supabase } from "../lib/supabase";
-import { demoDeleteAccount, demoSession, demoSignIn, demoSignOut } from "../lib/demo";
+import { demoDeleteAccount, demoSession, demoSignIn, demoSignOut, demoStart } from "../lib/demo";
 import type { AccountKind } from "../lib/account";
 import { metaFromSession } from "../lib/account";
 
@@ -18,6 +18,7 @@ interface AuthValue {
   loading: boolean;
   signUp: (input: SignUpInput) => Promise<{ needsConfirmation: boolean }>;
   signIn: (email: string, password: string) => Promise<void>;
+  enterDemo: (kind: AccountKind) => void;
   requestPasswordCode: (email: string) => Promise<void>;
   verifyPasswordCode: (email: string, token: string) => Promise<void>;
   updatePassword: (password: string) => Promise<void>;
@@ -73,6 +74,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
         const { error } = await requireSupabase().auth.signInWithPassword({ email, password });
         if (error) throw error;
+      },
+      enterDemo(kind) {
+        if (!isDemo) return;
+        setSession(demoStart(kind));
       },
       async requestPasswordCode(email) {
         if (isDemo) return;

@@ -1,6 +1,7 @@
 import { useState, type FormEvent } from "react";
 import { useAuth } from "../state/auth";
 import { friendlyError } from "../lib/errors";
+import { isDemo } from "../lib/supabase";
 import { ageThisYear, selfBirthYears } from "../lib/age";
 import { kindFromBirthYear } from "../lib/account";
 import { LEGAL_DOCS, type LegalId } from "../content/legal";
@@ -49,15 +50,31 @@ export function AuthFlow() {
 }
 
 function Welcome({ onSignIn, onSignUp, onDoc }: { onSignIn: () => void; onSignUp: () => void; onDoc: (doc: LegalId) => void }) {
+  const { enterDemo } = useAuth();
   return (
     <main className="welcome">
       <img src="icons/icon-192.png" alt="" width={88} height={88} className="welcome-icon" />
       <h1 className="large-title">Baseline</h1>
       <p className="welcome-sub">Treinos de basquete guiados, com vídeo, para você e para as crianças e adolescentes que você acompanha.</p>
       <div className="welcome-actions">
-        <PrimaryButton onClick={onSignUp}>Criar conta</PrimaryButton>
+        {isDemo && (
+          <>
+            <PrimaryButton onClick={() => enterDemo("adult")}>Explorar como adulto</PrimaryButton>
+            <PlainButton onClick={() => enterDemo("teen")}>Explorar como 16 anos</PlainButton>
+          </>
+        )}
+        {isDemo ? <PlainButton onClick={onSignUp}>Criar conta vazia</PlainButton> : <PrimaryButton onClick={onSignUp}>Criar conta</PrimaryButton>}
         <PlainButton onClick={onSignIn}>Já tenho conta</PlainButton>
       </div>
+      {isDemo && (
+        <p className="fine">
+          Na demonstração de 16 anos o responsável confirma em{" "}
+          <button type="button" className="inline-link" onClick={() => (window.location.hash = "/confirmar-responsavel")}>
+            confirmar responsável
+          </button>{" "}
+          com o e-mail mae@exemplo.com e o código 482193.
+        </p>
+      )}
       <p className="fine">A conta é a partir de 16 anos. De 16 a 17, um responsável confirma por e-mail. Quem tem menos de 16 treina pelo perfil criado pelo responsável.</p>
       <p className="fine legal-links">
         <button type="button" className="inline-link" onClick={() => onDoc("privacidade")}>
@@ -101,7 +118,7 @@ function SignIn({ onBack, onSwitch, onForgot }: { onBack: () => void; onSwitch: 
         <PrimaryButton type="submit" disabled={busy || !email || !password}>
           {busy ? "Entrando…" : "Entrar"}
         </PrimaryButton>
-        <PlainButton onClick={onForgot}>Esqueci a senha</PlainButton>
+        {!isDemo && <PlainButton onClick={onForgot}>Esqueci a senha</PlainButton>}
         <PlainButton onClick={onSwitch}>Criar conta</PlainButton>
       </form>
     </Screen>

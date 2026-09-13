@@ -1,6 +1,6 @@
 import type { Session } from "@supabase/supabase-js";
 import type { Athlete, AthletePatch, Consent, NewAthleteInput, NewSessionInput, NewTestInput, SkillTestRecord, TrainingSession } from "./types";
-import { CONSENT_VERSION, consentVersionFor } from "./consent";
+import { CONSENT_VERSION, SELF_CONSENT_VERSION, TEEN_CONSENT_VERSION, consentVersionFor } from "./consent";
 import { MAX_AGE, MIN_AGE, SELF_MIN_AGE, ageThisYear } from "./age";
 import { localIsoDate } from "./dates";
 import type { AccountKind } from "./account";
@@ -236,4 +236,99 @@ export function demoCreateTest(guardianId: string, input: NewTestInput): SkillTe
   data.tests.unshift(record);
   write(DATA_KEY, data);
   return record;
+}
+
+/** Pré-carrega uma família de exemplo para explorar o app sem cadastrar. */
+export function demoStart(kind: AccountKind): Session {
+  const now = new Date().toISOString();
+  const year = new Date().getFullYear();
+  const adultBirth = year - 36;
+  const teenBirth = year - 16;
+  const childBirth = year - 10;
+  const selfId = crypto.randomUUID();
+  const childId = crypto.randomUUID();
+
+  const daysAgo = (days: number) => {
+    const date = new Date();
+    date.setDate(date.getDate() - days);
+    return localIsoDate(date);
+  };
+
+  if (kind === "teen") {
+    const self: Athlete = {
+      id: selfId,
+      guardian_id: DEMO_GUARDIAN_ID,
+      nickname: "Dani",
+      birth_year: teenBirth,
+      level: "iniciante",
+      position: "ala",
+      weekly_goal: 3,
+      is_self: true,
+      created_at: now,
+    };
+    write(DATA_KEY, {
+      athletes: [self],
+      consents: [{ id: crypto.randomUUID(), athlete_id: selfId, document_version: TEEN_CONSENT_VERSION, accepted_at: now, revoked_at: null }],
+      sessions: [],
+      tests: [],
+      parent: { userId: DEMO_GUARDIAN_ID, parentEmail: "mae@exemplo.com", code: "482193", confirmed: false },
+    } satisfies DemoData);
+    return demoSignIn("dani@exemplo.com", { birthYear: teenBirth, parentEmail: "mae@exemplo.com", kind: "teen" });
+  }
+
+  const self: Athlete = {
+    id: selfId,
+    guardian_id: DEMO_GUARDIAN_ID,
+    nickname: "Rafa",
+    birth_year: adultBirth,
+    level: "iniciante",
+    position: "armador",
+    weekly_goal: 3,
+    is_self: true,
+    created_at: now,
+  };
+  const child: Athlete = {
+    id: childId,
+    guardian_id: DEMO_GUARDIAN_ID,
+    nickname: "Léo",
+    birth_year: childBirth,
+    level: "iniciante",
+    position: null,
+    weekly_goal: 3,
+    is_self: false,
+    created_at: now,
+  };
+  const session = (athleteId: string, programId: string, days: number, minutes: number, feeling: 1 | 2 | 3 | 4 | 5): TrainingSession => ({
+    id: crypto.randomUUID(),
+    guardian_id: DEMO_GUARDIAN_ID,
+    athlete_id: athleteId,
+    program_id: programId,
+    performed_on: daysAgo(days),
+    minutes,
+    drills_done: 4,
+    drills_total: 4,
+    feeling,
+    discomfort: false,
+    created_at: now,
+  });
+  write(DATA_KEY, {
+    athletes: [self, child],
+    consents: [
+      { id: crypto.randomUUID(), athlete_id: selfId, document_version: SELF_CONSENT_VERSION, accepted_at: now, revoked_at: null },
+      { id: crypto.randomUUID(), athlete_id: childId, document_version: CONSENT_VERSION, accepted_at: now, revoked_at: null },
+    ],
+    sessions: [session(selfId, "mao-fraca", 0, 18, 4), session(selfId, "arremesso-base", 2, 22, 5), session(childId, "drible-duas-maos", 1, 16, 4)],
+    tests: [
+      {
+        id: crypto.randomUUID(),
+        guardian_id: DEMO_GUARDIAN_ID,
+        athlete_id: selfId,
+        tested_on: daysAgo(10),
+        results: { "lance-livre": 4, "arremessos-1min": 12, "mao-fraca-30s": 38, "zigue-zague": 18.4, "sprint-10m": 2.3, "salto-vertical": 28 },
+        created_at: now,
+      },
+    ],
+    parent: null,
+  } satisfies DemoData);
+  return demoSignIn("rafa@exemplo.com", { birthYear: adultBirth, kind: "adult" });
 }
