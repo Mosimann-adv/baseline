@@ -258,6 +258,31 @@ button.row:active { background: var(--fill); }
 .athlete-card.locked .avatar { opacity: 0.55; }
 .athlete-card.locked span:last-child { color: var(--coral-soft); }
 
+/* ---------- Apoie o Arvoredo (só na tela Conta) ---------- */
+a.row { color: inherit; text-decoration: none; }
+.pix-box {
+  display: grid; justify-items: center; gap: 10px; padding: 18px 16px 16px; text-align: center;
+}
+.pix-box + .row::before { left: 16px; }
+.pix-lead { margin: 0; font-size: 17px; font-weight: 600; line-height: 1.3; color: var(--text); max-width: 28ch; }
+.pix-hint, .pix-note { margin: 0; font-size: 13px; line-height: 1.45; color: var(--text-3); max-width: 36ch; }
+.pix-qr {
+  width: 150px; height: 150px; border-radius: 12px; background: #fff; padding: 8px;
+}
+.pix-key {
+  display: flex; align-items: center; gap: 8px; width: 100%;
+  padding: 8px 8px 8px 14px; border-radius: 12px; background: var(--fill);
+}
+.pix-key-text {
+  flex: 1; min-width: 0; font-variant-numeric: tabular-nums; letter-spacing: 0.04em;
+  font-size: 15px; color: var(--text); overflow: hidden; text-overflow: ellipsis;
+}
+.copy-btn {
+  flex: 0 0 auto; min-height: 36px; padding: 0 14px; border: 0; border-radius: 999px;
+  background: var(--coral-strong); color: var(--cream); font-size: 14px; font-weight: 600;
+}
+.copy-btn:active { opacity: 0.72; }
+
 .demo-banner {
   position: sticky; top: 0; z-index: 10; margin: 0; padding: calc(6px + var(--safe-top)) 16px 6px;
   background: var(--yellow); color: var(--navy-deep); font-size: 13px; font-weight: 600; text-align: center;

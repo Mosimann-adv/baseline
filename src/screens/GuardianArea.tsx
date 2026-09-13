@@ -8,6 +8,8 @@ import { friendlyError } from "../lib/errors";
 import { collectFamilyData, saveJsonFile } from "../lib/exportData";
 import { LEVELS, POSITIONS } from "../lib/profile";
 import { LEGAL_DOCS, type LegalId } from "../content/legal";
+import { INSTITUTE_CNPJ, INSTITUTE_NAME, PIX_KEY, SUPPORT } from "../content/support";
+
 import { LegalScreen } from "./LegalScreen";
 import type { Athlete, AthletePatch, Consent, Level, Position, SkillTestRecord, TrainingSession } from "../lib/types";
 
@@ -60,6 +62,7 @@ function AccountSettings({
   const [busy, setBusy] = useState(false);
   const [exporting, setExporting] = useState(false);
   const [exportNote, setExportNote] = useState<string | null>(null);
+  const [copied, setCopied] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -119,6 +122,24 @@ function AccountSettings({
     }
   }
 
+  async function copyPix() {
+    try {
+      await navigator.clipboard.writeText(PIX_KEY);
+    } catch {
+      const field = document.createElement("textarea");
+      field.value = PIX_KEY;
+      field.setAttribute("readonly", "");
+      field.style.position = "fixed";
+      field.style.left = "-9999px";
+      document.body.appendChild(field);
+      field.select();
+      document.execCommand("copy");
+      field.remove();
+    }
+    setCopied(true);
+    window.setTimeout(() => setCopied(false), 2000);
+  }
+
   return (
     <Screen eyebrow="Baseline" title="Conta" onBack={onBack}>
       <Group header="Perfis de treino" footer="Toque em um perfil para corrigir os dados, mudar a meta semanal, revogar o aceite ou excluir.">
@@ -165,6 +186,45 @@ function AccountSettings({
         </button>
       </Group>
       {exportNote && <Notice tone="success">{exportNote}</Notice>}
+
+      <Group
+        header="Apoie o Arvoredo"
+        footer="O app é gratuito. A doação é opcional e vai para o Instituto, não para o app. Nunca aparece na tela de treino."
+      >
+        <div className="pix-box">
+          <p className="pix-lead">Cada real vira treino, bola e oportunidade.</p>
+          <img className="pix-qr" src="pix-qr.png" alt="QR Code Pix do Instituto Arvoredo" width={150} height={150} />
+          <p className="pix-hint">Escaneie o QR Code ou copie a chave Pix. Qualquer valor ajuda a pagar materiais, viagens para campeonatos e uniformes.</p>
+          <div className="pix-key">
+            <span className="pix-key-text">{PIX_KEY}</span>
+            <button type="button" className="copy-btn" onClick={() => void copyPix()}>
+              {copied ? "Copiado" : "Copiar"}
+            </button>
+          </div>
+          <p className="pix-note">Chave Pix (CNPJ {INSTITUTE_CNPJ}) do {INSTITUTE_NAME}.</p>
+        </div>
+        <a className="row row-nav" href={SUPPORT.whatsapp} target="_blank" rel="noopener noreferrer">
+          <span className="row-label">
+            WhatsApp
+            <small>{SUPPORT.whatsappLabel}</small>
+          </span>
+        </a>
+        <a className="row row-nav" href={SUPPORT.instagram} target="_blank" rel="noopener noreferrer">
+          <span className="row-label">
+            Instagram
+            <small>{SUPPORT.instagramLabel}</small>
+          </span>
+        </a>
+        <a className="row row-nav" href={SUPPORT.sponsor} target="_blank" rel="noopener noreferrer">
+          <span className="row-label">
+            Para empresas
+            <small>Cotas Bola, Uniforme e Cesta no site do Instituto</small>
+          </span>
+        </a>
+        <a className="row row-nav" href={SUPPORT.donate} target="_blank" rel="noopener noreferrer">
+          <span className="row-label">Abrir o site do Arvoredo</span>
+        </a>
+      </Group>
 
       <Group header="Conta">
         <div className="row">

@@ -1,9 +1,11 @@
+import { INSTITUTE_CNPJ, INSTITUTE_NAME } from "./support";
+
 // RASCUNHO — pendente de revisão jurídica. Trechos entre colchetes precisam ser preenchidos antes de publicar.
 // Mudou o texto de forma relevante? Troque LEGAL_VERSION.
-export const LEGAL_VERSION = "2026-09-rascunho-3";
+export const LEGAL_VERSION = "2026-09-rascunho-4";
 
-const ORG = "Instituto Arvoredo";
-const CNPJ = "[CNPJ a preencher]";
+const ORG = INSTITUTE_NAME;
+const CNPJ = INSTITUTE_CNPJ;
 const CONTACT = "[e-mail de privacidade a preencher]";
 const BACKUP_WINDOW = "[prazo a confirmar com o provedor]";
 
@@ -149,7 +151,8 @@ export const LEGAL_DOCS: Record<LegalId, LegalDoc> = {
       {
         title: "O que é o Baseline",
         blocks: [
-          `O Baseline é um app de treinos de basquete para adultos e para crianças e adolescentes de 6 a 17 anos acompanhados por um adulto, mantido pelo ${ORG} (CNPJ ${CNPJ}). [Confirmar se o uso é gratuito.]`,
+          `O Baseline é um app de treinos de basquete para adultos e para crianças e adolescentes de 6 a 17 anos acompanhados por um adulto, mantido pelo ${ORG} (CNPJ ${CNPJ}). O uso do app é gratuito.`,
+          "Quem quiser pode fazer uma doação opcional ao Instituto pela tela Conta (Pix) ou pelo site do Arvoredo. A doação não é cobrança pelo app, não desbloqueia treino e nunca aparece na tela em que a criança treina. Empresas que quiserem patrocinar falam com a coordenação pelo site.",
         ],
       },
       {

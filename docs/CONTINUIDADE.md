@@ -1,6 +1,6 @@
 # Continuidade do desenvolvimento — Baseline by Arvoredo
 
-Atualizado em 2026-09-12, no commit `8774ff6` + este documento. É a passagem de bastão para quem continuar o projeto (pessoa ou agente).
+Atualizado em 2026-09-13.
 
 Leia nesta ordem:
 1. `AGENTS.md` — regras que não mudam sem pedido explícito.
@@ -13,13 +13,14 @@ Leia nesta ordem:
 
 - **O que é:** app de treinos de basquete para **adultos** e para **crianças (6+) e adolescentes** acompanhados por um adulto. Nome público **Baseline**; marca **Baseline by Arvoredo**.
 - **Quem mantém:** Instituto Arvoredo. A publicação no Google Play será por **conta de organização** do Instituto, que exige número D-U-N-S.
-- **Modelo de conta:** a conta é sempre de um **adulto (18+)**, com login por e-mail e senha.
+- **Modelo de conta (v1 no ar):** a conta é de um **adulto (18+)**, com login por e-mail e senha.
   - O adulto pode ter **um perfil próprio de treino** (`athletes.is_self = true`), com consentimento do titular.
   - O adulto pode criar **perfis de crianças e adolescentes** (6–17), com autorização de responsável legal. Esses perfis não têm login, e-mail nem perfil público.
   - Conta sem perfis abre na tela **"Quem vai treinar?"**, com as opções "Eu" e "Uma criança ou adolescente".
+  - **Decidido em 2026-09-13, ainda não no código:** conta própria a partir de **16 anos**, com e-mail do responsável confirmando. Menores de 16 continuam só como perfil criado pelo responsável. Implementar depois da revisão jurídica, como etapa própria (não misturar com a fila offline).
 - **Tela Conta** (componente `GuardianArea.tsx`, nome antigo "Área do responsável"):
   - abre direto, **sem PIN**;
-  - é onde se criam e corrigem perfis, se revogam e renovam aceites, se baixa a cópia dos dados, se leem os textos legais e se sai da conta ou a exclui;
+  - é onde se criam e corrigem perfis, se revogam e renovam aceites, se baixa a cópia dos dados, se lêem os textos legais, se apoia o Instituto (Pix) e se sai da conta ou a exclui;
   - ações sem volta pedem confirmação em dois passos.
 - **Escopo da v1:** não há área do treinador. O foco é quem treina:
   - treinos guiados com vídeo do exercício tocando na tela;
@@ -50,7 +51,7 @@ Leia nesta ordem:
 - Treinos e testes são **rascunho** até a validação do profissional de educação física.
 - Textos legais e termos de aceite são **rascunho** até a revisão jurídica.
 
-## 3. Registro de decisões (todas em 2026-09-12)
+## 3. Registro de decisões
 
 | Decisão | Motivo / detalhe |
 |---|---|
@@ -66,7 +67,8 @@ Leia nesta ordem:
 | Faixa Adulto reaproveita treinos e testes de 15–17 na v1 | Opção recomendada, escolhida pelo dono |
 | Perfil próprio do adulto também exige consentimento (`SELF_CONSENT_VERSION`) | "Algo doeu?" é dado de saúde (LGPD art. 11, I); decisão técnica comunicada ao dono |
 | **Sem PIN** na tela Conta | Pedido do dono: "Nao tem nada que demande tanta restrição"; ficam só as confirmações em dois passos |
-| Captação de recursos: **não decidida** (seção 10) | Discutida; nada implementado |
+| **Conta própria a partir de 16 anos** (2026-09-13; ainda não no código) | O corte de 18+ estava rígido para o adolescente que já treina sozinho. ECA Digital usa 16 como marco em redes sociais; 16–17 cria login com e-mail do responsável confirmando; <16 só por perfil do responsável. Cadastro no ar continua 18+ até a revisão jurídica e a etapa própria. |
+| **App gratuito na v1; Apoie o Arvoredo na tela Conta** (2026-09-13) | Sem anúncio, sem compra no treino. Doação opcional no estilo do site (Pix CNPJ `56660275000106`, QR, WhatsApp). Cotas Bola / Uniforme / Cesta para empresas no site. Captação principal continua fora da loja (incentivo, patrocínio). |
 
 ## 4. Estado atual
 
@@ -80,6 +82,7 @@ Leia nesta ordem:
 | `aae6fd2`, `94a9b77`, `793555b` | Supabase e Vercel registrados; `.env.production`; build ignora variáveis vazias |
 | `f0dc858` | Adultos: perfil próprio, tela "Quem vai treinar?", faixa Adulto, consentimento do titular; migração 0005 |
 | `8774ff6` | Remove o PIN; textos legais na versão `rascunho-3` |
+| (este) | Apoie o Arvoredo na tela Conta (Pix, QR, WhatsApp); app gratuito; conta a partir de 16 registrada como rumo; CNPJ nos termos (`rascunho-4`) |
 
 Etapas do `README.md`:
 1. Fundação — pronta.
@@ -207,13 +210,14 @@ src/
     programs.ts         11 programas por faixa e nível; VIDEOS com IDs verificados
     tests.ts            7 testes de habilidade; sprint e salto só a partir de 12 anos
     legal.ts            política, termos e página de exclusão (LEGAL_VERSION)
+    support.ts          CNPJ, Pix, WhatsApp, Instagram, URLs do site (Apoie o Arvoredo)
   screens/
     AuthScreens         boas-vindas, entrar, criar conta (declaração 18+ e aceite dos termos)
     ProfileChoice       "Quem vai treinar?" para conta sem perfis
     NewAthlete          cria perfil: kind "self" (adulto) ou "minor" (com declaração de responsável)
     WhoTrains           escolha de perfil; perfil sem aceite aparece bloqueado
     AthleteHome, ProgramDetail, TrainingSession, Progress, TestSession
-    GuardianArea        tela Conta (perfis, aceites, dados, textos legais, sair, excluir)
+    GuardianArea        tela Conta (perfis, aceites, dados, Apoie o Arvoredo, textos legais, sair, excluir)
     LegalScreen         renderiza os textos de legal.ts
   styles.css            tokens de design (azul-marinho, laranja, amarelo, creme) e componentes
 supabase/migrations/    0001 fundação · 0002 treinos · 0003 evolução · 0004 privacidade · 0005 adultos
@@ -240,6 +244,7 @@ supabase/migrations/    0001 fundação · 0002 treinos · 0003 evolução · 00
   - títulos na fonte Breymont com `text-transform: lowercase`, porque as maiúsculas são estilizadas e a fonte não tem – nem —;
   - nenhuma biblioteca de interface externa;
   - vídeos só por `youtube-nocookie.com`.
+  - doação só na tela Conta; constantes em `src/content/support.ts`.
 
 ## 10. Próximos passos
 
@@ -271,18 +276,20 @@ supabase/migrations/    0001 fundação · 0002 treinos · 0003 evolução · 00
    - Testar vídeo `youtube-nocookie` no WebView (origem `https://localhost`), tela ligada (Wake Lock ou `@capacitor-community/keep-awake`) e vibração.
 3. **"Esqueci a senha"** (não existe; hoje `detectSessionInUrl: false`). Avaliar código OTP por e-mail, que evita deep link.
 4. **Formulários do Google Play:** Segurança dos dados, público-alvo (Famílias, público misto), classificação de conteúdo, URL da política.
+5. **Conta a partir de 16 anos** (decidido; não começou).
+   - 16–17 cria login, com e-mail do responsável confirmando.
+   - Menor de 16 continua só como perfil criado pelo responsável, sem login.
+   - "Algo doeu?" continua dado de saúde: o termo de 16–17 e o fluxo de confirmação do responsável passam pela revisão jurídica **antes** do código.
+   - Aos 16 ou aos 18, decidir o que acontece com perfil de menor já existente (virar conta própria ou continuar no responsável).
+   - Não misturar essa etapa com a fila offline.
 
-### 10.3 Captação de recursos (discutida, não decidida)
+### 10.3 Captação de recursos (decidida em 2026-09-13)
 
-O dono perguntou se dá para captar recursos pelo Google Play. A recomendação apresentada:
-
-- **App gratuito e sem compras na v1.**
-  - App pago afasta o público.
-  - Compra ou assinatura pelo Google Play Billing custa taxa de 15%.
-  - Anúncio é incompatível com as regras do app.
-- **Seção "Apoie o Instituto Arvoredo" na tela Conta**, com link para doação no site do Instituto. Só depois de conferir a política de Pagamentos do Google Play em vigor, que trata doações de forma específica e muda com frequência. **Nunca** na área em que a criança treina.
+- **App gratuito na v1.** Sem compra, sem assinatura, sem anúncio.
+- **"Apoie o Arvoredo" na tela Conta**, no estilo do site [arvoredobasquete.pages.dev](https://arvoredobasquete.pages.dev/#doar): texto "Cada real vira treino, bola e oportunidade", QR Pix, copiar chave CNPJ `56660275000106`, WhatsApp e Instagram. Link para cotas de empresas (Bola, Uniforme, Cesta) no site. **Nunca** na tela de treino.
+- Doação é para o Instituto, fora do Google Play Billing. Se a política de Pagamentos do Play mudar, o advogado revisa antes da publicação na loja.
 - **Captação principal fora da loja:** Lei de Incentivo ao Esporte (Lei 11.438/2006, permanente pela Lei 14.439/2022), Fundos da Infância e Adolescência (art. 260 do ECA), termos de fomento (Lei 13.019/2014), patrocínio e editais, e Google for Nonprofits (anúncios para divulgação). Confirmar os percentuais de dedução vigentes.
-- **Indicadores de impacto** (perfis ativos, treinos, evolução média) só com dados **agregados e anônimos**, e depois de incluir essa finalidade na política e nos termos de aceite. Isso significa nova versão dos termos e novo aceite.
+- **Indicadores de impacto** (perfis ativos, treinos, evolução média) só com dados **agregados e anônimos**, e depois de incluir essa finalidade na política e nos termos de aceite. Isso significa nova versão dos termos e novo aceite. **Não está na v1.**
 
 ## 11. Pendências fora do código (dependem do dono)
 
@@ -296,22 +303,21 @@ O dono perguntou se dá para captar recursos pelo Google Play. A recomendação 
 - [ ] Conta de organização no Google Play (Instituto Arvoredo, D-U-N-S).
 - [ ] Confirmar o `appId`.
 - [ ] Revisão jurídica de `src/lib/consent.ts` (termo de menores e de adultos) e `src/content/legal.ts`. Preencher os trechos entre colchetes:
-  - CNPJ do Instituto Arvoredo;
   - e-mail de privacidade e nome do encarregado;
   - prazo das cópias de segurança do provedor;
   - prazo para atender pedido de exclusão por e-mail;
   - região do Supabase;
   - nome e CREF do profissional de educação física;
-  - se o uso é gratuito.
+  - fluxo de conta aos 16 (e-mail do responsável e dado de saúde).
+- [x] CNPJ do Instituto preenchido (`56.660.275/0001-06`); app descrito como gratuito; Apoie o Arvoredo na tela Conta.
 - [ ] Validação dos 11 programas e dos 7 testes por profissional de educação física, inclusive o uso deles para adultos.
 - [ ] Vídeos: só **9 dos 44 exercícios** têm vídeo; os IDs novos precisam ser escolhidos e verificados.
-- [ ] Decidir a estratégia de captação (seção 10.3).
 
 ## 12. Riscos e questões em aberto
 
 - **Sem PIN:** uma criança com o aparelho do adulto consegue abrir a Conta e, confirmando duas vezes, revogar aceites ou excluir perfis e a conta. Se incomodar, a alternativa combinada é pedir a **senha da conta** só para excluir a conta, sem voltar ao PIN.
 - **Revogação guarda os registros** até novo aceite ou exclusão do perfil. A revisão jurídica pode preferir exclusão automática após um prazo.
-- **Menor que completa 18 anos:** passa a ver a faixa Adulto, mas continua perfil de menor com autorização do responsável. Falta decidir se deve virar perfil próprio ou conta própria.
+- **Menor que completa 16 ou 18 anos:** hoje o perfil de menor continua no responsável mesmo depois dos 18 (só a faixa de treino muda). Com a conta a partir de 16 (decidida, não implementada), falta definir a conversão: convite para conta própria, permanência no responsável, ou os dois.
 - **Faixa Adulto:** reaproveita o conteúdo de 15–17. Treinos específicos para adultos dependem do profissional de educação física.
 - **Contagens com limite:** `useSessions` carrega no máximo 300 treinos, então as contagens da Conta podem ficar abaixo do real. A cópia de dados busca tudo, até 1000 linhas por consulta.
 - **Idade por ano:** calculada como `ano atual − ano de nascimento`, no app e no banco.

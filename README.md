@@ -1,6 +1,6 @@
 # Baseline by Arvoredo
 
-App de treinos de basquete para adultos e para crianças e adolescentes. A conta é de um adulto, que pode treinar pelo próprio perfil e criar perfis para os menores que acompanha. Cada perfil treina, registra e acompanha a própria evolução.
+App de treinos de basquete para adultos e para crianças e adolescentes. A conta, na v1, é de um adulto, que pode treinar pelo próprio perfil e criar perfis para os menores que acompanha. Cada perfil treina, registra e acompanha a própria evolução. O app é gratuito; na tela Conta há um Apoie o Arvoredo (Pix), no estilo do site do Instituto.
 
 Stack: Vite + TypeScript + React, empacotado para Android com Capacitor. Dados no Supabase.
 
