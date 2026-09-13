@@ -162,8 +162,9 @@ Migração nova: crie `supabase/migrations/0005_...sql` e rode-a no SQL Editor d
 - **Deploy:** automático a cada push na `main` (preset Vite, `npm run build`, pasta `dist`).
 - **Endereço e chave do Supabase:** ficam em `.env.production`, versionado no repositório.
   - São valores públicos: a chave publishable vai de qualquer forma para o navegador, e a proteção dos dados é o RLS.
-  - Motivo: as variáveis cadastradas no painel da Vercel não chegaram ao build (em 2026-09-12 o bundle saiu idêntico ao de um build sem variáveis).
-  - Variáveis do processo, se um dia funcionarem na Vercel, têm prioridade sobre o arquivo.
+  - Motivo: na Vercel as variáveis `VITE_SUPABASE_URL` e `VITE_SUPABASE_ANON_KEY` foram cadastradas **sem valor**. Variável de ambiente tem prioridade sobre o `.env.production`, mesmo vazia, e o site saiu sem Supabase.
+  - O `vite.config.ts` agora ignora essas duas quando estão vazias. Uma variável com valor na Vercel continua tendo prioridade sobre o arquivo.
+  - Arrumação opcional: apagar as duas variáveis vazias no painel da Vercel.
 - **Conferir um deploy:** procure `szpmzcrxyisehrvwlene` dentro do `assets/index-*.js` publicado.
 - **Páginas públicas:**
   - https://baseline-six-sigma.vercel.app/#/privacidade
