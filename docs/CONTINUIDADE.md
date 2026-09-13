@@ -1,57 +1,85 @@
 # Continuidade do desenvolvimento — Baseline by Arvoredo
 
-Atualizado em 2026-09-12. Este arquivo é a passagem de bastão para quem continuar o projeto (pessoa ou agente).
-Leia junto com `AGENTS.md` (regras que não mudam sem pedido explícito) e `README.md` (como rodar).
+Atualizado em 2026-09-12, no commit `8774ff6` + este documento. É a passagem de bastão para quem continuar o projeto (pessoa ou agente).
+
+Leia nesta ordem:
+1. `AGENTS.md` — regras que não mudam sem pedido explícito.
+2. Este arquivo — produto, decisões, estado, como verificar e o que falta.
+3. `README.md` — resumo de como rodar.
 
 ---
 
 ## 1. O produto em uma página
 
-- **O que é:** app de treinos de basquete para adultos e para crianças (a partir de 6 anos) e adolescentes acompanhados por um adulto. Nome público **Baseline**; marca **Baseline by Arvoredo**.
+- **O que é:** app de treinos de basquete para **adultos** e para **crianças (6+) e adolescentes** acompanhados por um adulto. Nome público **Baseline**; marca **Baseline by Arvoredo**.
 - **Quem mantém:** Instituto Arvoredo. A publicação no Google Play será por **conta de organização** do Instituto, que exige número D-U-N-S.
-- **Modelo de conta** (decisão de 2026-09-12): a conta é sempre de um **adulto (18+)**.
-  - O adulto pode ter **um perfil próprio de treino** (`is_self`), com consentimento do titular.
-  - O adulto pode criar **perfis de crianças e adolescentes** (6–17), com autorização do responsável. Esses perfis não têm login nem e-mail.
-  - Conta nova começa pela tela "Quem vai treinar?" (Eu / Uma criança ou adolescente).
-- **Tela Conta** (antes "Área do responsável"; o componente continua `GuardianArea.tsx`): abre direto, **sem PIN**, por decisão do dono em 2026-09-12. As ações sem volta pedem confirmação em dois passos.
-- **Faixa Adulto:** na v1 usa os mesmos treinos e testes de 15–17 (`contentBand` em `src/lib/age.ts`).
-- **Escopo da v1:** não há área do treinador. O foco é o atleta:
-  - treinos guiados com vídeo;
-  - registro dos treinos;
-  - testes a cada 4 semanas;
-  - meta semanal e conquistas.
-- **Stack:** Vite 8 + TypeScript 7 + React 19, empacotado com Capacitor 8 (Android primeiro, iPhone depois). O banco é o Supabase (Auth por e-mail e senha, RLS, funções RPC).
-- **Conteúdo dos treinos:** precisa ser validado por um profissional de educação física antes do lançamento.
-- **Público infantil:** o app tem de cumprir três conjuntos de regras.
-  - LGPD art. 14 (consentimento específico de um dos pais).
-  - ECA Digital (Lei 15.211/2025).
-  - Política de Famílias do Google Play: sem anúncios, sem identificador de publicidade, sem ferramentas de análise de terceiros, exclusão de conta no app e na web, coleta mínima.
+- **Modelo de conta:** a conta é sempre de um **adulto (18+)**, com login por e-mail e senha.
+  - O adulto pode ter **um perfil próprio de treino** (`athletes.is_self = true`), com consentimento do titular.
+  - O adulto pode criar **perfis de crianças e adolescentes** (6–17), com autorização de responsável legal. Esses perfis não têm login, e-mail nem perfil público.
+  - Conta sem perfis abre na tela **"Quem vai treinar?"**, com as opções "Eu" e "Uma criança ou adolescente".
+- **Tela Conta** (componente `GuardianArea.tsx`, nome antigo "Área do responsável"):
+  - abre direto, **sem PIN**;
+  - é onde se criam e corrigem perfis, se revogam e renovam aceites, se baixa a cópia dos dados, se leem os textos legais e se sai da conta ou a exclui;
+  - ações sem volta pedem confirmação em dois passos.
+- **Escopo da v1:** não há área do treinador. O foco é quem treina:
+  - treinos guiados com vídeo do exercício tocando na tela;
+  - registro do treino (como foi de 1 a 5 e "algo doeu?" sim/não);
+  - testes de habilidade a cada 4 semanas, com gráficos;
+  - meta semanal, sequência de semanas e conquistas, sem comparar pessoas.
+- **Faixas:** 6–8 Iniciação, 9–11 Minibasquete, 12–14 Fundamentos, 15–17 Desenvolvimento e **Adulto (18+)**. Na v1, a faixa Adulto usa os treinos e testes de 15–17 (`contentBand` em `src/lib/age.ts`).
+- **Stack:** Vite 8 + TypeScript 7 + React 19, empacotado com Capacitor 8 (Android primeiro, iPhone depois). O banco é o Supabase: Auth, RLS e funções RPC.
+- **Regras externas que o app segue** (por ter crianças no público):
+  - LGPD art. 14 (consentimento específico de um dos pais);
+  - LGPD art. 11 ("algo doeu?" é dado de saúde, por isso o adulto também consente);
+  - ECA Digital (Lei 15.211/2025);
+  - política de Famílias do Google Play: sem anúncios, sem ID de publicidade, sem análise de terceiros, exclusão de conta no app e na web, coleta mínima.
 - **Repositório:** `Mosimann-adv/baseline`, privado, branch `main`.
-  - É um produto separado do app pessoal `basketball-workout`.
-  - Não copie código, dados, plano de treino nem configuração do Supabase do app pessoal.
+  - Produto **separado** do app pessoal `basketball-workout`.
+  - Não copie código, dados, plano de treino nem o Supabase do app pessoal.
 
 ## 2. Como trabalhar com o dono do projeto
 
-- Responda sempre em **português do Brasil**, com acentuação correta.
-- O dono costuma acompanhar **pelo celular**. Mudança visual deve vir com uma demonstração navegável (modo demo, seção 6), não só com um relato em texto.
-- **Commit e push só com autorização explícita** a cada vez.
-- **Nunca** digite senhas nem faça login no lugar dele. **Nunca** use a chave `service_role` no app ou no repositório.
-- **Não invente IDs de vídeo do YouTube.** Use só IDs verificados; os que já existem estão em `VIDEOS`, em `src/content/programs.ts`.
+- **Idioma:** sempre **português do Brasil**, com acentuação correta. Linguagem simples, sem jargão desnecessário.
+- **Acompanha pelo celular** na maior parte do tempo.
+  - Mudança visual vem com demonstração navegável (seção 6), não só com relato.
+  - Evite pedir tarefas manuais longas. Quando forem inevitáveis (SQL no Supabase, painel da Vercel), mande **um arquivo só**, um passo a passo curto e, quando der, uma forma de confirmar que deu certo.
+- **Commit e push só com autorização explícita**, a cada vez ("Sim", "Pode", "Commit e push").
+- **Decisões de produto:** ele gosta de receber opções com uma recomendação marcada e costuma escolher a recomendada. Não aprova restrição sem motivo claro: o PIN foi removido por isso.
+- **Nunca** digite senhas nem faça login no lugar dele. **Nunca** use a chave `secret`/`service_role`.
+- **Não invente IDs de vídeo do YouTube.** Use só IDs verificados; os existentes estão em `VIDEOS`, em `src/content/programs.ts`.
 - Treinos e testes são **rascunho** até a validação do profissional de educação física.
-- Textos legais e o termo de autorização são **rascunho** até a revisão jurídica.
+- Textos legais e termos de aceite são **rascunho** até a revisão jurídica.
 
-## 3. Estado atual
+## 3. Registro de decisões (todas em 2026-09-12)
+
+| Decisão | Motivo / detalhe |
+|---|---|
+| Produto novo, separado do app pessoal, repositório sem histórico dele | Público e regras de privacidade diferentes |
+| React + Capacitor; Android primeiro; conta Google Play de organização (Instituto Arvoredo) | Escolha do dono; organização evita o teste fechado obrigatório de 12 testadores |
+| Sem área do treinador na v1; vídeos externos do YouTube aceitos | Escolha do dono |
+| Conteúdo validado por profissional de educação física antes do lançamento | Escolha do dono |
+| Modo demonstração (dados no navegador) para prévias | O dono acompanha pelo celular e gostou do formato |
+| Vídeo do exercício tocando na tela durante o treino | Pedido do dono: a pessoa faz o exercício enquanto vê |
+| Ordem das etapas: evolução → privacidade → fila offline → Android | Proposta aceita pelo dono |
+| Endereço e chave pública do Supabase versionados em `.env.production` | As variáveis cadastradas vazias na Vercel apagavam o arquivo; valores são públicos por natureza |
+| **Adultos também usam o app:** conta 18+ com perfil próprio e perfis de menores na mesma conta | Pedido do dono: o app estava "excessivamente focado em pais" |
+| Faixa Adulto reaproveita treinos e testes de 15–17 na v1 | Opção recomendada, escolhida pelo dono |
+| Perfil próprio do adulto também exige consentimento (`SELF_CONSENT_VERSION`) | "Algo doeu?" é dado de saúde (LGPD art. 11, I); decisão técnica comunicada ao dono |
+| **Sem PIN** na tela Conta | Pedido do dono: "Nao tem nada que demande tanta restrição"; ficam só as confirmações em dois passos |
+| Captação de recursos: **não decidida** (seção 10) | Discutida; nada implementado |
+
+## 4. Estado atual
 
 | Commit | Conteúdo |
 |---|---|
-| `6cd42a4` | Fundação: cadastro do responsável, perfis com autorização, PIN, exclusão de conta |
+| `6cd42a4` | Fundação: cadastro, perfis com autorização, PIN (removido depois), exclusão de conta |
 | `fac2cb3` | Treinos guiados por faixa etária e modo demonstração |
 | `d752170` | Vídeo do exercício na tela durante o treino guiado |
-| `a5f1a3c` | Evolução: testes a cada 4 semanas, meta semanal, sequência de semanas e conquistas |
-| `0d1da1e` | Privacidade: política, termos, página de exclusão, revogar e renovar autorização, corrigir e excluir perfil, cópia dos dados; migração 0004; este documento |
-| `aae6fd2`, `94a9b77`, `793555b` | Registro do Supabase e da Vercel; `.env.production` com os valores públicos; build ignora variáveis vazias |
-| `f0dc858` | Adultos: perfil próprio de treino, tela inicial "Quem vai treinar?", PIN só com menores, faixa Adulto, consentimento do titular (`SELF_CONSENT_VERSION`), termo de menores na versão `rascunho-2`, textos legais na versão `rascunho-2`; migração 0005 |
-| (este commit) | Remove o PIN: a tela Conta abre direto; `pin.ts` removido; textos legais na versão `rascunho-3` |
+| `a5f1a3c` | Evolução: testes a cada 4 semanas, meta semanal, sequência e conquistas |
+| `0d1da1e` | Privacidade: política, termos, exclusão, revogar e renovar aceite, corrigir e excluir perfil, cópia dos dados; migração 0004 |
+| `aae6fd2`, `94a9b77`, `793555b` | Supabase e Vercel registrados; `.env.production`; build ignora variáveis vazias |
+| `f0dc858` | Adultos: perfil próprio, tela "Quem vai treinar?", faixa Adulto, consentimento do titular; migração 0005 |
+| `8774ff6` | Remove o PIN; textos legais na versão `rascunho-3` |
 
 Etapas do `README.md`:
 1. Fundação — pronta.
@@ -60,28 +88,99 @@ Etapas do `README.md`:
 4. Privacidade e loja — parte do app pronta; formulários do Google Play pendentes.
 5. Teste e publicação — não começou.
 
+**No ar:** https://baseline-six-sigma.vercel.app/ com o commit `8774ff6`, conferido pelo conteúdo do bundle publicado.
+
+**Banco:** migrações 0001–0005 aplicadas e conferidas (seção 7).
+
 **Verificação feita:** `npm run build` e `npm run build:demo` passam, o que inclui `tsc --noEmit`. **Não existe suíte de testes.**
 
-As telas das etapas 3 e 4 **não foram conferidas no navegador**: a automação travou. Antes de avançar, abra o modo demo e percorra estes fluxos:
-- Evolução: meta, testes, conquistas, gráfico.
-- Tela Conta: corrigir perfil, revogar e renovar autorização, excluir perfil, baixar dados.
-- Textos legais.
+**Não conferido:**
+- Nenhuma tela das etapas 3 e 4, nem de adultos e sem PIN, foi aberta em navegador por um agente: a automação de navegador travou nesta máquina.
+- O dono ainda não confirmou o teste de ponta a ponta no site real (roteiro na seção 9).
 
-## 4. Como rodar
+## 5. Como rodar
 
 ```bash
 npm install
-cp .env.example .env.local    # VITE_SUPABASE_URL e VITE_SUPABASE_ANON_KEY do projeto do Baseline
-npm run dev                   # sem .env.local aparece a tela "Falta configurar"
+npm run dev                   # usa .env.production; crie .env.local para apontar para outro projeto
 npm run dev -- --mode demo    # modo demonstração: sem servidor, dados no localStorage
 npm run build                 # typecheck + build em dist/
 npm run build:demo            # typecheck + build demo em dist-demo/
 npx vite preview --outDir dist-demo   # servir a demo localmente
 ```
 
-Ambiente do dono: Windows 11 com PowerShell. Os avisos do Git sobre LF/CRLF são inofensivos.
+- **Ambiente do dono:** Windows 11 com PowerShell. Os avisos do Git sobre LF/CRLF são inofensivos.
+- **Memória da máquina:** tarefas longas em segundo plano (loops de `curl` esperando deploy) já foram encerradas por falta de memória. Prefira uma checagem pontual.
+- **Aviso de bundle:** o build avisa que o chunk passa de 500 kB. É o `supabase-js`, que entra desde que o site ficou configurado. Dividir o código é opcional.
 
-## 5. Mapa do código
+## 6. Demonstração (prévia pelo celular)
+
+- **Prévia navegável (privada, do dono):** https://claude.ai/code/artifact/22f74c46-a71c-45e8-a676-73c5bd4fbc47, versão 7, já sem PIN e com adultos.
+  - Publicada como Artifact do Claude Code a partir de `dist-demo/assets/*`, com uma página de entrada mínima.
+  - O CSP da prévia provavelmente bloqueia o player do YouTube, e o download da cópia de dados não funciona dentro dela.
+  - Dados antigos da demo podem aparecer como "Precisa de autorização" depois de trocas de versão do termo. É esperado; exclua a conta dentro da demo para recomeçar.
+- **Para republicar:** rode `npm run build:demo` e use como página de entrada:
+  ```html
+  <title>Baseline Demo</title>
+  <meta name="theme-color" content="#0d2742">
+  <link rel="icon" type="image/png" href="icons/favicon-64.png">
+  <link rel="stylesheet" href="assets/index-<hash>.css">
+  <div id="root"></div>
+  <script type="module" src="assets/index-<hash>.js"></script>
+  ```
+  Publique os novos `assets/index-*.css|js` e remova os antigos.
+- **Plano original do produto:** https://claude.ai/code/artifact/0cfc5c80-19f6-4328-b7fc-f7ca770515b0. Anterior à mudança para adultos.
+- **Sem acesso às prévias:** `npm run build:demo` e `npx vite preview --outDir dist-demo`.
+
+## 7. Banco de dados (Supabase)
+
+- **Projeto:** ref `szpmzcrxyisehrvwlene` (`https://szpmzcrxyisehrvwlene.supabase.co`), criado em 2026-09-12.
+- **Migrações:** 0001–0005 aplicadas.
+- **Auth:** e-mail ativo, confirmação de e-mail obrigatória, cadastro aberto.
+- **Chave pública (publishable):** em `.env.production`, versionado. **Nunca** usar a `secret`/`service_role`.
+- **E-mail:** SMTP padrão do Supabase, que só entrega para membros da equipe do projeto e com limite baixo por hora. Antes de abrir para outras famílias, configure SMTP próprio (ex.: Resend).
+
+| Migração | O que faz |
+|---|---|
+| `0001_fundacao.sql` | `athletes`, `consents`, RLS, `create_athlete_with_consent` (perfil + autorização na mesma transação, 6–17), `delete_my_account` (security definer) |
+| `0002_treinos.sql` | `training_sessions` (sem update; `discomfort` booleano) |
+| `0003_evolucao.sql` | `athletes.weekly_goal` (1–7, padrão 3) e `skill_tests` (`results` jsonb `{id_do_teste: valor}`) |
+| `0004_privacidade.sql` | Unicidade do aceite só entre ativos; revogação definitiva por trigger; insert de treino e teste exige aceite ativo |
+| `0005_adultos.sql` | `athletes.is_self` (um por conta, imutável); ano de nascimento a partir de 1900; idade por tipo no cadastro e na correção (adulto 18+, menor 6–17); `create_self_profile_with_consent` |
+
+### Como aplicar uma migração nova
+
+1. Crie `supabase/migrations/0006_<nome>.sql`. Escreva de forma **idempotente** (`if not exists`, `drop ... if exists`, `create or replace`), como as atuais, para poder rodar de novo sem estrago.
+2. Mande o arquivo ao dono e peça para rodar **inteiro** no SQL Editor do projeto. Pelo celular, só parte do texto já chegou a ser colada.
+   - Terminar com `select 'baseline: 0006 aplicada' as resultado;` dá um sinal claro de que o arquivo foi colado inteiro.
+3. **Suba o código só depois** de o banco estar atualizado.
+4. Confira pela API pública, com a chave de `.env.production`:
+   ```bash
+   U=https://szpmzcrxyisehrvwlene.supabase.co; K=<VITE_SUPABASE_ANON_KEY de .env.production>
+   curl -s "$U/rest/v1/athletes?select=id,is_self&limit=1" -H "apikey: $K"
+   ```
+   - `42501 permission denied`: a tabela ou coluna existe e está protegida. É o certo.
+   - `42703 does not exist` ou `PGRST205`/`PGRST202`: falta rodar a migração.
+
+## 8. Site na Vercel
+
+- **Endereço:** https://baseline-six-sigma.vercel.app/
+- **Deploy:** automático a cada push na `main` (preset Vite, `npm run build`, pasta `dist`). O status aparece no commit do GitHub (`gh api repos/Mosimann-adv/baseline/commits/<sha>/status`).
+- **Supabase no build:** vem de `.env.production`.
+  - Na Vercel existem `VITE_SUPABASE_URL` e `VITE_SUPABASE_ANON_KEY` **vazias**. O `vite.config.ts` ignora variáveis vazias; uma com valor teria prioridade sobre o arquivo.
+  - Arrumação opcional: apagar essas duas variáveis no painel.
+- **Conferir um deploy:**
+  ```bash
+  S=https://baseline-six-sigma.vercel.app
+  js=$(curl -s "$S/" | grep -o 'assets/index-[^"]*\.js' | head -1); curl -s "$S/$js" | grep -c szpmzcrxyisehrvwlene
+  ```
+  Resultado `1` significa que o site tem o Supabase. Um trecho de texto novo da interface também serve para confirmar que a versão nova entrou.
+- **Páginas públicas** (exigidas pelo Google Play):
+  - https://baseline-six-sigma.vercel.app/#/privacidade
+  - https://baseline-six-sigma.vercel.app/#/termos
+  - https://baseline-six-sigma.vercel.app/#/excluir-conta
+
+## 9. Mapa do código e padrões
 
 ```
 src/
@@ -90,17 +189,17 @@ src/
   components/ui.tsx     Screen, Group, Field, SwitchRow, Segmented, PrimaryButton, PlainButton, Notice
   state/
     auth.tsx            sessão do adulto dono da conta: signUp, signIn, signOut, deleteAccount
-    athletes.ts         perfis + autorizações: create (RPC), update, revoke, authorize, remove
+    athletes.ts         perfis + aceites: create (menor, RPC), createSelf (adulto, RPC), update, revoke, authorize, remove
     sessions.ts         treinos registrados (máx. 300 carregados)
     tests.ts            baterias de testes
   lib/
     supabase.ts         isDemo, isSupabaseConfigured, cliente
     demo.ts             backend falso em localStorage (baseline.demo.session / baseline.demo.data)
-    types.ts            tipos de domínio
-    age.ts              faixas 6–8, 9–11, 12–14, 15–17; allowedBirthYears
-    consent.ts          CONSENT_VERSION, CONSENT_POINTS, activeConsent()
+    types.ts            tipos de domínio (Athlete.is_self, AthletePatch, SkillTestRecord…)
+    age.ts              faixas 6–8…15–17 e Adulto; contentBand; allowedBirthYears / adultBirthYears
+    consent.ts          termos de menor e de adulto (versões e pontos), activeConsent(consents, athlete)
     progress.ts         semanas, sequência da meta, próxima data de teste, evolução por teste, conquistas
-    exportData.ts       cópia JSON da família (compartilhar ou baixar)
+    exportData.ts       cópia JSON dos dados da conta (compartilhar ou baixar)
     dates.ts            datas locais (nunca toISOString para dia); semana começa na segunda
     profile.ts          opções de nível e posição
     errors.ts           mensagens amigáveis a partir de erros do Supabase
@@ -108,124 +207,95 @@ src/
     programs.ts         11 programas por faixa e nível; VIDEOS com IDs verificados
     tests.ts            7 testes de habilidade; sprint e salto só a partir de 12 anos
     legal.ts            política, termos e página de exclusão (LEGAL_VERSION)
-  screens/              AuthScreens, NewAthlete, WhoTrains, AthleteHome, ProgramDetail,
-                        TrainingSession, Progress, TestSession, GuardianArea, LegalScreen
+  screens/
+    AuthScreens         boas-vindas, entrar, criar conta (declaração 18+ e aceite dos termos)
+    ProfileChoice       "Quem vai treinar?" para conta sem perfis
+    NewAthlete          cria perfil: kind "self" (adulto) ou "minor" (com declaração de responsável)
+    WhoTrains           escolha de perfil; perfil sem aceite aparece bloqueado
+    AthleteHome, ProgramDetail, TrainingSession, Progress, TestSession
+    GuardianArea        tela Conta (perfis, aceites, dados, textos legais, sair, excluir)
+    LegalScreen         renderiza os textos de legal.ts
   styles.css            tokens de design (azul-marinho, laranja, amarelo, creme) e componentes
-supabase/migrations/    0001 fundação · 0002 treinos · 0003 evolução · 0004 privacidade
+supabase/migrations/    0001 fundação · 0002 treinos · 0003 evolução · 0004 privacidade · 0005 adultos
 ```
 
 ### Padrões que o código segue
 
 - **Modo demo em toda operação de dados:** cada hook em `src/state/` tem um ramo `if (isDemo)` que chama `src/lib/demo.ts`. Toda função nova de dados precisa desse ramo.
-- **`loading` só na primeira carga.** Não volte a marcar `loading = true` num `reload`: o `App` troca a tela pelo splash e desmonta a tela aberta, por exemplo a Conta no meio de uma edição.
-- **Autorização manda no acesso.**
-  - `activeConsent()` exige autorização **não revogada e da versão atual** do termo.
-  - Sem ela, o perfil fica bloqueado na tela "Quem vai treinar?" e o banco recusa treinos e testes novos (policies da 0004).
-  - Mudou o texto de `CONSENT_POINTS`? Troque `CONSENT_VERSION`. Com isso **todos os perfis ficam bloqueados** até o responsável autorizar de novo.
+- **`loading` só na primeira carga.** Não volte a marcar `loading = true` num `reload`: o `App` troca a tela pelo splash e desmonta a tela aberta.
+- **Aceite manda no acesso.**
+  - `activeConsent(consents, athlete)` exige aceite **não revogado e da versão atual** do termo daquele tipo de perfil: `CONSENT_VERSION` para menor, `SELF_CONSENT_VERSION` para adulto.
+  - Sem aceite, o perfil aparece bloqueado e o banco recusa treinos e testes novos (policies da 0004).
+  - Mudou o texto de um termo? Troque a versão dele. **Todos os perfis daquele tipo ficam bloqueados** até novo aceite, então só troque quando o texto mudar de verdade.
+  - `LEGAL_VERSION` (política e termos) é só informativa e não bloqueia nada.
 - **RLS em toda tabela nova.**
-  - `guardian_id = auth.uid()` e verificação de que o atleta é da família.
-  - Em inserts de dados do atleta, exija também autorização ativa.
+  - `guardian_id = auth.uid()` e verificação de que o perfil é da conta.
+  - Em inserts de dados de treino, exija também aceite ativo.
   - Dentro de subselects, **qualifique as colunas com o nome da tabela** (`skill_tests.athlete_id`). Sem isso, `athlete_id` sozinho vira a coluna da tabela do subselect e a verificação passa sempre.
+- **Nomes internos antigos:** `guardian_id` significa "dono da conta", e `GuardianArea` é a tela Conta. Renomear exigiria migração e não traz ganho.
 - **Coleta mínima e dado de saúde mínimo:** a dor é só `discomfort` sim/não. Não crie campo de texto livre sobre saúde.
+- **Textos por tipo de perfil:** mensagens de segurança mudam para adulto (`athlete.is_self`), por exemplo "Pare de treinar agora" em vez de "conte para um adulto".
 - **Visual:**
   - listas agrupadas no estilo nativo;
-  - títulos na fonte Breymont com `text-transform: lowercase`, porque as maiúsculas da fonte são estilizadas e ela não tem os travessões – e —;
+  - títulos na fonte Breymont com `text-transform: lowercase`, porque as maiúsculas são estilizadas e a fonte não tem – nem —;
   - nenhuma biblioteca de interface externa;
   - vídeos só por `youtube-nocookie.com`.
 
-## 6. Demonstração publicada
+## 10. Próximos passos
 
-- **Prévia navegável (privada, do dono):** https://claude.ai/code/artifact/22f74c46-a71c-45e8-a676-73c5bd4fbc47 (versão 5, com privacidade).
-  - Foi publicada a partir de `dist-demo/assets/*`, com uma página de entrada que aponta para o CSS e o JS gerados.
-  - O CSP da prévia provavelmente bloqueia o player do YouTube.
-  - O download da cópia de dados é bloqueado dentro da prévia.
-- **Plano do produto:** https://claude.ai/code/artifact/0cfc5c80-19f6-4328-b7fc-f7ca770515b0
-- Sem acesso a essas prévias, rode `npm run build:demo` e `npx vite preview --outDir dist-demo`.
+### 10.1 Pendentes de confirmação com o dono
 
-## 7. Banco de dados (Supabase)
+- **Roteiro de teste no site real** (pelo celular), ainda sem retorno:
+  1. Criar conta com o próprio e-mail, confirmar pelo link e entrar.
+  2. "Quem vai treinar?" → **Eu** → criar perfil de adulto → treino com **vídeo tocando** → salvar.
+  3. Evolução: meta, registrar um teste, gráfico, conquistas.
+  4. Conta (abre sem PIN) → adicionar criança ou adolescente → revogar e autorizar de novo → corrigir perfil → baixar dados.
+  5. Abrir `#/privacidade` e `#/excluir-conta`.
+- **URL Configuration** no Supabase (Site URL `https://baseline-six-sigma.vercel.app` e Redirect URL `https://baseline-six-sigma.vercel.app/**`). Foi pedida ao dono, mas não foi confirmada. Sem ela, o link de confirmação de e-mail vai para o endereço errado.
 
-**Projeto criado em 2026-09-12:** ref `szpmzcrxyisehrvwlene` (`https://szpmzcrxyisehrvwlene.supabase.co`).
+### 10.2 Código (ordem combinada)
 
-- **Migrações:** 0001–0005 aplicadas. A conferência foi feita pela API pública:
-  - `is_self` e `create_self_profile_with_consent` existem e recusam o acesso anônimo;
-  - as 4 tabelas respondem "permission denied" ao acesso anônimo;
-  - a coluna `weekly_goal` existe.
-- **Auth:** e-mail ativo, confirmação de e-mail obrigatória, cadastro aberto.
-- **Chave pública (publishable):** fica em `.env.production`, versionado (seção 7.1). **Nunca** usar a `secret`/`service_role`.
-- **E-mail:** usa o SMTP padrão do Supabase, que só entrega para membros da equipe do projeto e com limite baixo por hora. Antes de convidar outras famílias, configure um SMTP próprio (ex.: Resend).
+1. **Fila offline para treinos e testes** (não começou).
+   - Gerar o `id` (UUID) no cliente e mandá-lo no insert, para o reenvio não duplicar.
+   - Fila no `localStorage` por conta. Tentar ao salvar, no evento `online` e ao reabrir.
+   - Erro `23505`/`duplicate key` significa **já enviado**. Trate isso antes do `friendlyError`, que traduz "duplicate key" como mensagem de aceite.
+   - Recusa por RLS (aceite revogado no meio do caminho): manter o item e mostrar o motivo.
+   - Mostrar pendentes na tela do perfil. O modo demo não precisa de fila.
+2. **Projeto Android (Capacitor).**
+   - JDK 21 (a máquina tem só Java 1.8; o Android Studio traz um em `jbr`).
+   - `npx cap add android`, depois `npm run android:sync` e `npm run android:open`.
+   - Confirmar o `appId` `br.org.arvoredo.baseline`, que fica **permanente** após a primeira publicação.
+   - Ícones e splash com `@capacitor/assets`.
+   - Botão voltar com `@capacitor/app` (`backButton`) chamando o `onBack` da tela.
+   - Cópia de dados com `@capacitor/filesystem` + `@capacitor/share`.
+   - Testar vídeo `youtube-nocookie` no WebView (origem `https://localhost`), tela ligada (Wake Lock ou `@capacitor-community/keep-awake`) e vibração.
+3. **"Esqueci a senha"** (não existe; hoje `detectSessionInUrl: false`). Avaliar código OTP por e-mail, que evita deep link.
+4. **Formulários do Google Play:** Segurança dos dados, público-alvo (Famílias, público misto), classificação de conteúdo, URL da política.
 
-| Migração | O que faz |
-|---|---|
-| `0001_fundacao.sql` | `athletes`, `consents`, RLS, `create_athlete_with_consent` (atleta + autorização na mesma transação, idade 6–17), `delete_my_account` (security definer) |
-| `0002_treinos.sql` | `training_sessions` (sem update; `discomfort` booleano) |
-| `0003_evolucao.sql` | `athletes.weekly_goal` (1–7, padrão 3) e `skill_tests` (`results` jsonb `{id_do_teste: valor}`) |
-| `0004_privacidade.sql` | Unicidade da autorização só entre ativas; revogação definitiva por trigger; idade 6–17 também na correção; insert de treino e teste exige autorização ativa |
-| `0005_adultos.sql` | `athletes.is_self` (um por conta, imutável); ano de nascimento a partir de 1900; idade por tipo no cadastro e na correção (adulto 18+, menor 6–17); `create_self_profile_with_consent` |
+### 10.3 Captação de recursos (discutida, não decidida)
 
-Migração nova: crie `supabase/migrations/0005_...sql` e rode-a no SQL Editor do projeto acima. Escreva migrações idempotentes (`if not exists`, `drop ... if exists`, `create or replace`), como as atuais.
+O dono perguntou se dá para captar recursos pelo Google Play. A recomendação apresentada:
 
-## 7.1 Site na Vercel
+- **App gratuito e sem compras na v1.**
+  - App pago afasta o público.
+  - Compra ou assinatura pelo Google Play Billing custa taxa de 15%.
+  - Anúncio é incompatível com as regras do app.
+- **Seção "Apoie o Instituto Arvoredo" na tela Conta**, com link para doação no site do Instituto. Só depois de conferir a política de Pagamentos do Google Play em vigor, que trata doações de forma específica e muda com frequência. **Nunca** na área em que a criança treina.
+- **Captação principal fora da loja:** Lei de Incentivo ao Esporte (Lei 11.438/2006, permanente pela Lei 14.439/2022), Fundos da Infância e Adolescência (art. 260 do ECA), termos de fomento (Lei 13.019/2014), patrocínio e editais, e Google for Nonprofits (anúncios para divulgação). Confirmar os percentuais de dedução vigentes.
+- **Indicadores de impacto** (perfis ativos, treinos, evolução média) só com dados **agregados e anônimos**, e depois de incluir essa finalidade na política e nos termos de aceite. Isso significa nova versão dos termos e novo aceite.
 
-- **Endereço:** https://baseline-six-sigma.vercel.app/
-- **Deploy:** automático a cada push na `main` (preset Vite, `npm run build`, pasta `dist`).
-- **Endereço e chave do Supabase:** ficam em `.env.production`, versionado no repositório.
-  - São valores públicos: a chave publishable vai de qualquer forma para o navegador, e a proteção dos dados é o RLS.
-  - Motivo: na Vercel as variáveis `VITE_SUPABASE_URL` e `VITE_SUPABASE_ANON_KEY` foram cadastradas **sem valor**. Variável de ambiente tem prioridade sobre o `.env.production`, mesmo vazia, e o site saiu sem Supabase.
-  - O `vite.config.ts` agora ignora essas duas quando estão vazias. Uma variável com valor na Vercel continua tendo prioridade sobre o arquivo.
-  - Arrumação opcional: apagar as duas variáveis vazias no painel da Vercel.
-- **Conferir um deploy:** procure `szpmzcrxyisehrvwlene` dentro do `assets/index-*.js` publicado.
-- **Páginas públicas:**
-  - https://baseline-six-sigma.vercel.app/#/privacidade
-  - https://baseline-six-sigma.vercel.app/#/termos
-  - https://baseline-six-sigma.vercel.app/#/excluir-conta
+## 11. Pendências fora do código (dependem do dono)
 
-## 8. Próximos passos de código (ordem combinada)
-
-### 8.1 Fila offline para treinos e testes
-O próximo passo proposto ao dono, ainda sem início.
-- **Idempotência:** gerar o `id` (UUID) no cliente e mandá-lo no insert (as tabelas aceitam `id` informado). Assim o reenvio não duplica.
-- **Fila:** guardar os pendentes no `localStorage`, por responsável.
-- **Envio:** tentar ao salvar, no evento `online` e ao reabrir o app.
-- **Registro já enviado:** erro de chave duplicada (`23505`/`duplicate key`) significa sucesso. Hoje `friendlyError` traduz "duplicate key" como "Este atleta já está autorizado", então trate esse caso **antes** de chegar ali.
-- **Recusa por RLS** (autorização revogada no meio do caminho): manter o item e mostrar o motivo, sem apagar em silêncio.
-- **Interface:** mostrar na tela do atleta o que está pendente de envio, somando os pendentes às listas locais.
-- **Modo demo:** não precisa de fila.
-
-### 8.2 Projeto Android (Capacitor)
-- **Pré-requisito:** JDK 21. A máquina do dono tem só Java 1.8; o Android Studio traz um JDK em `jbr`.
-- **Criar o projeto:** `npx cap add android`, depois `npm run android:sync` e `npm run android:open`.
-- **appId:** confirmar `br.org.arvoredo.baseline` em `capacitor.config.ts`. Ele é **permanente** depois da primeira publicação.
-- **Ícones e splash:** `@capacitor/assets`, a partir de `public/icons`.
-- **Botão voltar do Android:** o app não usa router. Use `@capacitor/app` (`backButton`) para chamar o `onBack` da tela atual.
-- **Cópia de dados:** no WebView do Android, `navigator.share` com arquivo não funciona. Use `@capacitor/filesystem` + `@capacitor/share`.
-- **Vídeo:**
-  - testar o embed `youtube-nocookie` no WebView, porque a origem do Capacitor é `https://localhost`;
-  - testar tela sempre ligada (Wake Lock), com `@capacitor-community/keep-awake` como alternativa;
-  - testar vibração.
-
-### 8.3 "Esqueci a senha"
-Não existe. Hoje `detectSessionInUrl: false`. Avalie código OTP por e-mail (evita deep link) ou link com deep link no Android. Enquanto não existir, a página de exclusão manda escrever para o e-mail de privacidade.
-
-### 8.4 Google Play
-Formulários de Segurança dos dados, público-alvo (Famílias), classificação de conteúdo e URL da política. Os endereços públicos estão na seção 7.1.
-
-## 9. Pendências fora do código (dependem do dono)
-
-- [x] Criar o projeto Supabase do Baseline e rodar as migrações 0001–0004.
-- [x] Deploy web na Vercel, com variáveis de ambiente.
-- [ ] Confirmar no Supabase, em **Authentication → URL Configuration**, a Site URL `https://baseline-six-sigma.vercel.app` e a Redirect URL `https://baseline-six-sigma.vercel.app/**`. Ainda não foi verificado.
-- [ ] Testar de ponta a ponta no site real, pelo celular:
-  - cadastro com confirmação de e-mail e login;
-  - criar atleta;
-  - treino com vídeo tocando;
-  - teste de habilidade;
-  - revogar e renovar autorização;
-  - baixar dados.
-- [ ] Configurar SMTP próprio no Supabase antes de convidar outras famílias.
-- [ ] Instalar JDK 21 / Android Studio.
+- [x] Projeto Supabase criado e migrações 0001–0005 aplicadas.
+- [x] Deploy web na Vercel funcionando com o Supabase.
+- [ ] Confirmar a URL Configuration no Supabase (seção 10.1).
+- [ ] Testar de ponta a ponta no site real (seção 10.1).
+- [ ] SMTP próprio no Supabase antes de abrir para outras famílias.
+- [ ] (Opcional) Apagar as variáveis vazias `VITE_SUPABASE_*` na Vercel.
+- [ ] JDK 21 / Android Studio.
 - [ ] Conta de organização no Google Play (Instituto Arvoredo, D-U-N-S).
 - [ ] Confirmar o `appId`.
-- [ ] Revisão jurídica de `src/lib/consent.ts` e `src/content/legal.ts`. Preencher os trechos entre colchetes:
+- [ ] Revisão jurídica de `src/lib/consent.ts` (termo de menores e de adultos) e `src/content/legal.ts`. Preencher os trechos entre colchetes:
   - CNPJ do Instituto Arvoredo;
   - e-mail de privacidade e nome do encarregado;
   - prazo das cópias de segurança do provedor;
@@ -233,14 +303,16 @@ Formulários de Segurança dos dados, público-alvo (Famílias), classificação
   - região do Supabase;
   - nome e CREF do profissional de educação física;
   - se o uso é gratuito.
-- [ ] Validação dos 11 programas (`src/content/programs.ts`) e dos 7 testes (`src/content/tests.ts`) por profissional de educação física.
-- [ ] Vídeos: só **9 dos 44 exercícios** têm vídeo. Os IDs novos precisam ser escolhidos e verificados.
+- [ ] Validação dos 11 programas e dos 7 testes por profissional de educação física, inclusive o uso deles para adultos.
+- [ ] Vídeos: só **9 dos 44 exercícios** têm vídeo; os IDs novos precisam ser escolhidos e verificados.
+- [ ] Decidir a estratégia de captação (seção 10.3).
 
-## 10. Riscos e decisões em aberto
+## 12. Riscos e questões em aberto
 
-- **Revogação guarda os registros** até o responsável autorizar de novo ou excluir o perfil. A revisão jurídica pode preferir exclusão automática após um prazo.
-- **Contagens com limite:** `useSessions` carrega no máximo 300 treinos, então as contagens da tela Conta podem ficar abaixo do real em famílias muito ativas. A cópia de dados busca tudo, dentro do limite padrão de 1000 linhas por consulta do Supabase.
-- **Idade por ano:** é calculada pela diferença de anos do calendário (`ano atual − ano de nascimento`), tanto no app quanto no banco.
-- **Comparação só consigo mesmo:** conquistas e testes nunca comparam atletas. Mantenha assim.
-- **Menor que completa 18 anos:** passa a receber a faixa Adulto, mas continua sendo perfil de menor, com autorização do responsável. Falta decidir se deve virar perfil próprio com conta própria.
+- **Sem PIN:** uma criança com o aparelho do adulto consegue abrir a Conta e, confirmando duas vezes, revogar aceites ou excluir perfis e a conta. Se incomodar, a alternativa combinada é pedir a **senha da conta** só para excluir a conta, sem voltar ao PIN.
+- **Revogação guarda os registros** até novo aceite ou exclusão do perfil. A revisão jurídica pode preferir exclusão automática após um prazo.
+- **Menor que completa 18 anos:** passa a ver a faixa Adulto, mas continua perfil de menor com autorização do responsável. Falta decidir se deve virar perfil próprio ou conta própria.
 - **Faixa Adulto:** reaproveita o conteúdo de 15–17. Treinos específicos para adultos dependem do profissional de educação física.
+- **Contagens com limite:** `useSessions` carrega no máximo 300 treinos, então as contagens da Conta podem ficar abaixo do real. A cópia de dados busca tudo, até 1000 linhas por consulta.
+- **Idade por ano:** calculada como `ano atual − ano de nascimento`, no app e no banco.
+- **Comparação só consigo mesmo:** conquistas e testes nunca comparam pessoas. Mantenha assim.
