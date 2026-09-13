@@ -7,7 +7,8 @@ const VIDEOS = {
   aquecimento: { id: "IoPvijC5TgY", title: "Aquecimento dinâmico para basquete — Nathanael Morton" },
   deslocamento: { id: "sz45B4GpEXw", title: "Recuar, deslizar e arrancar — Jr. NBA" },
   espelho: { id: "HJwBzfT3ZJc", title: "Espelho defensivo — Jr. NBA" },
-  aceleracao: { id: "PzjxFXQy1XI", title: "Saída e aceleração — Coach DuWayne Campbell" },
+  // start 51: capítulo automático "Acceleration" (o "Intro" vai até 0:51). Confirmar assistindo 0:45–1:00.
+  aceleracao: { id: "PzjxFXQy1XI", start: 51, title: "Saída e aceleração — Coach DuWayne Campbell" },
   saltoVertical: { id: "iU9MOreQB8Y", title: "Salto vertical com contramovimento — Jason Curtis" },
   drible: { id: "BnvGa0I8bMc", title: "Fundamentos do drible — Jr. NBA" },
   dribleAlto: { id: "UY1Z4bKUZRU", title: "Drible alto — Jr. NBA" },

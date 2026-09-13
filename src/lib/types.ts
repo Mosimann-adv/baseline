@@ -44,7 +44,7 @@ export interface Drill {
   cue: string;
   seconds: number;
   restSeconds: number;
-  video?: { id: string; start?: number; title: string };
+  video?: { id: string; start?: number; end?: number; title: string };
 }
 
 export interface Program {

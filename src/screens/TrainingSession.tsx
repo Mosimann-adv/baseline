@@ -105,6 +105,7 @@ function youtubeSrc(video: NonNullable<Drill["video"]>, autoplay: boolean): stri
     autoplay: autoplay ? "1" : "0",
   });
   if (video.start) params.set("start", String(video.start));
+  if (video.end) params.set("end", String(video.end));
   if (location.origin.startsWith("http")) params.set("origin", location.origin);
   return `${YOUTUBE_ORIGIN}/embed/${video.id}?${params.toString()}`;
 }
@@ -131,6 +132,10 @@ export function TrainingSession({
   const playerRef = useRef<HTMLIFrameElement>(null);
   const act = (type: Action["type"]) => dispatch({ type, now: Date.now(), drills });
 
+  // Vídeo do exercício corrente, lido pelos efeitos do player antes do render.
+  const currentDrill = drills[Math.min(state.index, drills.length - 1)];
+  const video = state.phase !== "rest" ? currentDrill.video : undefined;
+
   const running = (state.phase === "work" || state.phase === "rest") && state.pausedLeft === null;
 
   useEffect(() => {
@@ -149,11 +154,53 @@ export function TrainingSession({
   }, [state.phase, state.index]);
 
   // Pausar o treino pausa o vídeo, e continuar volta a tocar (API de iframe do YouTube via postMessage).
+  const ytCommand = (func: string, args: unknown[] = []) => {
+    playerRef.current?.contentWindow?.postMessage(JSON.stringify({ event: "command", func, args }), YOUTUBE_ORIGIN);
+  };
+
   useEffect(() => {
     if (state.phase !== "work") return;
     const func = state.pausedLeft === null ? "playVideo" : "pauseVideo";
-    playerRef.current?.contentWindow?.postMessage(JSON.stringify({ event: "command", func, args: [] }), YOUTUBE_ORIGIN);
+    ytCommand(func);
   }, [state.phase, state.pausedLeft]);
+
+  // Repetição do trecho: ao terminar (ou cair antes do começo do exercício), volta ao `start`
+  // em vez de mostrar a introdução de novo. O `loop=1` do embed fica como plano B se os eventos não chegarem.
+  const lastSeekRef = useRef(0);
+  useEffect(() => {
+    const frame = playerRef.current;
+    if (!video || !frame) return;
+    frame.contentWindow?.postMessage(JSON.stringify({ event: "listening" }), YOUTUBE_ORIGIN);
+
+    const onMessage = (ev: MessageEvent) => {
+      if (ev.origin !== YOUTUBE_ORIGIN || ev.source !== frame.contentWindow) return;
+      let data: { event?: string; info?: unknown };
+      try {
+        data = JSON.parse(String(ev.data)) as { event?: string; info?: unknown };
+      } catch {
+        return;
+      }
+      const start = video.start ?? 0;
+      const time = typeof data.info === "object" && data.info !== null && "currentTime" in data.info ? Number((data.info as { currentTime: unknown }).currentTime) : NaN;
+
+      if (data.event === "onStateChange" && data.info === 0) {
+        ytCommand("seekTo", [start, true]);
+        ytCommand("playVideo");
+        return;
+      }
+      if (data.event === "infoDelivery" && !Number.isNaN(time)) {
+        const now = Date.now();
+        if (now - lastSeekRef.current < 1500) return;
+        if (time + 1.5 < start || (video.end !== undefined && time >= video.end)) {
+          lastSeekRef.current = now;
+          ytCommand("seekTo", [start, true]);
+          ytCommand("playVideo");
+        }
+      }
+    };
+    window.addEventListener("message", onMessage);
+    return () => window.removeEventListener("message", onMessage);
+  }, [video]);
 
   useWakeLock(state.phase !== "done");
 
@@ -165,7 +212,6 @@ export function TrainingSession({
   const next = drills[state.index + 1];
   const left = state.pausedLeft ?? Math.max(0, state.endsAt - now);
   const progress = ((state.index + (state.phase === "rest" ? 1 : 0)) / drills.length) * 100;
-  const video = state.phase !== "rest" ? drill.video : undefined;
 
   return (
     <main className="training">
@@ -204,6 +250,7 @@ export function TrainingSession({
                   allow="autoplay; encrypted-media; picture-in-picture"
                   allowFullScreen
                   referrerPolicy="strict-origin-when-cross-origin"
+                  onLoad={() => playerRef.current?.contentWindow?.postMessage(JSON.stringify({ event: "listening" }), YOUTUBE_ORIGIN)}
                 />
               </div>
               <p className="video-hint">O vídeo começa sem som — toque nele para ligar.</p>
