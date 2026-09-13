@@ -1,5 +1,5 @@
 import { useEffect, useReducer, useRef, useState } from "react";
-import { Group, Notice, PlainButton, PrimaryButton, Segmented } from "../components/ui";
+import { Group, CountUp, Notice, PlainButton, PrimaryButton, Segmented } from "../components/ui";
 import { friendlyError } from "../lib/errors";
 import { keepAwake } from "../lib/native";
 import type { Athlete, Drill, NewSessionInput, Program } from "../lib/types";
@@ -206,6 +206,7 @@ export function TrainingSession({
                   referrerPolicy="strict-origin-when-cross-origin"
                 />
               </div>
+              <p className="video-hint">O vídeo começa sem som — toque nele para ligar.</p>
               <a
                 className="plain-link"
                 href={`https://www.youtube.com/watch?v=${video.id}${video.start ? `&t=${video.start}s` : ""}`}
@@ -315,12 +316,14 @@ function Finish({
       <div className="metrics two">
         <div className="metric">
           <strong>
-            {done}/{total}
+            <CountUp value={done} />/{total}
           </strong>
           <span>exercícios</span>
         </div>
         <div className="metric">
-          <strong>{minutes}</strong>
+          <strong>
+            <CountUp value={minutes} />
+          </strong>
           <span>{minutes === 1 ? "minuto" : "minutos"}</span>
         </div>
       </div>

@@ -1,4 +1,4 @@
-import { Group, Screen } from "../components/ui";
+import { CountUp, Group, Screen } from "../components/ui";
 import { ageThisYear, bandFor } from "../lib/age";
 import { formatDayMonth } from "../lib/dates";
 import { achievements, goalStreak, isTestDue, lastWeeks, nextTestDate, testProgress, type WeekSummary } from "../lib/progress";
@@ -33,11 +33,15 @@ export function Progress({
     <Screen eyebrow={athlete.nickname} title="Evolução" onBack={onBack}>
       <div className="metrics two">
         <div className="metric">
-          <strong>{streak}</strong>
+          <strong>
+            <CountUp value={streak} />
+          </strong>
           <span>{streak === 1 ? "semana seguida na meta" : "semanas seguidas na meta"}</span>
         </div>
         <div className="metric">
-          <strong>{sessions.length}</strong>
+          <strong>
+            <CountUp value={sessions.length} />
+          </strong>
           <span>{sessions.length === 1 ? "treino no total" : "treinos no total"}</span>
         </div>
       </div>

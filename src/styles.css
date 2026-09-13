@@ -1,5 +1,6 @@
-/* Baseline by Arvoredo — visual de app nativo herdado do Baseline pessoal.
-   Marca Arvoredo nas cores e na Breymont dos títulos; fonte do sistema no resto. */
+/* Baseline by Arvoredo — visual de app nativo com as cores oficiais do kit do site do Instituto
+   (DESIGN.md do Arvoredo): Maré #133358, Oceano #015CA6, Coral #D96953, Areia #F8F1E0,
+   Sol #EEA047, Quadra #F3C44B. Breymont nos títulos; fonte do sistema no resto. */
 
 @font-face {
   font-family: "Breymont";
@@ -7,30 +8,54 @@
   font-weight: 700;
   font-display: swap;
 }
+/* Poppins embutida (subset latin, inclui acentos e pontuação do pt-BR): corpo do texto como no site do Instituto. */
+@font-face {
+  font-family: "Poppins";
+  src: url("./assets/fonts/poppins-400-latin.woff2") format("woff2");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Poppins";
+  src: url("./assets/fonts/poppins-500-latin.woff2") format("woff2");
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Poppins";
+  src: url("./assets/fonts/poppins-600-latin.woff2") format("woff2");
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+}
 
 :root {
-  --bg: #0d2742;
-  --bg-elevated: #15365a;
-  --bg-raised: #1f4167;
-  --navy-deep: #0a1f35;
+  --bg: #133358;
+  --bg-elevated: #1b4068;
+  --bg-raised: #26578c;
+  --navy-deep: #0b2340;
+  --ocean: #015ca6;
   --blue-bright: #7db8e8;
   --coral: #d96953;
-  --coral-strong: #b04f3b;
   --coral-soft: #f2a493;
   --orange: #eea047;
   --yellow: #f3c44b;
   --cream: #f8f1e0;
   --text: #f8f1e0;
-  --text-2: rgba(248, 241, 224, 0.74);
-  --text-3: rgba(248, 241, 224, 0.6);
+  --text-2: rgba(248, 241, 224, 0.78);
+  --text-3: rgba(248, 241, 224, 0.66);
   --separator: rgba(248, 241, 224, 0.1);
   --fill: rgba(248, 241, 224, 0.08);
   --fill-2: rgba(248, 241, 224, 0.15);
-  --radius-group: 14px;
+  --radius-group: 20px;
   --ease: cubic-bezier(0.22, 1, 0.36, 1);
+  --spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --shadow-navy: 0 12px 32px -12px rgba(10, 31, 53, 0.55);
   --safe-top: env(safe-area-inset-top, 0px);
   --safe-bottom: env(safe-area-inset-bottom, 0px);
-  --font: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font: "Poppins", -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
   --font-display: "Breymont", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   color-scheme: dark;
 }
@@ -53,8 +78,15 @@ button { cursor: pointer; -webkit-tap-highlight-color: transparent; }
 button:disabled { cursor: default; opacity: 0.4; }
 button, label, .group-header { -webkit-user-select: none; user-select: none; }
 :focus { outline: none; }
-:focus-visible { outline: 2px solid var(--blue-bright); outline-offset: 2px; border-radius: 8px; }
+:focus-visible { outline: 2px solid var(--blue-bright); outline-offset: 2px; }
 h1, h2, h3 { text-wrap: balance; }
+
+/* Entrada das telas: sobe levemente, como revelar em quadra. Reduced-motion anula no fim do arquivo. */
+@keyframes view-in {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: none; }
+}
+.screen, .welcome, .training { animation: view-in 0.24s var(--ease); }
 
 /* ---------- Tela ---------- */
 .screen { max-width: 640px; margin: 0 auto; padding: calc(8px + var(--safe-top)) 16px calc(32px + var(--safe-bottom)); }
@@ -65,14 +97,14 @@ h1, h2, h3 { text-wrap: balance; }
 }
 .back-button svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
 .large-title-block { padding: 4px 4px 16px; }
-.subtitle { margin: 0 0 4px; font-size: 14px; font-weight: 600; color: var(--orange); }
+.subtitle { margin: 0 0 6px; font-size: 12px; font-weight: 600; color: var(--orange); text-transform: uppercase; letter-spacing: 0.16em; }
 /* A Breymont estiliza as maiúsculas; em minúsculas desenha caixa-alta limpa. */
 .large-title { margin: 0; font-family: var(--font-display); font-weight: 700; text-transform: lowercase; letter-spacing: 0.012em; font-size: 30px; line-height: 1.08; }
 .stack { display: grid; gap: 12px; }
 
 /* ---------- Listas agrupadas ---------- */
 .group-section + .group-section { margin-top: 8px; }
-.group-header { margin: 20px 16px 8px; font-size: 13px; font-weight: 500; color: var(--text-3); }
+.group-header { margin: 20px 16px 8px; font-size: 12px; font-weight: 600; color: var(--text-3); text-transform: uppercase; letter-spacing: 0.16em; }
 .group { background: var(--bg-elevated); border-radius: var(--radius-group); overflow: hidden; }
 .group-footer { margin: 8px 16px 0; font-size: 13px; line-height: 1.45; color: var(--text-3); }
 .row {
@@ -106,7 +138,7 @@ button.row:active { background: var(--fill); }
 
 /* ---------- Controles ---------- */
 .segmented { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; gap: 2px; padding: 2px; background: var(--fill); border-radius: 10px; }
-.segment { min-height: 36px; border: 0; border-radius: 8px; background: transparent; color: var(--text-2); font-size: 14px; font-weight: 600; }
+.segment { min-height: 36px; border: 0; border-radius: 8px; background: transparent; color: var(--text-2); font-size: 14px; font-weight: 600; transition: background-color 0.2s ease, color 0.2s ease, box-shadow 0.2s ease; }
 .segment[aria-checked="true"] { background: var(--bg-raised); color: var(--text); box-shadow: 0 1px 3px rgba(0, 0, 0, 0.28); }
 .switch {
   -webkit-appearance: none; appearance: none; position: relative; flex: 0 0 auto;
@@ -119,10 +151,12 @@ button.row:active { background: var(--fill); }
 .switch:checked { background: var(--orange); }
 .switch:checked::after { transform: translateX(20px); }
 .primary-button {
-  min-height: 52px; padding: 0 20px; border: 0; border-radius: 14px;
-  background: var(--coral-strong); color: var(--cream); font-size: 17px; font-weight: 600;
+  min-height: 52px; padding: 0 24px; border: 0; border-radius: 999px;
+  background: var(--coral); color: var(--cream); font-size: 17px; font-weight: 600;
+  box-shadow: var(--shadow-navy);
+  transition: transform 0.25s var(--spring), background-color 0.25s ease, color 0.25s ease, box-shadow 0.25s ease;
 }
-.primary-button:active:not(:disabled) { opacity: 0.72; }
+.primary-button:active:not(:disabled) { transform: translateY(-1px) scale(0.98); background: var(--yellow); color: var(--navy-deep); }
 .plain-button { min-height: 44px; border: 0; background: transparent; color: var(--blue-bright); font-size: 16px; font-weight: 500; }
 .plain-button:active { opacity: 0.55; }
 .notice { margin: 0; padding: 12px 16px; border-radius: var(--radius-group); font-size: 15px; line-height: 1.45; }
@@ -135,9 +169,16 @@ button.row:active { background: var(--fill); }
   min-height: 100dvh; max-width: 480px; margin: 0 auto; display: flex; flex-direction: column; justify-content: center; gap: 16px;
   padding: calc(24px + var(--safe-top)) 24px calc(24px + var(--safe-bottom));
 }
-.welcome-icon { border-radius: 20px; }
+.welcome-icon { border-radius: 28px 28px 28px 90px; box-shadow: var(--shadow-navy); }
 .welcome .large-title { font-size: 40px; }
+/* Foto real do projeto (pública, do site do Instituto), com o canto "onda" do kit. */
+.welcome-hero {
+  width: 100%; max-height: 230px; aspect-ratio: 4 / 3; object-fit: cover; object-position: center 30%;
+  border-radius: 28px 28px 28px 90px; box-shadow: var(--shadow-navy);
+}
 .welcome-sub { margin: 0; font-size: 18px; line-height: 1.5; color: var(--text-2); }
+/* Palavra-chave sublinhada em coral, como o headline do hero do site. */
+.welcome-sub em { font-style: normal; color: var(--coral); text-decoration: underline; text-decoration-thickness: 0.08em; text-underline-offset: 0.14em; }
 .welcome-actions { display: grid; gap: 4px; margin-top: 12px; }
 .fine { margin: 8px 0 0; font-size: 13px; line-height: 1.45; color: var(--text-3); }
 
@@ -146,8 +187,10 @@ button.row:active { background: var(--fill); }
 .athlete-card {
   display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 20px 12px;
   border: 0; border-radius: var(--radius-group); background: var(--bg-elevated); color: var(--text); text-align: center;
+  box-shadow: inset 0 0 0 1px rgba(248, 241, 224, 0.08);
+  transition: transform 0.25s var(--spring), background-color 0.2s ease;
 }
-.athlete-card:active { background: var(--bg-raised); }
+.athlete-card:active { background: var(--bg-raised); transform: scale(0.97); }
 .athlete-card strong { font-size: 17px; font-weight: 600; }
 .athlete-card span:last-child { font-size: 13px; color: var(--text-3); }
 .avatar {
@@ -187,10 +230,12 @@ button.row:active { background: var(--fill); }
 .progress-line { height: 4px; margin: 6px 0 0; border-radius: 999px; background: var(--fill-2); overflow: hidden; }
 .progress-line span { display: block; height: 100%; background: linear-gradient(90deg, var(--yellow), var(--orange)); transition: width 0.4s var(--ease); }
 .training-body { flex: 1; display: flex; flex-direction: column; justify-content: center; gap: 10px; padding: 24px 4px; }
-.phase-label { margin: 0; font-size: 15px; font-weight: 600; color: var(--orange); }
+.phase-label { margin: 0; font-size: 13px; font-weight: 600; color: var(--orange); text-transform: uppercase; letter-spacing: 0.16em; }
 .drill-name { margin: 0; font-size: clamp(30px, 8vw, 40px); line-height: 1.1; font-weight: 700; }
 .drill-cue { margin: 0; font-size: 18px; line-height: 1.5; color: var(--text-2); max-width: 36ch; }
 .countdown { margin: 12px 0 0; font-family: var(--font-display); font-size: clamp(64px, 22vw, 104px); line-height: 1; font-variant-numeric: tabular-nums; }
+/* Descanso em azul claro do Oceano; contagem de trabalho fica no creme padrão. */
+.training-body:not(:has(.drill-name)) .countdown { color: var(--blue-bright); }
 .training-next { margin: 8px 0 0; font-size: 17px; color: var(--text-2); }
 .training-next strong { color: var(--text); }
 .training-actions { display: grid; gap: 4px; }
@@ -200,9 +245,12 @@ button.row:active { background: var(--fill); }
 .with-video .drill-name { font-size: clamp(24px, 6.5vw, 32px); }
 .with-video .drill-cue { font-size: 16px; }
 .with-video .countdown { margin-top: 4px; font-size: clamp(52px, 17vw, 76px); }
-.video-frame { width: 100%; max-width: 100%; aspect-ratio: 16 / 9; border-radius: 12px; overflow: hidden; background: var(--navy-deep); }
+.video-frame { width: 100%; max-width: 100%; aspect-ratio: 16 / 9; border-radius: 20px 20px 20px 72px; overflow: hidden; background: var(--navy-deep); }
 .video-frame iframe { width: 100%; height: 100%; border: 0; display: block; }
 .plain-link { color: var(--blue-bright); font-size: 14px; }
+.video-hint { margin: 0; font-size: 12px; line-height: 1.4; color: var(--text-3); }
+/* Ícones stroke amarelos das linhas de contato, como no site do Instituto. */
+.row-icon { flex: 0 0 auto; width: 20px; height: 20px; fill: none; stroke: var(--yellow); stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
 
 /* ---------- Evolução ---------- */
 .goal-card, .due-card { margin: 0 0 8px; padding: 14px 16px; border-radius: var(--radius-group); background: var(--bg-elevated); }
@@ -211,7 +259,7 @@ button.row:active { background: var(--fill); }
 .goal-head strong { font-size: 17px; font-weight: 600; font-variant-numeric: tabular-nums; }
 .goal-bar { height: 8px; margin: 10px 0 8px; border-radius: 999px; background: var(--fill-2); overflow: hidden; }
 .goal-bar span { display: block; height: 100%; border-radius: 999px; background: var(--blue-bright); transition: width 0.4s var(--ease); }
-.goal-bar span.met { background: var(--orange); }
+.goal-bar span.met { background: linear-gradient(90deg, var(--yellow), var(--orange)); }
 .goal-card p { margin: 0; font-size: 13px; color: var(--text-3); font-variant-numeric: tabular-nums; }
 .due-card { display: flex; align-items: center; justify-content: space-between; gap: 12px; box-shadow: inset 0 0 0 1px rgba(125, 184, 232, 0.35); }
 .due-card .subtitle { color: var(--blue-bright); }
@@ -220,7 +268,7 @@ button.row:active { background: var(--fill); }
 .due-card.pending .subtitle { color: var(--orange); }
 .due-card.blocked { box-shadow: inset 0 0 0 1px rgba(217, 105, 83, 0.5); }
 .due-card.blocked .subtitle { color: var(--coral-soft); }
-.secondary-button { flex: 0 0 auto; min-height: 44px; padding: 0 16px; border: 0; border-radius: 12px; background: var(--fill-2); color: var(--text); font-size: 15px; font-weight: 600; }
+.secondary-button { flex: 0 0 auto; min-height: 44px; padding: 0 18px; border: 0; border-radius: 999px; background: var(--fill-2); color: var(--text); font-size: 15px; font-weight: 600; }
 .secondary-button:active { opacity: 0.72; }
 .chart-box { padding: 12px 12px 8px; }
 .weeks-chart { display: block; width: 100%; height: auto; }
@@ -238,7 +286,7 @@ button.row:active { background: var(--fill); }
 .badge strong { font-size: 14px; font-weight: 600; color: var(--text-2); }
 .badge span { font-size: 12px; line-height: 1.35; }
 .badge-mark { font-size: 20px; line-height: 1; margin-bottom: 4px; }
-.badge.earned { background: rgba(238, 160, 71, 0.14); color: var(--text-2); }
+.badge.earned { background: rgba(238, 160, 71, 0.14); color: var(--text-2); box-shadow: inset 0 0 0 1px rgba(243, 196, 75, 0.35); }
 .badge.earned strong { color: var(--text); }
 .badge.earned .badge-mark { color: var(--orange); }
 .goal-select { flex: 0 0 auto; max-width: 42%; }
@@ -271,7 +319,7 @@ a.row { color: inherit; text-decoration: none; }
 .pix-lead { margin: 0; font-size: 17px; font-weight: 600; line-height: 1.3; color: var(--text); max-width: 28ch; }
 .pix-hint, .pix-note { margin: 0; font-size: 13px; line-height: 1.45; color: var(--text-3); max-width: 36ch; }
 .pix-qr {
-  width: 150px; height: 150px; border-radius: 12px; background: #fff; padding: 8px;
+  width: 150px; height: 150px; border-radius: 12px; background: var(--cream); padding: 8px;
 }
 .pix-key {
   display: flex; align-items: center; gap: 8px; width: 100%;
@@ -283,9 +331,11 @@ a.row { color: inherit; text-decoration: none; }
 }
 .copy-btn {
   flex: 0 0 auto; min-height: 36px; padding: 0 14px; border: 0; border-radius: 999px;
-  background: var(--coral-strong); color: var(--cream); font-size: 14px; font-weight: 600;
+  background: var(--coral); color: var(--cream); font-size: 14px; font-weight: 600;
+  transition: background-color 0.25s ease, color 0.25s ease;
 }
-.copy-btn:active { opacity: 0.72; }
+.copy-btn:active { background: var(--yellow); color: var(--navy-deep); }
+.copy-btn.copied { background: var(--ocean); color: var(--cream); }
 
 .demo-banner {
   position: sticky; top: 0; z-index: 10; margin: 0; padding: calc(6px + var(--safe-top)) 16px 6px;
@@ -294,7 +344,8 @@ a.row { color: inherit; text-decoration: none; }
 
 @media (hover: hover) {
   button.row:hover { background: var(--fill); }
-  .primary-button:hover:not(:disabled) { opacity: 0.9; }
+  .primary-button:hover:not(:disabled) { background: var(--yellow); color: var(--navy-deep); }
+  .copy-btn:hover { background: var(--yellow); color: var(--navy-deep); }
 }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { transition-duration: 0.01ms !important; animation-duration: 0.01ms !important; }

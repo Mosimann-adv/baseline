@@ -53,7 +53,8 @@ function Welcome({ onSignIn, onSignUp, onDoc }: { onSignIn: () => void; onSignUp
     <main className="welcome">
       <img src="icons/icon-192.png" alt="" width={88} height={88} className="welcome-icon" />
       <h1 className="large-title">Baseline</h1>
-      <p className="welcome-sub">Treinos de basquete guiados, com vídeo, para você e para as crianças e adolescentes que você acompanha.</p>
+      <p className="welcome-sub">Treinos de basquete guiados, com <em>vídeo</em>, para você e para as crianças e adolescentes que você acompanha.</p>
+      <img className="welcome-hero" src="hero.webp" alt="Atletas do Arvoredo Basquetebol em quadra" loading="lazy" />
       <div className="welcome-actions">
         {isDemo && <PrimaryButton onClick={() => enterDemo("adult")}>Explorar</PrimaryButton>}
         {isDemo ? <PlainButton onClick={onSignUp}>Criar conta vazia</PlainButton> : <PrimaryButton onClick={onSignUp}>Criar conta</PrimaryButton>}

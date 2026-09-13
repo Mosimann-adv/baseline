@@ -1,4 +1,4 @@
-import type { ButtonHTMLAttributes, HTMLInputTypeAttribute, ReactNode } from "react";
+import { useEffect, useState, type ButtonHTMLAttributes, type HTMLInputTypeAttribute, type ReactNode } from "react";
 
 export function Screen({
   title,
@@ -147,5 +147,34 @@ export function Notice({ tone = "info", children }: { tone?: "info" | "error" | 
     <p className={`notice ${tone}`} role={tone === "error" ? "alert" : "status"}>
       {children}
     </p>
+  );
+}
+
+/** Número que sobe do zero até o valor, como os números de impacto do site. Pula direto com reduced-motion. */
+export function CountUp({ value, duration = 600, suffix }: { value: number; duration?: number; suffix?: string }) {
+  const [display, setDisplay] = useState(0);
+
+  useEffect(() => {
+    if (value <= 0 || window.matchMedia?.("(prefers-reduced-motion: reduce)").matches) {
+      setDisplay(value);
+      return;
+    }
+    const start = performance.now();
+    let raf = 0;
+    const tick = (now: number) => {
+      const t = Math.min(1, (now - start) / duration);
+      const eased = 1 - Math.pow(1 - t, 3);
+      setDisplay(Math.round(value * eased));
+      if (t < 1) raf = requestAnimationFrame(tick);
+    };
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, [value, duration]);
+
+  return (
+    <>
+      {display}
+      {suffix}
+    </>
   );
 }
