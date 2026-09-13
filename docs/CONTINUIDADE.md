@@ -274,8 +274,9 @@ supabase/migrations/    0001 fundação · 0002 treinos · 0003 evolução · 00
 5. **Formulários do Google Play** — rascunho em `docs/GOOGLE_PLAY.md`. Preencher no Console (dono).
 6. **Senha para excluir a conta** — feita (alternativa combinada ao PIN).
 7. **Conversão 16/18** — feita como aviso, sem migrar histórico: o perfil de menor permanece na conta do responsável; a pessoa pode criar login próprio se quiser. Aos 18, o adolescente vira adulto pela idade e precisa do termo de adulto para seguir treinando.
+8. **Vídeos dos exercícios** — 40 de 44 com ID conferido (Jr. NBA, USA Basketball e os cinco já usados). Sem vídeo: cintura, polichinelo, pular num pé só, equilíbrio de cegonha.
 
-Não há mais item de código da v1 além de conteúdo (vídeos, revisão jurídica, validação do profissional).
+Não há mais item de código da v1 além da revisão jurídica, da validação do profissional e do que depende do dono (migração 0006, Play, AAB).
 
 ### 10.3 Captação de recursos (decidida em 2026-09-13)
 
@@ -298,15 +299,13 @@ Não há mais item de código da v1 além de conteúdo (vídeos, revisão juríd
 - [ ] JDK 21 / Android Studio na máquina do dono, para gerar o AAB.
 - [ ] Conta de organização no Google Play (Instituto Arvoredo, D-U-N-S).
 - [x] `appId` definido (`br.org.arvoredo.baseline`); permanente depois da primeira publicação.
-- [ ] Revisão jurídica de `src/lib/consent.ts` e `src/content/legal.ts`. Preencher os trechos entre colchetes:
-  - e-mail de privacidade e nome do encarregado;
-  - prazo das cópias de segurança do provedor;
-  - prazo para atender pedido de exclusão por e-mail;
-  - região do Supabase;
+- [ ] Revisão jurídica de `src/lib/consent.ts` e `src/content/legal.ts`. Ainda faltam:
+  - e-mail de privacidade e nome do encarregado (hoje o canal é o WhatsApp);
   - nome e CREF do profissional de educação física.
+  Já preenchidos: CNPJ, endereço de treino, região São Paulo do Supabase, prazo de 15 dias úteis para exclusão por WhatsApp, app gratuito.
 - [x] CNPJ do Instituto preenchido (`56.660.275/0001-06`); app descrito como gratuito; Apoie o Arvoredo na tela Conta.
 - [ ] Validação dos 11 programas e dos 7 testes por profissional de educação física, inclusive o uso deles para adultos.
-- [ ] Vídeos: só **9 dos 44 exercícios** têm vídeo; lista em `docs/VIDEOS.md`.
+- [ ] Vídeos: **40 de 44 exercícios** têm vídeo conferido; lista em `docs/VIDEOS.md`. Sem vídeo: bola em volta da cintura, polichinelo, pular num pé só, equilíbrio de cegonha.
 - [ ] Copiar `docs/GOOGLE_PLAY.md` no Play Console.
 
 ## 12. Riscos e questões em aberto

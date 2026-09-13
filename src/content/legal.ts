@@ -1,13 +1,13 @@
 import { INSTITUTE_CNPJ, INSTITUTE_NAME } from "./support";
 
-// RASCUNHO — pendente de revisão jurídica. Trechos entre colchetes precisam ser preenchidos antes de publicar.
+// RASCUNHO — pendente de revisão jurídica. Encarregado, e-mail de privacidade e CREF ainda faltam.
 // Mudou o texto de forma relevante? Troque LEGAL_VERSION.
-export const LEGAL_VERSION = "2026-09-rascunho-5";
+export const LEGAL_VERSION = "2026-09-rascunho-6";
 
 const ORG = INSTITUTE_NAME;
 const CNPJ = INSTITUTE_CNPJ;
-const CONTACT = "[e-mail de privacidade a preencher]";
-const BACKUP_WINDOW = "[prazo a confirmar com o provedor]";
+const CONTACT = "WhatsApp (48) 9664-1051";
+const BACKUP_WINDOW = "o ciclo automático de backups do provedor, no plano contratado";
 const ADDRESS = "Escola de Educação Básica Intendente José Fernandes — Rod. João Gualberto Soares, 324, Ingleses Norte, Florianópolis/SC";
 
 export type LegalId = "privacidade" | "termos" | "excluir-conta";
@@ -33,7 +33,7 @@ export const LEGAL_DOCS: Record<LegalId, LegalDoc> = {
         title: "Quem cuida dos dados",
         blocks: [
           `O Baseline é mantido pelo ${ORG} (CNPJ ${CNPJ}), controlador dos dados nos termos da Lei Geral de Proteção de Dados (Lei 13.709/2018). Treinamos em ${ADDRESS}.`,
-          `Encarregado pelo tratamento de dados: [nome a preencher], pelo e-mail ${CONTACT}. Até lá, o canal público do Instituto é o WhatsApp (48) 9664-1051.`,
+          `Encarregado pelo tratamento de dados: a nomear. Até a indicação formal, o canal público do Instituto é o ${CONTACT}.`,
         ],
       },
       {
@@ -98,7 +98,7 @@ export const LEGAL_DOCS: Record<LegalId, LegalDoc> = {
           "Não vendemos nem cedemos dados. Alguns serviços são necessários para o app funcionar:",
           {
             list: [
-              "Supabase: guarda o banco de dados e faz o login, seguindo nossas instruções. [Confirmar a região dos servidores do projeto.]",
+              "Supabase: guarda o banco de dados e faz o login, em servidores na região São Paulo (sa-east-1), seguindo nossas instruções.",
               "YouTube (Google): os vídeos dos exercícios abrem no modo sem cookies. Ao tocar um vídeo, o YouTube recebe dados técnicos da conexão, como o endereço IP, conforme a política de privacidade do Google.",
               "Vercel: hospeda a versão web do app.",
               "Google Play: distribui o app no Android.",
@@ -129,7 +129,7 @@ export const LEGAL_DOCS: Record<LegalId, LegalDoc> = {
         title: "Seus direitos",
         blocks: [
           "Pela LGPD (art. 18), você pode confirmar se tratamos dados, acessar, corrigir, pedir anonimização, bloqueio ou eliminação, levar os dados para outro serviço, saber com quem compartilhamos e revogar o consentimento.",
-          `Na tela Conta você faz quase tudo sozinho: corrigir perfis, baixar uma cópia dos dados, revogar consentimentos e autorizações, excluir perfis e excluir a conta. Para outros pedidos, escreva para ${CONTACT}. Você também pode reclamar à Autoridade Nacional de Proteção de Dados (ANPD).`,
+          `Na tela Conta você faz quase tudo sozinho: corrigir perfis, baixar uma cópia dos dados, revogar consentimentos e autorizações, excluir perfis e excluir a conta. Para outros pedidos, chame no ${CONTACT}. Você também pode reclamar à Autoridade Nacional de Proteção de Dados (ANPD).`,
         ],
       },
       {
@@ -181,7 +181,7 @@ export const LEGAL_DOCS: Record<LegalId, LegalDoc> = {
               "Se algo doer, pare na hora. Crianças e adolescentes devem avisar um adulto.",
             ],
           },
-          "Os treinos e testes são elaborados e validados por profissional de educação física [nome e registro no CREF a preencher].",
+          "Os treinos e testes desta versão são rascunho pedagógico, até validação por profissional de educação física com registro no CREF.",
         ],
       },
       {
@@ -227,7 +227,7 @@ export const LEGAL_DOCS: Record<LegalId, LegalDoc> = {
       },
       {
         title: "Sem acesso à conta",
-        blocks: [`Escreva para ${CONTACT} a partir do e-mail cadastrado pedindo a exclusão. Confirmamos o pedido e excluímos em até [prazo a definir] dias.`],
+        blocks: [`Chame no ${CONTACT}, de preferência a partir do e-mail cadastrado, pedindo a exclusão. Confirmamos o pedido e excluímos em até 15 dias úteis.`],
       },
       {
         title: "O que é apagado",

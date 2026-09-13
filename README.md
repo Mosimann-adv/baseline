@@ -44,8 +44,8 @@ Requer JDK 21 (o Android Studio já traz um em `jbr`). O projeto `android/` já 
 
 ## Pendências antes de publicar
 
-- Confirmar o `appId` em `capacitor.config.ts` (permanente depois da primeira publicação).
-- Revisão jurídica do termo em `src/lib/consent.ts` e dos textos em `src/content/legal.ts`; preencher os trechos entre colchetes (CNPJ, e-mail de privacidade, encarregado, prazos, região do Supabase, profissional de educação física).
-- Endereços públicos para o Google Play: https://baseline-six-sigma.vercel.app/#/privacidade (política) e https://baseline-six-sigma.vercel.app/#/excluir-conta (exclusão de conta).
+- Revisão jurídica de `src/lib/consent.ts` e `src/content/legal.ts` (encarregado, e-mail de privacidade, CREF do profissional).
+- Endereços públicos: https://baseline-six-sigma.vercel.app/#/privacidade e https://baseline-six-sigma.vercel.app/#/excluir-conta.
 - Validação dos treinos por profissional de educação física.
+- Rodar a migração `0006_conta_16.sql` no SQL Editor do Supabase.
 - Número D-U-N-S do Instituto Arvoredo para a conta de organização no Google Play.
