@@ -298,7 +298,7 @@ export const PROGRAMS: Program[] = [
     levels: ALL_LEVELS,
     equipment: "Bola tamanho 6 ou 7 e 2 cones ou garrafas.",
     drills: [
-      { id: "aquece-maos", name: "Drible forte parado", cue: "Drible forte e baixo com cada mão, olhando para a frente.", seconds: 30, restSeconds: 15, video: VIDEOS.drible },
+      { id: "aquece-maos", name: "Drible forte parado", cue: "Drible forte e baixo com cada mão, olhando para a frente.", seconds: 30, restSeconds: 15, video: { ...VIDEOS.drible, previewOnly: true } },
       { id: "finta-cruzar", name: "Finta de cruzar", cue: "Fingir que vai cruzar a bola e não cruza; na próxima, cruze de verdade. Alterne os dois.", seconds: 45, restSeconds: 20, video: VIDEOS.crossover },
       { id: "entre-pernas", name: "Entre as pernas", cue: "Um drible entre as pernas, um do lado de fora. O pé da frente fica parado.", seconds: 45, restSeconds: 20, video: VIDEOS.entrePernas },
       { id: "puxado-arranque", name: "Puxou, arrancou", cue: "Drible dois passos para a frente, puxe a bola de volta e arranque pelo lado por três passos.", seconds: 45, restSeconds: 20, video: VIDEOS.ritmo },
