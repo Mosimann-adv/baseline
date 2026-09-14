@@ -177,7 +177,7 @@ export const PROGRAMS: Program[] = [
     drills: [
       { id: "uma-mao", name: "Arremesso com uma mão", cue: "Bem perto da cesta, só a mão de arremesso. Termine com o pulso dobrado.", seconds: 60, restSeconds: 20, video: VIDEOS.forma },
       { id: "cinco-pontos", name: "Cinco pontos em volta da cesta", cue: "Arremesse de cinco posições a dois passos da cesta, na mesma altura de salto.", seconds: 90, restSeconds: 30, video: { ...VIDEOS.arremesso, previewOnly: true } },
-      { id: "lance-livre", name: "Lance livre com rotina", cue: "A mesma rotina toda vez: quiques, respira, olha o aro e arremessa.", seconds: 90, restSeconds: 0, video: VIDEOS.lanceLivre },
+      { id: "lance-livre", name: "Lance livre com rotina", cue: "A mesma rotina toda vez: quiques, respira, olha o aro e arremessa.", seconds: 90, restSeconds: 0, video: { ...VIDEOS.lanceLivre, previewOnly: true } },
     ],
   },
   {
