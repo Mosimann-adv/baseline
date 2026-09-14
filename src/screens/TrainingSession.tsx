@@ -199,13 +199,13 @@ export function TrainingSession({
     if (restSeconds > 0 && restSeconds <= 3) cue("tick");
   }, [state.phase, state.pausedLeft, restSeconds]);
 
-  // Pausar o treino pausa o vídeo, e continuar volta a tocar (API de iframe do YouTube via postMessage).
+  // Pausar o treino pausa o vídeo em exibição (exercício ou prévia do próximo), e continuar volta a tocar (API de iframe do YouTube via postMessage).
   const ytCommand = (func: string, args: unknown[] = []) => {
     playerRef.current?.contentWindow?.postMessage(JSON.stringify({ event: "command", func, args }), YOUTUBE_ORIGIN);
   };
 
   useEffect(() => {
-    if (state.phase !== "work") return;
+    if (state.phase !== "work" && state.phase !== "rest") return;
     const func = state.pausedLeft === null ? "playVideo" : "pauseVideo";
     ytCommand(func);
   }, [state.phase, state.pausedLeft]);
@@ -296,9 +296,10 @@ export function TrainingSession({
                   <div className="video-frame">
                     <iframe
                       key={`next-${next.id}`}
-                      src={youtubeSrc(next.video, false)}
+                      ref={playerRef}
+                      src={youtubeSrc(next.video, true)}
                       title={next.video.title}
-                      allow="encrypted-media; picture-in-picture"
+                      allow="autoplay; encrypted-media; picture-in-picture"
                       allowFullScreen
                       referrerPolicy="strict-origin-when-cross-origin"
                     />
