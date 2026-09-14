@@ -34,7 +34,10 @@ export function friendlyError(err: unknown): string {
   if (/email not confirmed/i.test(msg)) return "Confirme o e-mail pelo link que enviamos antes de entrar.";
   if (/otp|token has expired|invalid token|invalid otp/i.test(msg)) return "Código inválido ou vencido. Peça outro e tente de novo.";
   if (/same password/i.test(msg)) return "A nova senha precisa ser diferente da atual.";
-  if (/rate limit|too many/i.test(msg)) return "Muitas tentativas seguidas. Espere um minuto e tente de novo.";
+  // Supabase: "Email rate limit exceeded" — o provedor de e-mail embutido manda só 2 e-mails por hora no projeto todo.
+  if (/email rate limit/i.test(msg))
+    return "O servidor está no limite de envio de e-mails agora. Espere um pouco — pode levar até uma hora — ou entre com e-mail e senha.";
+  if (/rate limit|too many/i.test(msg)) return "Muitas tentativas seguidas. Espere alguns minutos e tente de novo.";
   if (/idade fora da faixa/i.test(msg)) return "Perfis de crianças e adolescentes são para 6 a 17 anos.";
   if (/perfil proprio exige/i.test(msg)) return "O perfil próprio é para quem tem 16 anos ou mais.";
   if (/conta propria a partir de 16/i.test(msg)) return "Conta própria é a partir de 16 anos. Quem tem menos treina pelo perfil criado pelo responsável.";
