@@ -9,8 +9,8 @@ import type { Category, Level, Program } from "../lib/types";
 const VIDEOS = {
   aquecimento: { id: "IoPvijC5TgY", start: 11, title: "Aquecimento dinâmico para basquete — Nathanael Morton" },
   deslocamento: { id: "sz45B4GpEXw", start: 30, title: "Recuar, deslizar e arrancar — Jr. NBA" },
-  // start 5: capítulo "The Defensive Mirror Drill" (demo vai até 0:19, "Solid Defensive Posture").
-  espelho: { id: "HJwBzfT3ZJc", start: 5, end: 19, title: "Espelho defensivo — Jr. NBA" },
+  // start 187 (pedido do dono, 3:07); end 283: começa o capítulo "Pull the Ball".
+  espelho: { id: "HJwBzfT3ZJc", start: 187, end: 283, title: "Espelho defensivo — Jr. NBA" },
   // start 51: capítulo "Acceleration" (o "Intro" vai até 0:51); end 93: começa "Standing Long Jump".
   aceleracao: { id: "PzjxFXQy1XI", start: 51, end: 93, title: "Saída e aceleração — Coach DuWayne Campbell" },
   // start 30: capítulo "Countermovement" (o "Intro" vai até 0:30); end 80: começa "Hip Whip". Confirmar.
