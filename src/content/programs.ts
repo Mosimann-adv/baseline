@@ -3,14 +3,19 @@ import type { Category, Level, Program } from "../lib/types";
 
 // RASCUNHO — conteúdo pendente de validação por profissional de educação física.
 // Vídeos: só IDs do YouTube conferidos (oEmbed). Exercício sem equivalente fica sem vídeo.
+// start/end: recorte do trecho que demonstra o exercício (start = capítulo do YouTube; end = próximo capítulo).
+// Onde diz "confirmar", o tempo veio dos "Key moments" automáticos do YouTube — conferir assistindo.
 const VIDEOS = {
   aquecimento: { id: "IoPvijC5TgY", title: "Aquecimento dinâmico para basquete — Nathanael Morton" },
   deslocamento: { id: "sz45B4GpEXw", title: "Recuar, deslizar e arrancar — Jr. NBA" },
-  espelho: { id: "HJwBzfT3ZJc", title: "Espelho defensivo — Jr. NBA" },
-  // start 51: capítulo automático "Acceleration" (o "Intro" vai até 0:51). Confirmar assistindo 0:45–1:00.
-  aceleracao: { id: "PzjxFXQy1XI", start: 51, title: "Saída e aceleração — Coach DuWayne Campbell" },
-  saltoVertical: { id: "iU9MOreQB8Y", title: "Salto vertical com contramovimento — Jason Curtis" },
-  drible: { id: "BnvGa0I8bMc", title: "Fundamentos do drible — Jr. NBA" },
+  // start 5: capítulo "The Defensive Mirror Drill" (demo vai até 0:19, "Solid Defensive Posture").
+  espelho: { id: "HJwBzfT3ZJc", start: 5, end: 19, title: "Espelho defensivo — Jr. NBA" },
+  // start 51: capítulo "Acceleration" (o "Intro" vai até 0:51); end 93: começa "Standing Long Jump".
+  aceleracao: { id: "PzjxFXQy1XI", start: 51, end: 93, title: "Saída e aceleração — Coach DuWayne Campbell" },
+  // start 30: capítulo "Countermovement" (o "Intro" vai até 0:30); end 80: começa "Hip Whip". Confirmar.
+  saltoVertical: { id: "iU9MOreQB8Y", start: 30, end: 80, title: "Salto vertical com contramovimento — Jason Curtis" },
+  // start 67: capítulo "move with the basketball" (0:00–1:07 é introdução); end 97: cobre até "stay on top". Confirmar.
+  drible: { id: "BnvGa0I8bMc", start: 67, end: 97, title: "Fundamentos do drible — Jr. NBA" },
   dribleAlto: { id: "UY1Z4bKUZRU", title: "Drible alto — Jr. NBA" },
   dribleBaixo: { id: "qBkSOtWQe4o", title: "Drible baixo — Jr. NBA" },
   dribleDedos: { id: "8NiQszvmHho", title: "Drible com os dedos — Jr. NBA" },
@@ -18,15 +23,20 @@ const VIDEOS = {
   estatua: { id: "f7tB5drRCNA", title: "Drible e estátua — Jr. NBA" },
   crossover: { id: "OQWe-Y4zwEg", title: "Crossover por dentro e por fora — Jr. NBA" },
   ritmo: { id: "HDHFyQ0DwS4", title: "Drible de puxada — Jr. NBA" },
-  arremesso: { id: "t7ciq_x4138", title: "Fundamentos do arremesso — Jr. NBA" },
-  forma: { id: "ihKEQGn3KNo", title: "Arremesso de forma, sem cesta — Jr. NBA" },
-  lanceLivre: { id: "lnuZNZPDvaY", title: "Fundamentos do lance livre — Jr. NBA" },
-  paradaArremesso: { id: "AueLd1-H1V8", title: "Parada e arremesso — Jr. NBA" },
+  // start 59: capítulo "The Finish"; end 119: cobre "Extended Finish" e "Cadence", até "Mechanics". Confirmar.
+  arremesso: { id: "t7ciq_x4138", start: 59, end: 119, title: "Fundamentos do arremesso — Jr. NBA" },
+  // start 83: "Key moment" sobre os pés no arremesso de forma. Confirmar.
+  forma: { id: "ihKEQGn3KNo", start: 83, title: "Arremesso de forma, sem cesta — Jr. NBA" },
+  // start 4: "Key moment" sobre a importância do lance livre. Confirmar.
+  lanceLivre: { id: "lnuZNZPDvaY", start: 4, title: "Fundamentos do lance livre — Jr. NBA" },
+  // start 113: "Key moment" explicando a parada (jump stop). Confirmar.
+  paradaArremesso: { id: "AueLd1-H1V8", start: 113, title: "Parada e arremesso — Jr. NBA" },
   crossoverArremesso: { id: "ajAQJRkSkIo", title: "Crossover e arremesso — Jr. NBA" },
-  bandeja: { id: "hI0aUdwBAqw", title: "Bandeja em cinco — Jr. NBA" },
+  // start 112: "Key moment" sobre os passos da bandeja. Confirmar.
+  bandeja: { id: "hI0aUdwBAqw", start: 112, title: "Bandeja em cinco — Jr. NBA" },
   bandejaPasso: { id: "TlOwO09gzpI", title: "Bandeja com drop-step — Jr. NBA" },
-  passePeito: { id: "SbOsxamKyzY", start: 27, title: "Passe de peito — USA Basketball" },
-  passePicado: { id: "SbOsxamKyzY", start: 64, title: "Passe picado — USA Basketball" },
+  passePeito: { id: "SbOsxamKyzY", start: 27, end: 64, title: "Passe de peito — USA Basketball" },
+  passePicado: { id: "SbOsxamKyzY", start: 64, end: 90, title: "Passe picado — USA Basketball" },
   passaCorta: { id: "YzadRKLSMB4", title: "Passa e corta — Jr. NBA" },
   passePivo: { id: "jgqdv9ySjYM", title: "Parada, pivô e passe — Jr. NBA" },
   base: { id: "4A6KqSJX8Ek", title: "Postura defensiva — Jr. NBA" },
