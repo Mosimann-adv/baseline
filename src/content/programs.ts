@@ -191,7 +191,7 @@ export const PROGRAMS: Program[] = [
     drills: [
       { id: "aquecimento", name: "Aquecimento dinâmico", cue: "Trote leve, mobilidade de tornozelo e deslocamentos curtos.", seconds: 180, restSeconds: 30, video: VIDEOS.aquecimento },
       { id: "aterrissagem", name: "Aterrissagem suave", cue: "Salte baixo e aterrisse sem barulho, joelhos na direção dos pés.", seconds: 30, restSeconds: 30, video: { ...VIDEOS.saltoVertical, previewOnly: true } },
-      { id: "salto-vertical", name: "Salto vertical", cue: "Desça rápido, suba sem pausa e aterrisse no mesmo lugar. Poucas repetições, com qualidade.", seconds: 30, restSeconds: 60, video: VIDEOS.saltoVertical },
+      { id: "salto-vertical", name: "Salto vertical", cue: "Desça rápido, suba sem pausa e aterrisse no mesmo lugar. Poucas repetições, com qualidade.", seconds: 30, restSeconds: 60, video: { ...VIDEOS.saltoVertical, previewOnly: true } },
       { id: "lateral-arrancada", name: "Lateral e arrancada", cue: "Dois passos laterais e, no sinal, arranque por três passos.", seconds: 30, restSeconds: 45, video: VIDEOS.deslocamento },
     ],
   },
