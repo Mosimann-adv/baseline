@@ -44,7 +44,8 @@ export interface Drill {
   cue: string;
   seconds: number;
   restSeconds: number;
-  video?: { id: string; start?: number; end?: number; title: string };
+  /** previewOnly: vídeo só na prévia antes do treino, porque não mostra o exercício em si. */
+  video?: { id: string; start?: number; end?: number; title: string; previewOnly?: boolean };
 }
 
 export interface Program {

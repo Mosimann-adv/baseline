@@ -151,8 +151,9 @@ export function TrainingSession({
   };
 
   // Vídeo do exercício corrente, lido pelos efeitos do player antes do render.
+  // previewOnly não entra no treino: serve só para ver antes (ProgramDetail).
   const currentDrill = drills[Math.min(state.index, drills.length - 1)];
-  const video = state.phase !== "rest" ? currentDrill.video : undefined;
+  const video = state.phase !== "rest" && !currentDrill.video?.previewOnly ? currentDrill.video : undefined;
 
   const running = (state.phase === "work" || state.phase === "rest" || state.phase === "getready") && state.pausedLeft === null;
 
@@ -362,7 +363,7 @@ export function TrainingSession({
                     {i + 1}. {item.name}
                   </span>
                   <span className="ready-meta">
-                    {item.seconds} s{item.video ? " · vídeo" : ""}
+                    {item.seconds} s{item.video && !item.video.previewOnly ? " · vídeo" : ""}
                   </span>
                 </li>
               ))}
