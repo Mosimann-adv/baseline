@@ -33,9 +33,13 @@ const VIDEOS = {
   // start 113: "Key moment" explicando a parada (jump stop). Confirmar.
   paradaArremesso: { id: "AueLd1-H1V8", start: 113, title: "Parada e arremesso — Jr. NBA" },
   crossoverArremesso: { id: "ajAQJRkSkIo", start: 30, title: "Crossover e arremesso — Jr. NBA" },
+  // start 30: sem capítulos conferidos; vale a convenção de pular a introdução. Confirmar assistindo.
+  entrePernas: { id: "D2hhRG2Hda4", start: 30, title: "Tesoura entre as pernas — Jr. NBA" },
   // start 112: "Key moment" sobre os passos da bandeja. Confirmar.
   bandeja: { id: "hI0aUdwBAqw", start: 112, title: "Bandeja em cinco — Jr. NBA" },
   bandejaPasso: { id: "TlOwO09gzpI", start: 30, title: "Bandeja com drop-step — Jr. NBA" },
+  // start 30: sem capítulos conferidos; vale a convenção de pular a introdução. Confirmar assistindo.
+  bandejaFundamentos: { id: "3noGvqHdoRE", start: 30, title: "Fundamentos da bandeja — Jr. NBA" },
   passePeito: { id: "SbOsxamKyzY", start: 27, end: 64, title: "Passe de peito — USA Basketball" },
   passePicado: { id: "SbOsxamKyzY", start: 64, end: 90, title: "Passe picado — USA Basketball" },
   passaCorta: { id: "YzadRKLSMB4", start: 30, title: "Passa e corta — Jr. NBA" },
@@ -111,7 +115,7 @@ export const PROGRAMS: Program[] = [
     levels: ALL_LEVELS,
     equipment: "Bola e cesta: 2,60 m no minibasquete, 3,05 m a partir dos 12 anos.",
     drills: [
-      { id: "passo-sem-bola", name: "Passo da bandeja sem bola", cue: "Pela direita: pé direito, pé esquerdo e sobe com o joelho direito.", seconds: 40, restSeconds: 20 },
+      { id: "passo-sem-bola", name: "Passo da bandeja sem bola", cue: "Pela direita: pé direito, pé esquerdo e sobe com o joelho direito.", seconds: 40, restSeconds: 20, video: VIDEOS.bandejaFundamentos },
       { id: "bandeja-direita", name: "Bandeja pela direita", cue: "Suba com a mão direita e mire no quadrado da tabela.", seconds: 60, restSeconds: 20, video: VIDEOS.bandeja },
       { id: "bandeja-esquerda", name: "Bandeja pela esquerda", cue: "Pé esquerdo, pé direito e sobe com a mão esquerda.", seconds: 60, restSeconds: 20, video: VIDEOS.bandeja },
       { id: "perto-da-cesta", name: "Arremesso perto da cesta", cue: "Cotovelo embaixo da bola e termine com a mão virada para baixo.", seconds: 60, restSeconds: 0 },
@@ -296,7 +300,7 @@ export const PROGRAMS: Program[] = [
     drills: [
       { id: "aquece-maos", name: "Drible forte parado", cue: "Drible forte e baixo com cada mão, olhando para a frente.", seconds: 30, restSeconds: 15, video: VIDEOS.drible },
       { id: "finta-cruzar", name: "Finta de cruzar", cue: "Fingir que vai cruzar a bola e não cruza; na próxima, cruze de verdade. Alterne os dois.", seconds: 45, restSeconds: 20, video: VIDEOS.crossover },
-      { id: "entre-pernas", name: "Entre as pernas", cue: "Um drible entre as pernas, um do lado de fora. O pé da frente fica parado.", seconds: 45, restSeconds: 20 },
+      { id: "entre-pernas", name: "Entre as pernas", cue: "Um drible entre as pernas, um do lado de fora. O pé da frente fica parado.", seconds: 45, restSeconds: 20, video: VIDEOS.entrePernas },
       { id: "puxado-arranque", name: "Puxou, arrancou", cue: "Drible dois passos para a frente, puxe a bola de volta e arranque pelo lado por três passos.", seconds: 45, restSeconds: 20, video: VIDEOS.ritmo },
       { id: "cadeia", name: "A cadeia inteira", cue: "Junte tudo: crossover, entre as pernas e puxado — quatro dribles em cada. Já está fácil? Inclua por trás das costas.", seconds: 60, restSeconds: 0 },
     ],
