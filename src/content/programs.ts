@@ -33,13 +33,13 @@ const VIDEOS = {
   // start 113: "Key moment" explicando a parada (jump stop). Confirmar.
   paradaArremesso: { id: "AueLd1-H1V8", start: 113, title: "Parada e arremesso — Jr. NBA" },
   crossoverArremesso: { id: "ajAQJRkSkIo", start: 30, title: "Crossover e arremesso — Jr. NBA" },
-  // start 30: sem capítulos conferidos; vale a convenção de pular a introdução. Confirmar assistindo.
-  entrePernas: { id: "D2hhRG2Hda4", start: 30, title: "Tesoura entre as pernas — Jr. NBA" },
+  // start 27: início da demonstração, conferido assistindo (dono).
+  entrePernas: { id: "D2hhRG2Hda4", start: 27, title: "Tesoura entre as pernas — Jr. NBA" },
   // start 112: "Key moment" sobre os passos da bandeja. Confirmar.
   bandeja: { id: "hI0aUdwBAqw", start: 112, title: "Bandeja em cinco — Jr. NBA" },
   bandejaPasso: { id: "TlOwO09gzpI", start: 30, title: "Bandeja com drop-step — Jr. NBA" },
-  // start 30: sem capítulos conferidos; vale a convenção de pular a introdução. Confirmar assistindo.
-  bandejaFundamentos: { id: "3noGvqHdoRE", start: 30, title: "Fundamentos da bandeja — Jr. NBA" },
+  // start 52: início da demonstração, conferido assistindo (dono).
+  bandejaFundamentos: { id: "3noGvqHdoRE", start: 52, title: "Fundamentos da bandeja — Jr. NBA" },
   passePeito: { id: "SbOsxamKyzY", start: 27, end: 64, title: "Passe de peito — USA Basketball" },
   passePicado: { id: "SbOsxamKyzY", start: 64, end: 90, title: "Passe picado — USA Basketball" },
   passaCorta: { id: "YzadRKLSMB4", start: 30, title: "Passa e corta — Jr. NBA" },
