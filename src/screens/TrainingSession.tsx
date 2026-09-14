@@ -263,13 +263,30 @@ export function TrainingSession({
       </div>
 
       {state.phase === "rest" ? (
-        <section className="training-body" aria-live="polite">
+        <section className={`training-body${next?.video ? " with-video" : ""}`} aria-live="polite">
           <p className="phase-label">Descanso</p>
           <p className="countdown">{clock(left)}</p>
           {next && (
-            <p className="training-next">
-              Próximo: <strong>{next.name}</strong>
-            </p>
+            <>
+              <p className="training-next">
+                Próximo: <strong>{next.name}</strong>
+              </p>
+              <p className="drill-cue">{next.cue}</p>
+              {next.video && (
+                <div className="video-block">
+                  <div className="video-frame">
+                    <iframe
+                      key={`next-${next.id}`}
+                      src={youtubeSrc(next.video, false)}
+                      title={next.video.title}
+                      allow="encrypted-media; picture-in-picture"
+                      allowFullScreen
+                      referrerPolicy="strict-origin-when-cross-origin"
+                    />
+                  </div>
+                </div>
+              )}
+            </>
           )}
         </section>
       ) : (
