@@ -5,7 +5,7 @@ import { keepAwake } from "../lib/native";
 import { cue, say, unlockAudio } from "../lib/sounds";
 import type { Athlete, Drill, NewSessionInput, Program } from "../lib/types";
 
-type Phase = "ready" | "work" | "rest" | "done";
+type Phase = "ready" | "getready" | "work" | "rest" | "done";
 
 interface RunState {
   phase: Phase;
@@ -33,7 +33,8 @@ function run(state: RunState, action: Action): RunState {
 
   switch (action.type) {
     case "start":
-      return { ...INITIAL, phase: "work", endsAt: now + drills[0].seconds * 1000, startedAt: now };
+      // 3 s para largar o celular e pegar a bola antes do primeiro exercício.
+      return { ...INITIAL, phase: "getready", endsAt: now + 3000, startedAt: now };
     case "pause":
       if (state.pausedLeft !== null || (state.phase !== "work" && state.phase !== "rest")) return state;
       return { ...state, pausedLeft: Math.max(0, state.endsAt - now) };
@@ -43,6 +44,7 @@ function run(state: RunState, action: Action): RunState {
     case "finish":
       return { ...state, phase: "done", pausedLeft: null };
     case "advance":
+      if (state.phase === "getready") return workFrom(0);
       if (state.phase === "work") {
         const done = state.done + 1;
         if (state.index >= last) return { ...state, phase: "done", done, pausedLeft: null };
@@ -152,7 +154,7 @@ export function TrainingSession({
   const currentDrill = drills[Math.min(state.index, drills.length - 1)];
   const video = state.phase !== "rest" ? currentDrill.video : undefined;
 
-  const running = (state.phase === "work" || state.phase === "rest") && state.pausedLeft === null;
+  const running = (state.phase === "work" || state.phase === "rest" || state.phase === "getready") && state.pausedLeft === null;
 
   useEffect(() => {
     if (!running) return;
@@ -281,7 +283,16 @@ export function TrainingSession({
         <span style={{ width: `${progress}%` }} />
       </div>
 
-      {state.phase === "rest" ? (
+      {state.phase === "getready" ? (
+        <section className="training-body" aria-live="polite">
+          <p className="phase-label">Prepare-se</p>
+          <h1 className="drill-name">{drills[0].name}</h1>
+          <p className="drill-cue">{drills[0].cue}</p>
+          <p className="countdown" aria-live="off">
+            {clock(left)}
+          </p>
+        </section>
+      ) : state.phase === "rest" ? (
         <section className={`training-body${next?.video ? " with-video" : ""}`} aria-live="polite">
           <p className="phase-label">Descanso</p>
           <p className="countdown">{clock(left)}</p>
