@@ -30,8 +30,8 @@ const VIDEOS = {
   forma: { id: "ihKEQGn3KNo", start: 83, title: "Arremesso de forma, sem cesta — Jr. NBA" },
   // start 4: "Key moment" sobre a importância do lance livre. Confirmar.
   lanceLivre: { id: "lnuZNZPDvaY", start: 4, title: "Fundamentos do lance livre — Jr. NBA" },
-  // start 113: "Key moment" explicando a parada (jump stop). Confirmar.
-  paradaArremesso: { id: "AueLd1-H1V8", start: 113, title: "Parada e arremesso — Jr. NBA" },
+  // start 68 (pedido do dono, 1:08 — "Key moment" da parada).
+  paradaArremesso: { id: "AueLd1-H1V8", start: 68, title: "Parada e arremesso — Jr. NBA" },
   crossoverArremesso: { id: "ajAQJRkSkIo", start: 30, title: "Crossover e arremesso — Jr. NBA" },
   // start 27: início da demonstração, conferido assistindo (dono).
   entrePernas: { id: "D2hhRG2Hda4", start: 27, title: "Tesoura entre as pernas — Jr. NBA" },
@@ -221,7 +221,7 @@ export const PROGRAMS: Program[] = [
     drills: [
       { id: "um-drible", name: "Um drible e arremesso", cue: "Um drible forte para o lado, pare com os dois pés e arremesse.", seconds: 90, restSeconds: 30, video: VIDEOS.paradaArremesso },
       { id: "crossover-parada", name: "Crossover e parada", cue: "Crossover, parada em dois tempos e arremesso com o corpo de frente para a cesta.", seconds: 90, restSeconds: 30, video: VIDEOS.crossoverArremesso },
-      { id: "sequencia", name: "Sequência de arremessos", cue: "Cinco arremessos seguidos de pontos diferentes. Anote quantos caíram.", seconds: 90, restSeconds: 0, video: VIDEOS.arremesso },
+      { id: "sequencia", name: "Sequência de arremessos", cue: "Cinco arremessos seguidos de pontos diferentes. Anote quantos caíram.", seconds: 90, restSeconds: 0, video: { ...VIDEOS.arremesso, previewOnly: true } },
     ],
   },
   // Rascunho de 2026-09-13: ball handling para treinar em casa, sem cesta (pedido do dono).
