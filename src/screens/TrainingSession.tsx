@@ -130,6 +130,17 @@ export function TrainingSession({
   const drills = program.drills;
   const [state, dispatch] = useReducer(run, INITIAL);
   const [now, setNow] = useState(() => Date.now());
+  const [confirmExit, setConfirmExit] = useState(false);
+  // Sair no meio do treino pede confirmação em dois passos, como as outras ações sem volta.
+  // A confirmação caduca em segundos e a cada troca de fase, para um toque sem querer não encerrar depois.
+  useEffect(() => {
+    if (!confirmExit) return;
+    const id = window.setTimeout(() => setConfirmExit(false), 4000);
+    return () => window.clearTimeout(id);
+  }, [confirmExit]);
+  useEffect(() => {
+    setConfirmExit(false);
+  }, [state.phase, state.index]);
   const playerRef = useRef<HTMLIFrameElement>(null);
   // Todo toque destrava o áudio (requisito dos navegadores); os bipes só tocam depois disso.
   const act = (type: Action["type"]) => {
@@ -251,8 +262,16 @@ export function TrainingSession({
   return (
     <main className="training">
       <div className="training-top">
-        <button type="button" className="back-button" onClick={() => (state.phase === "ready" ? onExit() : act("finish"))}>
-          {state.phase === "ready" ? "Voltar" : "Encerrar"}
+        <button
+          type="button"
+          className="back-button"
+          onClick={() => {
+            if (state.phase === "ready") return onExit();
+            if (confirmExit) act("finish");
+            else setConfirmExit(true);
+          }}
+        >
+          {state.phase === "ready" ? "Voltar" : confirmExit ? "Encerrar mesmo?" : "Encerrar"}
         </button>
         <span className="training-count">
           Exercício {Math.min(state.index + 1, drills.length)} de {drills.length}
