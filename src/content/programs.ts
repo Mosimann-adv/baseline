@@ -7,7 +7,7 @@ import type { Category, Level, Program } from "../lib/types";
 // Onde diz "confirmar", o tempo veio dos "Key moments" automáticos do YouTube — conferir assistindo.
 // Vídeos curtos da Jr. NBA sem capítulos: start 30 para pular a introdução (pedido do dono).
 const VIDEOS = {
-  aquecimento: { id: "IoPvijC5TgY", title: "Aquecimento dinâmico para basquete — Nathanael Morton" },
+  aquecimento: { id: "IoPvijC5TgY", start: 11, title: "Aquecimento dinâmico para basquete — Nathanael Morton" },
   deslocamento: { id: "sz45B4GpEXw", start: 30, title: "Recuar, deslizar e arrancar — Jr. NBA" },
   // start 5: capítulo "The Defensive Mirror Drill" (demo vai até 0:19, "Solid Defensive Posture").
   espelho: { id: "HJwBzfT3ZJc", start: 5, end: 19, title: "Espelho defensivo — Jr. NBA" },
@@ -190,7 +190,7 @@ export const PROGRAMS: Program[] = [
     equipment: "Chão firme e antiderrapante.",
     drills: [
       { id: "aquecimento", name: "Aquecimento dinâmico", cue: "Trote leve, mobilidade de tornozelo e deslocamentos curtos.", seconds: 180, restSeconds: 30, video: VIDEOS.aquecimento },
-      { id: "aterrissagem", name: "Aterrissagem suave", cue: "Salte baixo e aterrisse sem barulho, joelhos na direção dos pés.", seconds: 30, restSeconds: 30, video: VIDEOS.saltoVertical },
+      { id: "aterrissagem", name: "Aterrissagem suave", cue: "Salte baixo e aterrisse sem barulho, joelhos na direção dos pés.", seconds: 30, restSeconds: 30, video: { ...VIDEOS.saltoVertical, previewOnly: true } },
       { id: "salto-vertical", name: "Salto vertical", cue: "Desça rápido, suba sem pausa e aterrisse no mesmo lugar. Poucas repetições, com qualidade.", seconds: 30, restSeconds: 60, video: VIDEOS.saltoVertical },
       { id: "lateral-arrancada", name: "Lateral e arrancada", cue: "Dois passos laterais e, no sinal, arranque por três passos.", seconds: 30, restSeconds: 45, video: VIDEOS.deslocamento },
     ],
