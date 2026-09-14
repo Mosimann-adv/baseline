@@ -83,7 +83,7 @@ export const PROGRAMS: Program[] = [
       { id: "polichinelo", name: "Polichinelo", cue: "Abra e feche braços e pernas no mesmo ritmo.", seconds: 30, restSeconds: 15 },
       { id: "pe-so", name: "Pular num pé só", cue: "Pulinhos baixos. Troque de pé na metade do tempo.", seconds: 20, restSeconds: 20 },
       { id: "lado", name: "Corrida de lado", cue: "Passos para o lado sem cruzar os pés. Vá e volte.", seconds: 30, restSeconds: 15, video: VIDEOS.lateral },
-      { id: "parar-firme", name: "Correr e parar firme", cue: "Corra devagar e pare com os dois pés no chão, joelhos dobrados, quando ouvir o sinal.", seconds: 40, restSeconds: 20, video: VIDEOS.aceleracao },
+      { id: "parar-firme", name: "Correr e parar firme", cue: "Corra devagar e pare com os dois pés no chão, joelhos dobrados, quando ouvir o sinal.", seconds: 40, restSeconds: 20 },
       { id: "equilibrio", name: "Equilíbrio de cegonha", cue: "Fique num pé só com os braços abertos. Troque de pé na metade.", seconds: 30, restSeconds: 0 },
     ],
   },
@@ -97,8 +97,8 @@ export const PROGRAMS: Program[] = [
     equipment: "Bola tamanho 5 e 2 cones ou garrafas.",
     drills: [
       { id: "alto-baixo", name: "Drible alto e baixo", cue: "Três dribles na altura da cintura, três na altura do joelho. Depois a outra mão.", seconds: 40, restSeconds: 20, video: VIDEOS.dribleAlto },
-      { id: "troca-frente", name: "Troca de mão pela frente", cue: "Passe a bola de uma mão para a outra na frente do corpo, abaixo do joelho.", seconds: 40, restSeconds: 20, video: VIDEOS.crossover },
-      { id: "oito", name: "Drible em oito", cue: "Com as pernas afastadas, drible entre elas desenhando um 8.", seconds: 40, restSeconds: 20, video: VIDEOS.dribleDedos },
+      { id: "troca-frente", name: "Troca de mão pela frente", cue: "Passe a bola de uma mão para a outra na frente do corpo, abaixo do joelho.", seconds: 40, restSeconds: 20 },
+      { id: "oito", name: "Drible em oito", cue: "Com as pernas afastadas, drible entre elas desenhando um 8.", seconds: 40, restSeconds: 20 },
       { id: "cones", name: "Drible até o cone e volta", cue: "Use a mão de fora do cone. Na volta, troque de mão.", seconds: 45, restSeconds: 20, video: VIDEOS.cones },
     ],
   },
@@ -111,10 +111,10 @@ export const PROGRAMS: Program[] = [
     levels: ALL_LEVELS,
     equipment: "Bola e cesta: 2,60 m no minibasquete, 3,05 m a partir dos 12 anos.",
     drills: [
-      { id: "passo-sem-bola", name: "Passo da bandeja sem bola", cue: "Pela direita: pé direito, pé esquerdo e sobe com o joelho direito.", seconds: 40, restSeconds: 20, video: VIDEOS.bandejaPasso },
+      { id: "passo-sem-bola", name: "Passo da bandeja sem bola", cue: "Pela direita: pé direito, pé esquerdo e sobe com o joelho direito.", seconds: 40, restSeconds: 20 },
       { id: "bandeja-direita", name: "Bandeja pela direita", cue: "Suba com a mão direita e mire no quadrado da tabela.", seconds: 60, restSeconds: 20, video: VIDEOS.bandeja },
       { id: "bandeja-esquerda", name: "Bandeja pela esquerda", cue: "Pé esquerdo, pé direito e sobe com a mão esquerda.", seconds: 60, restSeconds: 20, video: VIDEOS.bandeja },
-      { id: "perto-da-cesta", name: "Arremesso perto da cesta", cue: "Cotovelo embaixo da bola e termine com a mão virada para baixo.", seconds: 60, restSeconds: 0, video: VIDEOS.forma },
+      { id: "perto-da-cesta", name: "Arremesso perto da cesta", cue: "Cotovelo embaixo da bola e termine com a mão virada para baixo.", seconds: 60, restSeconds: 0 },
     ],
   },
   {
@@ -157,7 +157,7 @@ export const PROGRAMS: Program[] = [
     equipment: "Bola tamanho 6 ou 7 e 3 cones.",
     drills: [
       { id: "fraca-parado", name: "Mão fraca parado", cue: "Drible forte e baixo com a mão que você usa menos, olhando para a frente.", seconds: 45, restSeconds: 15, video: VIDEOS.dribleBaixo },
-      { id: "ritmo", name: "Mudança de ritmo", cue: "Drible devagar por três passos e acelere de repente por dois.", seconds: 45, restSeconds: 20, video: VIDEOS.ritmo },
+      { id: "ritmo", name: "Mudança de ritmo", cue: "Drible devagar por três passos e acelere de repente por dois.", seconds: 45, restSeconds: 20 },
       { id: "cross-entre", name: "In & Out e crossover", cue: "Um in & out, um crossover. Repita sem perder o ritmo.", seconds: 45, restSeconds: 20, video: VIDEOS.crossover },
       { id: "cones-fraca", name: "Zigue-zague com a mão fraca", cue: "Começando com a mão fraca, troque de mão a cada cone.", seconds: 60, restSeconds: 0, video: VIDEOS.cones },
     ],
@@ -202,7 +202,7 @@ export const PROGRAMS: Program[] = [
     drills: [
       { id: "aquecimento", name: "Aquecimento dinâmico", cue: "Trote leve, mobilidade e acelerações progressivas.", seconds: 180, restSeconds: 30, video: VIDEOS.aquecimento },
       { id: "saida", name: "Saída de aceleração 10 m", cue: "Corpo inclinado para a frente e braços fortes. Descanse bem entre as saídas.", seconds: 20, restSeconds: 60, video: VIDEOS.aceleracao },
-      { id: "freio", name: "Arrancada e freio em 3 passos", cue: "Diminua o tamanho dos passos e baixe o quadril para parar equilibrado.", seconds: 20, restSeconds: 60, video: VIDEOS.aceleracao },
+      { id: "freio", name: "Arrancada e freio em 3 passos", cue: "Diminua o tamanho dos passos e baixe o quadril para parar equilibrado.", seconds: 20, restSeconds: 60 },
       { id: "espelho-reativo", name: "Espelho reativo", cue: "Blocos curtos: reaja ao parceiro sem antecipar.", seconds: 15, restSeconds: 45, video: VIDEOS.espelho },
     ],
   },
@@ -247,7 +247,7 @@ export const PROGRAMS: Program[] = [
     equipment: "Bola tamanho 5 e 2 cones ou garrafas.",
     drills: [
       { id: "dedos-parado", name: "Drible de dedos", cue: "Sentado ou de joelhos, drible rápido só com a ponta dos dedos, sem usar a palma.", seconds: 30, restSeconds: 15, video: VIDEOS.dribleDedos },
-      { id: "troca-baixa", name: "Troca de mão baixa", cue: "Drible baixo e passe a bola de uma mão para a outra na frente do corpo, sem olhar para a bola.", seconds: 40, restSeconds: 20, video: VIDEOS.crossover },
+      { id: "troca-baixa", name: "Troca de mão baixa", cue: "Drible baixo e passe a bola de uma mão para a outra na frente do corpo, sem olhar para a bola.", seconds: 40, restSeconds: 20 },
       { id: "recuo", name: "Drible de recuo", cue: "Drible dois passos para a frente e puxe a bola de volta, escondendo-a com o corpo.", seconds: 40, restSeconds: 20, video: VIDEOS.ritmo },
       { id: "dois-cones", name: "Oito entre dois cones", cue: "Drible em zigue-zague entre os dois cones. Use a mão de fora na ida e troque na volta.", seconds: 45, restSeconds: 20, video: VIDEOS.cones },
       { id: "congela-andando", name: "Congela em movimento", cue: "Com um adulto: drible andando em qualquer direção e, no sinal, congele segurando a bola firme.", seconds: 60, restSeconds: 0, video: VIDEOS.estatua },
@@ -265,7 +265,7 @@ export const PROGRAMS: Program[] = [
       { id: "olhar-frente", name: "Ponto na parede", cue: "Drible parado olhando para um ponto alto na parede. Conte até 30 sem olhar para a bola.", seconds: 30, restSeconds: 15, video: VIDEOS.dribleAlto },
       { id: "conta-dedos", name: "Contar dedos", cue: "Com um adulto na sua frente: drible sem olhar para a bola e diga quantos dedos ele está mostrando.", seconds: 40, restSeconds: 20 },
       { id: "chamou-trocou", name: "Chamou, trocou", cue: "Com um adulto: ele grita “direita” ou “esquerda” e você troca a mão do drible na hora.", seconds: 40, restSeconds: 20 },
-      { id: "troca-sem-olhar", name: "Troca escondida", cue: "Troque a mão do drible na frente do corpo e depois por baixo da perna, sempre de olho na frente.", seconds: 40, restSeconds: 20, video: VIDEOS.crossover },
+      { id: "troca-sem-olhar", name: "Troca escondida", cue: "Troque a mão do drible na frente do corpo e depois por baixo da perna, sempre de olho na frente.", seconds: 40, restSeconds: 20 },
       { id: "cones-sem-olhar", name: "Zigue-zague sem olhar", cue: "Drible entre os dois cones olhando para a frente, não para os cones. Comece devagar.", seconds: 45, restSeconds: 0, video: VIDEOS.cones },
     ],
   },
@@ -278,11 +278,11 @@ export const PROGRAMS: Program[] = [
     levels: ALL_LEVELS,
     equipment: "2 bolas (tamanho 6 ou 7) e um espaço de 2 por 2 metros.",
     drills: [
-      { id: "duplo-alto", name: "Duplo alto", cue: "Drible as duas bolas na altura da cintura, no mesmo ritmo. Depois faça cada mão em um ritmo.", seconds: 40, restSeconds: 20, video: VIDEOS.dribleAlto },
-      { id: "duplo-baixo", name: "Duplo baixo", cue: "Agora baixinho, na altura do joelho, só com a ponta dos dedos.", seconds: 40, restSeconds: 20, video: VIDEOS.dribleBaixo },
+      { id: "duplo-alto", name: "Duplo alto", cue: "Drible as duas bolas na altura da cintura, no mesmo ritmo. Depois faça cada mão em um ritmo.", seconds: 40, restSeconds: 20 },
+      { id: "duplo-baixo", name: "Duplo baixo", cue: "Agora baixinho, na altura do joelho, só com a ponta dos dedos.", seconds: 40, restSeconds: 20 },
       { id: "alternado", name: "Alternado", cue: "Uma bola sobe enquanto a outra desce, como um balanço. Sem olhar para as bolas.", seconds: 40, restSeconds: 20 },
       { id: "para-ergue", name: "Para e ergue", cue: "No sinal de um adulto (ou conte mentalmente), pare uma bola segurando firme e continue só com a outra.", seconds: 45, restSeconds: 20 },
-      { id: "duplo-andando", name: "Duplo andando", cue: "Ande para a frente driblando as duas bolas até a parede e volte, mantendo o mesmo ritmo.", seconds: 60, restSeconds: 0, video: VIDEOS.drible },
+      { id: "duplo-andando", name: "Duplo andando", cue: "Ande para a frente driblando as duas bolas até a parede e volte, mantendo o mesmo ritmo.", seconds: 60, restSeconds: 0 },
     ],
   },
   {
