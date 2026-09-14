@@ -253,7 +253,6 @@ export function TrainingSession({
                   onLoad={() => playerRef.current?.contentWindow?.postMessage(JSON.stringify({ event: "listening" }), YOUTUBE_ORIGIN)}
                 />
               </div>
-              <p className="video-hint">O vídeo começa sem som — toque nele para ligar.</p>
               <a
                 className="plain-link"
                 href={`https://www.youtube.com/watch?v=${video.id}${video.start ? `&t=${video.start}s` : ""}`}
