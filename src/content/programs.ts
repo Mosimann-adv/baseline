@@ -159,7 +159,7 @@ export const PROGRAMS: Program[] = [
       { id: "fraca-parado", name: "Mão fraca parado", cue: "Drible forte e baixo com a mão que você usa menos, olhando para a frente.", seconds: 45, restSeconds: 15, video: VIDEOS.dribleBaixo },
       { id: "ritmo", name: "Mudança de ritmo", cue: "Drible devagar por três passos e acelere de repente por dois.", seconds: 45, restSeconds: 20, video: VIDEOS.ritmo },
       { id: "cross-entre", name: "In & Out e crossover", cue: "Um in & out, um crossover. Repita sem perder o ritmo.", seconds: 45, restSeconds: 20, video: VIDEOS.crossover },
-      { id: "cones-fraca", name: "Zigue-zague com a mão fraca", cue: "Contorne os cones usando só a mão fraca na ida e só a forte na volta.", seconds: 60, restSeconds: 0, video: VIDEOS.cones },
+      { id: "cones-fraca", name: "Zigue-zague com a mão fraca", cue: "Começando com a mão fraca, troque de mão a cada cone.", seconds: 60, restSeconds: 0, video: VIDEOS.cones },
     ],
   },
   {
