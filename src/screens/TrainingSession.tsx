@@ -2,6 +2,7 @@ import { useEffect, useReducer, useRef, useState } from "react";
 import { Group, CountUp, Notice, PlainButton, PrimaryButton, Segmented } from "../components/ui";
 import { friendlyError } from "../lib/errors";
 import { keepAwake } from "../lib/native";
+import { cue, say, unlockAudio } from "../lib/sounds";
 import type { Athlete, Drill, NewSessionInput, Program } from "../lib/types";
 
 type Phase = "ready" | "work" | "rest" | "done";
@@ -130,7 +131,11 @@ export function TrainingSession({
   const [state, dispatch] = useReducer(run, INITIAL);
   const [now, setNow] = useState(() => Date.now());
   const playerRef = useRef<HTMLIFrameElement>(null);
-  const act = (type: Action["type"]) => dispatch({ type, now: Date.now(), drills });
+  // Todo toque destrava o áudio (requisito dos navegadores); os bipes só tocam depois disso.
+  const act = (type: Action["type"]) => {
+    unlockAudio();
+    dispatch({ type, now: Date.now(), drills });
+  };
 
   // Vídeo do exercício corrente, lido pelos efeitos do player antes do render.
   const currentDrill = drills[Math.min(state.index, drills.length - 1)];
@@ -148,10 +153,40 @@ export function TrainingSession({
     if (running && state.endsAt <= now) dispatch({ type: "advance", now: Date.now(), drills });
   }, [running, state.endsAt, now, drills]);
 
+  // App em segundo plano ou tela travada: pausa na hora, para os exercícios não passarem sem a pessoa ver.
+  // Ao voltar, o treino fica em "Pausado" com o tempo que restava, e quem treina decide continuar.
   useEffect(() => {
-    if (state.phase === "work") navigator.vibrate?.(60);
-    if (state.phase === "done") navigator.vibrate?.([120, 80, 120]);
-  }, [state.phase, state.index]);
+    if (!running) return;
+    const onHide = () => {
+      if (document.hidden) dispatch({ type: "pause", now: Date.now(), drills });
+    };
+    document.addEventListener("visibilitychange", onHide);
+    return () => document.removeEventListener("visibilitychange", onHide);
+  }, [running, drills]);
+
+  useEffect(() => {
+    if (state.phase === "work") {
+      navigator.vibrate?.(60);
+      cue("up");
+    }
+    if (state.phase === "rest") {
+      navigator.vibrate?.(60);
+      cue("down");
+      const nextName = drills[state.index + 1]?.name;
+      if (nextName) say(`Próximo: ${nextName}`);
+    }
+    if (state.phase === "done") {
+      navigator.vibrate?.([120, 80, 120]);
+      cue("done");
+    }
+  }, [state.phase, state.index, drills]);
+
+  // Últimos 3 s de descanso: bipe por segundo para se preparar sem olhar para a tela.
+  const restSeconds = state.phase === "rest" ? Math.ceil((state.pausedLeft ?? Math.max(0, state.endsAt - now)) / 1000) : 0;
+  useEffect(() => {
+    if (state.phase !== "rest" || state.pausedLeft !== null) return;
+    if (restSeconds > 0 && restSeconds <= 3) cue("tick");
+  }, [state.phase, state.pausedLeft, restSeconds]);
 
   // Pausar o treino pausa o vídeo, e continuar volta a tocar (API de iframe do YouTube via postMessage).
   const ytCommand = (func: string, args: unknown[] = []) => {
@@ -343,8 +378,16 @@ function Finish({
   const [feeling, setFeeling] = useState<(typeof FEELINGS)[number]["value"] | null>(null);
   const [discomfort, setDiscomfort] = useState<"nao" | "sim" | null>(null);
   const [busy, setBusy] = useState(false);
+  const [saved, setSaved] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const total = program.drills.length;
+
+  // Confirma o salvamento na tela antes de voltar — sem internet, o treino fica na fila e sobe depois.
+  useEffect(() => {
+    if (!saved) return;
+    const id = window.setTimeout(onExit, 1800);
+    return () => window.clearTimeout(id);
+  }, [saved, onExit]);
 
   async function save() {
     setBusy(true);
@@ -359,7 +402,7 @@ function Finish({
         feeling: feeling ? Number(feeling) : null,
         discomfort: discomfort === "sim",
       });
-      onExit();
+      setSaved(true);
     } catch (err) {
       setError(friendlyError(err));
       setBusy(false);
@@ -403,14 +446,18 @@ function Finish({
         </Notice>
       )}
       {error && <Notice tone="error">{error}</Notice>}
-      <div className="stack bottom-cta">
-        <PrimaryButton onClick={() => void save()} disabled={busy}>
-          {busy ? "Salvando…" : "Salvar treino"}
-        </PrimaryButton>
-        <PlainButton onClick={onExit} disabled={busy}>
-          Sair sem salvar
-        </PlainButton>
-      </div>
+      {saved ? (
+        <Notice tone="success">Treino salvo! Até a próxima.</Notice>
+      ) : (
+        <div className="stack bottom-cta">
+          <PrimaryButton onClick={() => void save()} disabled={busy}>
+            {busy ? "Salvando…" : "Salvar treino"}
+          </PrimaryButton>
+          <PlainButton onClick={onExit} disabled={busy}>
+            Sair sem salvar
+          </PlainButton>
+        </div>
+      )}
     </main>
   );
 }
