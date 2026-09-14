@@ -20,9 +20,9 @@ const VIDEOS = {
   dribleAlto: { id: "UY1Z4bKUZRU", start: 30, title: "Drible alto — Jr. NBA" },
   dribleBaixo: { id: "qBkSOtWQe4o", start: 30, title: "Drible baixo — Jr. NBA" },
   dribleDedos: { id: "8NiQszvmHho", start: 30, title: "Drible com os dedos — Jr. NBA" },
-  cones: { id: "1Sp_dQorGvA", start: 30, title: "Drible entre cones — Jr. NBA" },
+  cones: { id: "1Sp_dQorGvA", start: 42, title: "Drible entre cones — Jr. NBA" },
   estatua: { id: "f7tB5drRCNA", start: 30, title: "Drible e estátua — Jr. NBA" },
-  crossover: { id: "OQWe-Y4zwEg", start: 30, title: "Crossover por dentro e por fora — Jr. NBA" },
+  crossover: { id: "OQWe-Y4zwEg", start: 63, title: "Crossover por dentro e por fora — Jr. NBA" },
   ritmo: { id: "HDHFyQ0DwS4", start: 30, title: "Drible de puxada — Jr. NBA" },
   // start 59: capítulo "The Finish"; end 119: cobre "Extended Finish" e "Cadence", até "Mechanics". Confirmar.
   arremesso: { id: "t7ciq_x4138", start: 59, end: 119, title: "Fundamentos do arremesso — Jr. NBA" },
