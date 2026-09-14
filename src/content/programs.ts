@@ -206,7 +206,7 @@ export const PROGRAMS: Program[] = [
     drills: [
       { id: "aquecimento", name: "Aquecimento dinâmico", cue: "Trote leve, mobilidade e acelerações progressivas.", seconds: 180, restSeconds: 30, video: VIDEOS.aquecimento },
       { id: "saida", name: "Saída de aceleração 10 m", cue: "Corpo inclinado para a frente e braços fortes. Descanse bem entre as saídas.", seconds: 20, restSeconds: 60, video: { ...VIDEOS.aceleracao, previewOnly: true } },
-      { id: "freio", name: "Arrancada e freio em 3 passos", cue: "Diminua o tamanho dos passos e baixe o quadril para parar equilibrado.", seconds: 20, restSeconds: 60, video: { ...VIDEOS.aceleracao, previewOnly: true } },
+      { id: "freio", name: "Arrancada e freio em 3 passos", cue: "Diminua o tamanho dos passos e baixe o quadril para parar equilibrado.", seconds: 20, restSeconds: 60 },
       { id: "espelho-reativo", name: "Espelho reativo", cue: "Blocos curtos: reaja ao parceiro sem antecipar.", seconds: 15, restSeconds: 45, video: VIDEOS.espelho },
     ],
   },
