@@ -13,11 +13,16 @@ function previewSrc(video: NonNullable<Drill["video"]>): string {
 }
 
 export function ProgramDetail({ program, onBack, onStart }: { program: Program; onBack: () => void; onStart: () => void }) {
-  const [openId, setOpenId] = useState<string | null>(null);
+  const [openIds, setOpenIds] = useState<string[]>([]);
   const listRef = useRef<HTMLDivElement>(null);
 
-  const scrollToList = () => {
-    listRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+  // O botão precisa mostrar os exercícios, não só rolar: a lista costuma
+  // já estar visível acima do botão, então só rolar parecia não fazer nada.
+  const showAll = () => {
+    setOpenIds(program.drills.map((drill) => drill.id));
+    requestAnimationFrame(() => {
+      listRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    });
   };
 
   return (
@@ -29,14 +34,14 @@ export function ProgramDetail({ program, onBack, onStart }: { program: Program; 
       <div ref={listRef} className="drill-list-anchor">
         <Group header={`${program.drills.length} exercícios`} footer="Toque em um exercício para ver a dica e o vídeo antes de começar. Conteúdo em validação por profissional de educação física.">
           {program.drills.map((drill, index) => {
-            const open = openId === drill.id;
+            const open = openIds.includes(drill.id);
             return (
               <div key={drill.id} className="drill-item">
                 <button
                   type="button"
                   className="row drill-row"
                   aria-expanded={open}
-                  onClick={() => setOpenId(open ? null : drill.id)}
+                  onClick={() => setOpenIds(open ? openIds.filter((id) => id !== drill.id) : [...openIds, drill.id])}
                 >
                   <span className="row-label">
                     {index + 1}. {drill.name}
@@ -84,7 +89,7 @@ export function ProgramDetail({ program, onBack, onStart }: { program: Program; 
       </div>
       <div className="bottom-cta stack">
         <PrimaryButton onClick={onStart}>Começar treino</PrimaryButton>
-        <PlainButton onClick={scrollToList}>Ver exercícios antes</PlainButton>
+        <PlainButton onClick={showAll}>Ver exercícios antes</PlainButton>
       </div>
     </Screen>
   );
