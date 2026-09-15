@@ -164,7 +164,7 @@ button.row:active { background: var(--fill); }
 .notice.error { background: rgba(217, 105, 83, 0.16); color: var(--coral-soft); }
 .notice.success { background: rgba(238, 160, 71, 0.14); }
 
-/* ---------- Rodapé de navegação (Treinos · Evolução · Perfil) ---------- */
+/* ---------- Rodapé de navegação (Treinos · Evolução · Vídeos · Perfil) ---------- */
 .tabbar {
   position: fixed; bottom: 0; left: 0; right: 0; z-index: 20;
   display: flex; gap: 4px; max-width: 640px; margin: 0 auto;

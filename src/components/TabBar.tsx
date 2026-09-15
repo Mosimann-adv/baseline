@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 
-export type TabId = "trainings" | "progress" | "profile";
+export type TabId = "trainings" | "progress" | "videos" | "profile";
 
 const ICONS: Record<TabId, ReactNode> = {
   trainings: (
@@ -15,6 +15,12 @@ const ICONS: Record<TabId, ReactNode> = {
       <path d="M7 15l4-4 3 3 5-6" />
     </svg>
   ),
+  videos: (
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <rect x="2" y="5" width="20" height="14" rx="4" />
+      <path d="M10 9.5v5l4.5-2.5z" />
+    </svg>
+  ),
   profile: (
     <svg viewBox="0 0 24 24" aria-hidden="true">
       <circle cx="12" cy="8" r="3.5" />
@@ -26,10 +32,11 @@ const ICONS: Record<TabId, ReactNode> = {
 const LABELS: Record<TabId, string> = {
   trainings: "Treinos",
   progress: "Evolução",
+  videos: "Vídeos",
   profile: "Perfil",
 };
 
-/** Rodapé de navegação do contexto do atleta: Treinos, Evolução e Perfil (troca de perfil e Conta). */
+/** Rodapé de navegação do contexto do atleta: Treinos, Evolução, Vídeos e Perfil (troca de perfil e Conta). */
 export function TabBar({ current, onSelect }: { current: TabId; onSelect: (tab: TabId) => void }) {
   return (
     <nav className="tabbar" aria-label="Navegação principal">

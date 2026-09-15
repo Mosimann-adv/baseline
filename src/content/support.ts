@@ -17,6 +17,8 @@ export const SUPPORT = {
   whatsappLabel: "(48) 9664-1051",
   instagram: "https://www.instagram.com/arvoredo.basquetebol/",
   instagramLabel: "@arvoredo.basquetebol",
+  youtube: "https://www.youtube.com/@arvoredobasquetebol",
+  youtubeLabel: "@arvoredobasquetebol",
 } as const;
 
 /** Hash público (`privacidade`, `confirmar-responsavel`…). No app nativo usa o site, não o localhost. */

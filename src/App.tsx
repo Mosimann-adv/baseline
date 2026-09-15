@@ -16,6 +16,7 @@ import { NewAthlete } from "./screens/NewAthlete";
 import { ProfileChoice } from "./screens/ProfileChoice";
 import { WhoTrains } from "./screens/WhoTrains";
 import { AthleteHome } from "./screens/AthleteHome";
+import { Channel } from "./screens/Channel";
 import { ProgramDetail } from "./screens/ProgramDetail";
 import { TrainingSession } from "./screens/TrainingSession";
 import { Progress } from "./screens/Progress";
@@ -38,6 +39,7 @@ type View =
   | { name: "program"; athleteId: string; programId: string }
   | { name: "training"; athleteId: string; programId: string }
   | { name: "progress"; athleteId: string }
+  | { name: "videos"; athleteId: string }
   | { name: "tests"; athleteId: string };
 
 const lastAthleteKey = (guardianId: string) => `baseline.athlete.${guardianId}`;
@@ -227,7 +229,15 @@ function Family({ guardianId, email }: { guardianId: string; email: string }) {
       toPicker();
       return;
     }
-    setView(tab === "progress" ? { name: "progress", athleteId: tabAthlete.id } : { name: "athlete", athleteId: tabAthlete.id });
+    if (tab === "progress") {
+      setView({ name: "progress", athleteId: tabAthlete.id });
+      return;
+    }
+    if (tab === "videos") {
+      setView({ name: "videos", athleteId: tabAthlete.id });
+      return;
+    }
+    setView({ name: "athlete", athleteId: tabAthlete.id });
   };
   const withTabs = (node: ReactNode, current: TabId): ReactNode =>
     tabAthlete ? (
@@ -289,6 +299,8 @@ function Family({ guardianId, email }: { guardianId: string; email: string }) {
           <Progress athlete={athlete} sessions={sessions} tests={tests} onBack={home} onStartTests={() => setView({ name: "tests", athleteId })} />,
           "progress",
         );
+      } else if (view.name === "videos") {
+        return withTabs(<Channel />, "videos");
       } else if (view.name === "tests") {
         return <TestSession athlete={athlete} tests={tests} onBack={() => setView({ name: "progress", athleteId })} onSave={skill.create} />;
       } else {
