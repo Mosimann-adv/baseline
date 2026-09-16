@@ -1,5 +1,6 @@
 import { Group, Screen } from "../components/ui";
 import { ageThisYear, bandFor } from "../lib/age";
+import { avatarFor } from "../lib/avatar";
 import type { Athlete } from "../lib/types";
 
 export function WhoTrains({
@@ -33,6 +34,7 @@ export function WhoTrains({
                 ? `${band.label} · ${age} anos`
                 : `${age} anos`;
           // Perfil sem aceite não treina: o toque leva à tela Conta.
+          const avatar = avatarFor(athlete.id);
           return (
             <button
               key={athlete.id}
@@ -40,8 +42,8 @@ export function WhoTrains({
               className={`athlete-card${locked ? " locked" : ""}`}
               onClick={() => (locked ? onAccount() : onPick(athlete.id))}
             >
-              <span className="avatar" aria-hidden="true">
-                {athlete.nickname.slice(0, 1).toUpperCase()}
+              <span className="avatar" aria-hidden="true" style={{ background: avatar.background }}>
+                {avatar.glyph}
               </span>
               <strong>{athlete.nickname}</strong>
               <span>{detail}</span>
