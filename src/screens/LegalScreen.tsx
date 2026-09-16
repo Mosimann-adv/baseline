@@ -1,6 +1,6 @@
 import { useEffect, type ReactNode } from "react";
-import { Notice, Screen } from "../components/ui";
-import { LEGAL_VERSION, type LegalDoc } from "../content/legal";
+import { Screen } from "../components/ui";
+import type { LegalDoc } from "../content/legal";
 
 export function LegalScreen({ doc, onBack, children }: { doc: LegalDoc; onBack: () => void; children?: ReactNode }) {
   useEffect(() => {
@@ -9,7 +9,6 @@ export function LegalScreen({ doc, onBack, children }: { doc: LegalDoc; onBack: 
 
   return (
     <Screen eyebrow="Baseline" title={doc.title} onBack={onBack}>
-      <Notice>Rascunho {LEGAL_VERSION}, em revisão jurídica. Os trechos entre colchetes serão preenchidos antes do lançamento.</Notice>
       <article className="legal">
         <p className="legal-intro">{doc.intro}</p>
         {doc.sections.map((section) => (
