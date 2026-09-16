@@ -46,6 +46,8 @@ export interface Drill {
   restSeconds: number;
   /** previewOnly: vídeo só na prévia antes do treino, porque não mostra o exercício em si. */
   video?: { id: string; start?: number; end?: number; title: string; previewOnly?: boolean };
+  /** Dica de foco para os exercícios sem vídeo, em uma frase curtinha para a criança seguir. */
+  focus?: string;
 }
 
 export interface Program {

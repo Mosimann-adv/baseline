@@ -68,7 +68,7 @@ export const PROGRAMS: Program[] = [
     levels: ALL_LEVELS,
     equipment: "Bola tamanho 5 e um espaço livre sem objetos por perto.",
     drills: [
-      { id: "cintura", name: "Bola em volta da cintura", cue: "Passe a bola de uma mão para a outra em volta da cintura, sem deixar cair.", seconds: 30, restSeconds: 15 },
+      { id: "cintura", name: "Bola em volta da cintura", cue: "Passe a bola de uma mão para a outra em volta da cintura, sem deixar cair.", seconds: 30, restSeconds: 15, focus: "Olhos para a frente" },
       { id: "drible-forte", name: "Drible com a mão forte", cue: "Empurre a bola com a ponta dos dedos, não com a palma. Olhe para a frente.", seconds: 30, restSeconds: 15, video: VIDEOS.drible },
       { id: "drible-outra", name: "Drible com a outra mão", cue: "Agora com a mão que você usa menos. Devagar está ótimo.", seconds: 30, restSeconds: 15, video: VIDEOS.dribleBaixo },
       { id: "drible-andando", name: "Drible andando", cue: "Vá até a parede e volte driblando, com a bola na altura da cintura.", seconds: 40, restSeconds: 20, video: VIDEOS.dribleAlto },
@@ -84,11 +84,11 @@ export const PROGRAMS: Program[] = [
     levels: ALL_LEVELS,
     equipment: "Espaço livre de 5 metros.",
     drills: [
-      { id: "polichinelo", name: "Polichinelo", cue: "Abra e feche braços e pernas no mesmo ritmo.", seconds: 30, restSeconds: 15 },
-      { id: "pe-so", name: "Pular num pé só", cue: "Pulinhos baixos. Troque de pé na metade do tempo.", seconds: 20, restSeconds: 20 },
+      { id: "polichinelo", name: "Polichinelo", cue: "Abra e feche braços e pernas no mesmo ritmo.", seconds: 30, restSeconds: 15, focus: "Ritmo constante" },
+      { id: "pe-so", name: "Pular num pé só", cue: "Pulinhos baixos. Troque de pé na metade do tempo.", seconds: 20, restSeconds: 20, focus: "Pulinhos baixos" },
       { id: "lado", name: "Corrida de lado", cue: "Passos para o lado sem cruzar os pés. Vá e volte.", seconds: 30, restSeconds: 15, video: VIDEOS.lateral },
-      { id: "parar-firme", name: "Correr e parar firme", cue: "Corra devagar e pare com os dois pés no chão, joelhos dobrados, quando ouvir o sinal.", seconds: 40, restSeconds: 20 },
-      { id: "equilibrio", name: "Equilíbrio de cegonha", cue: "Fique num pé só com os braços abertos. Troque de pé na metade.", seconds: 30, restSeconds: 0 },
+      { id: "parar-firme", name: "Correr e parar firme", cue: "Corra devagar e pare com os dois pés no chão, joelhos dobrados, quando ouvir o sinal.", seconds: 40, restSeconds: 20, focus: "Pare com os dois pés" },
+      { id: "equilibrio", name: "Equilíbrio de cegonha", cue: "Fique num pé só com os braços abertos. Troque de pé na metade.", seconds: 30, restSeconds: 0, focus: "Braços abertos" },
     ],
   },
   {

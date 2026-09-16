@@ -78,7 +78,13 @@ export function ProgramDetail({ program, onBack, onStart }: { program: Program; 
                         </a>
                       </div>
                     ) : (
-                      <p className="video-hint">Sem vídeo para este exercício — siga a dica acima.</p>
+                      <p className="focus-hint">
+                        <svg viewBox="0 0 24 24" aria-hidden="true">
+                          <circle cx="12" cy="12" r="9" />
+                          <circle cx="12" cy="12" r="3.5" />
+                        </svg>
+                        {drill.focus ? `Foco: ${drill.focus}` : "Sem vídeo para este exercício — siga a dica acima."}
+                      </p>
                     )}
                   </div>
                 )}

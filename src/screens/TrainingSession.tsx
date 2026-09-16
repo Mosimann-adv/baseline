@@ -310,7 +310,7 @@ export function TrainingSession({
   const progress = ((state.index + (state.phase === "rest" ? 1 : 0)) / drills.length) * 100;
 
   return (
-    <main className="training">
+    <main className={`training${state.phase === "work" && state.pausedLeft === null ? " focus" : ""}`}>
       <div className="training-top">
         <button
           type="button"
@@ -397,6 +397,15 @@ export function TrainingSession({
           <p className="phase-label">{state.phase === "ready" ? program.title : state.pausedLeft === null ? "Agora" : "Pausado"}</p>
           <h1 className="drill-name">{drill.name}</h1>
           <p className="drill-cue">{drill.cue}</p>
+          {drill.focus && !video && (
+            <p className="focus-hint" aria-label="Foco do exercício">
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <circle cx="12" cy="12" r="9" />
+                <circle cx="12" cy="12" r="3.5" />
+              </svg>
+              {drill.focus}
+            </p>
+          )}
           {state.phase === "work" && (
             <p className="countdown" aria-live="off">
               {clock(left)}
