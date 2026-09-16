@@ -1,7 +1,8 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Group, PrimaryButton, Screen } from "../components/ui";
 import { ageThisYear, bandFor } from "../lib/age";
 import { formatDayMonth, startOfWeekIso } from "../lib/dates";
+import { clearResume, readResume, type ResumeState } from "../lib/resumeSession";
 import { goalStreak, isTestDue } from "../lib/progress";
 import { CATEGORY_LABELS, programById, programMinutes, programsFor } from "../content/programs";
 import type { Athlete, Category, SkillTestRecord, TrainingSession } from "../lib/types";
@@ -14,6 +15,7 @@ export function AthleteHome({
   onOpenProgram,
   onStartTests,
   onRetryPending,
+  onResume,
 }: {
   athlete: Athlete;
   sessions: TrainingSession[];
@@ -22,6 +24,7 @@ export function AthleteHome({
   onOpenProgram: (programId: string) => void;
   onStartTests: () => void;
   onRetryPending: () => void;
+  onResume: (resume: ResumeState) => void;
 }) {
   const age = ageThisYear(athlete.birth_year);
   const band = bandFor(age);
@@ -37,6 +40,23 @@ export function AthleteHome({
   const goalPct = Math.min(100, Math.round((thisWeek.length / goal) * 100));
   const testDue = band !== null && isTestDue(tests);
 
+  // Treino pela metade: lido ao abrir a tela, porque voltar de um treino remonta a Home.
+  const [resume, setResume] = useState<ResumeState | null>(() => readResume(athlete.id));
+  const [confirmDiscard, setConfirmDiscard] = useState(false);
+  useEffect(() => {
+    if (!confirmDiscard) return;
+    const id = window.setTimeout(() => setConfirmDiscard(false), 4000);
+    return () => window.clearTimeout(id);
+  }, [confirmDiscard]);
+  const resumeProgram = resume ? programById(resume.programId) : undefined;
+  const resumeTotal = resumeProgram?.drills.length ?? 0;
+  const resumeLeft = resume ? Math.max(0, Math.min(resumeTotal - resume.done, resumeTotal)) : 0;
+  const discardResume = () => {
+    clearResume();
+    setResume(null);
+    setConfirmDiscard(false);
+  };
+
   // Sugestão: o treino da faixa feito há mais tempo (ou nunca feito), respeitando a ordem por nível.
   const lastDone = new Map<string, string>();
   for (const s of sessions) if (!lastDone.has(s.program_id)) lastDone.set(s.program_id, s.performed_on);
@@ -44,6 +64,29 @@ export function AthleteHome({
 
   return (
     <Screen eyebrow={band ? `${band.label} · ${age} anos` : `${age} anos`} title={`Oi, ${athlete.nickname}`}>
+      {resume && resumeProgram && (
+        <section className={`due-card${confirmDiscard ? " blocked" : " pending"}`}>
+          <div>
+            <p className="subtitle">Treino pela metade</p>
+            <p>
+              Faltam {resumeLeft === 1 ? "1 exercício" : `${resumeLeft} exercícios`} de “{resumeProgram.title}”. Continuar de onde parou?
+            </p>
+          </div>
+          <div className="resume-actions">
+            <button type="button" className="secondary-button" onClick={() => onResume(resume)}>
+              Continuar
+            </button>
+            <button
+              type="button"
+              className="plain-button quiet"
+              onClick={() => (confirmDiscard ? discardResume() : setConfirmDiscard(true))}
+            >
+              {confirmDiscard ? "Descartar mesmo?" : "Descartar"}
+            </button>
+          </div>
+        </section>
+      )}
+
       {pending.count > 0 && (
         <section className={`due-card ${pending.blocked ? "blocked" : "pending"}`}>
           <div>

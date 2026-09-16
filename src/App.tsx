@@ -8,6 +8,7 @@ import { activeConsent } from "./lib/consent";
 import { canCreateMinorProfiles, metaFromSession } from "./lib/account";
 import { listenBackButton } from "./lib/native";
 import { pendingSummary } from "./lib/offlineQueue";
+import type { ResumeState } from "./lib/resumeSession";
 import { loadParentStatus, registerParentEmail, type ParentStatus } from "./lib/parentConfirm";
 import { programById } from "./content/programs";
 import { LEGAL_DOCS, legalIdFromHash, type LegalId } from "./content/legal";
@@ -37,7 +38,7 @@ type View =
   | { name: "newAthlete"; from: Origin }
   | { name: "athlete"; athleteId: string }
   | { name: "program"; athleteId: string; programId: string }
-  | { name: "training"; athleteId: string; programId: string }
+  | { name: "training"; athleteId: string; programId: string; resume?: ResumeState }
   | { name: "progress"; athleteId: string }
   | { name: "videos"; athleteId: string }
   | { name: "tests"; athleteId: string };
@@ -289,7 +290,7 @@ function Family({ guardianId, email }: { guardianId: string; email: string }) {
       if (view.name === "program" || view.name === "training") {
         const program = programById(view.programId);
         if (program && view.name === "training") {
-          return <TrainingSession athlete={athlete} program={program} onExit={home} onSave={training.create} />;
+          return <TrainingSession athlete={athlete} program={program} resume={view.resume} onExit={home} onSave={training.create} />;
         }
         if (program) {
           return <ProgramDetail program={program} onBack={home} onStart={() => setView({ name: "training", athleteId, programId: program.id })} />;
@@ -313,6 +314,7 @@ function Family({ guardianId, email }: { guardianId: string; email: string }) {
             onOpenProgram={(programId) => setView({ name: "program", athleteId, programId })}
             onStartTests={() => setView({ name: "tests", athleteId })}
             onRetryPending={retry}
+            onResume={(r) => setView({ name: "training", athleteId, programId: r.programId, resume: r })}
           />,
           "trainings",
         );

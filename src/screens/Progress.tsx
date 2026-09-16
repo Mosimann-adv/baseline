@@ -1,9 +1,11 @@
+import { useMemo, useState } from "react";
 import { CountUp, Group, Screen } from "../components/ui";
 import { ageThisYear, bandFor } from "../lib/age";
-import { formatDayMonth } from "../lib/dates";
+import { formatDayMonth, localIsoDate } from "../lib/dates";
 import { achievements, goalStreak, isTestDue, lastWeeks, nextTestDate, testProgress, type WeekSummary } from "../lib/progress";
 import { formatTestValue, testsFor } from "../content/tests";
 import { programById } from "../content/programs";
+import { TestDetail } from "./TestDetail";
 import type { Athlete, SkillTestRecord, TrainingSession } from "../lib/types";
 
 export function Progress({
@@ -28,6 +30,21 @@ export function Progress({
   const due = isTestDue(tests);
   const badges = achievements(sessions, tests, goal, defs);
   const earned = badges.filter((badge) => badge.earned).length;
+  // Tocar num teste abre o detalhe dele, com todas as marcas e o que o teste mede.
+  const [openTestId, setOpenTestId] = useState<string | null>(null);
+  const openDef = band ? defs.find((def) => def.id === openTestId) : undefined;
+
+  if (openDef) {
+    return (
+      <TestDetail
+        athlete={athlete}
+        def={openDef}
+        tests={tests}
+        onBack={() => setOpenTestId(null)}
+        onStartTests={onStartTests}
+      />
+    );
+  }
 
   return (
     <Screen eyebrow={athlete.nickname} title="Evolução" onBack={onBack}>
@@ -60,7 +77,7 @@ export function Progress({
           {defs.map((def) => {
             const progress = testProgress(def, tests);
             return (
-              <div key={def.id} className="row test-row">
+              <button key={def.id} type="button" className="row row-nav" onClick={() => setOpenTestId(def.id)}>
                 <span className="row-label">
                   {def.name}
                   <small>
@@ -71,7 +88,7 @@ export function Progress({
                 </span>
                 {progress.improved && <span className="chip-up">evoluiu</span>}
                 {progress.points.length > 1 && <Sparkline values={progress.points.map((p) => p.value)} />}
-              </div>
+              </button>
             );
           })}
           <button type="button" className="row row-action" onClick={onStartTests}>
@@ -95,21 +112,11 @@ export function Progress({
         </div>
       </Group>
 
-      <Group header="Todos os treinos">
+      <Group header="Calendário">
         {sessions.length === 0 ? (
-          <p className="row-note">Nenhum treino registrado ainda.</p>
+          <p className="row-note">Quando você terminar um treino, ele aparece aqui.</p>
         ) : (
-          sessions.slice(0, 30).map((s) => (
-            <div key={s.id} className="row">
-              <span className="row-label">
-                {programById(s.program_id)?.title ?? "Treino"}
-                <small>
-                  {formatDayMonth(s.performed_on)} · {s.drills_done}/{s.drills_total} exercícios · {s.minutes} min
-                  {s.feeling ? ` · como foi: ${s.feeling}/5` : ""}
-                </small>
-              </span>
-            </div>
-          ))
+          <MonthCalendar sessions={sessions} />
         )}
       </Group>
     </Screen>
@@ -165,5 +172,93 @@ function Sparkline({ values }: { values: number[] }) {
       <path d={path} />
       <circle cx={x(values.length - 1)} cy={y(values[values.length - 1])} r={2.8} />
     </svg>
+  );
+}
+
+// Calendário do mês com bolinha nos dias com treino. Só lê `sessions` que a tela já tem:
+// sem busca nova, sem limite novo e sem comparar com outras pessoas.
+function MonthCalendar({ sessions }: { sessions: TrainingSession[] }) {
+  const today = localIsoDate();
+  const [offset, setOffset] = useState(0);
+  const [selected, setSelected] = useState<string | null>(null);
+
+  const byDay = useMemo(() => {
+    const map = new Map<string, TrainingSession[]>();
+    for (const s of sessions) {
+      const list = map.get(s.performed_on) ?? [];
+      list.push(s);
+      map.set(s.performed_on, list);
+    }
+    return map;
+  }, [sessions]);
+
+  const base = new Date();
+  const first = new Date(base.getFullYear(), base.getMonth() + offset, 1);
+  const year = first.getFullYear();
+  const month = first.getMonth();
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const leading = (first.getDay() + 6) % 7; // semana começa na segunda
+  const pad = (n: number) => String(n).padStart(2, "0");
+  const isoOf = (day: number) => `${year}-${pad(month + 1)}-${pad(day)}`;
+  const monthLabel = first.toLocaleDateString("pt-BR", { month: "long", year: "numeric" });
+  const selectedList = selected ? (byDay.get(selected) ?? []) : [];
+
+  return (
+    <div className="cal">
+      <div className="cal-nav">
+        <button type="button" className="cal-arrow" aria-label="Mês anterior" disabled={offset <= -11} onClick={() => { setOffset((o) => o - 1); setSelected(null); }}>
+          ‹
+        </button>
+        <strong>{monthLabel}</strong>
+        <button type="button" className="cal-arrow" aria-label="Próximo mês" disabled={offset >= 0} onClick={() => { setOffset((o) => o + 1); setSelected(null); }}>
+          ›
+        </button>
+      </div>
+      <div className="cal-grid" role="grid" aria-label={`Treinos em ${monthLabel}`}>
+        {["S", "T", "Q", "Q", "S", "S", "D"].map((d, i) => (
+          <span key={i} className="cal-weekday" aria-hidden="true">
+            {d}
+          </span>
+        ))}
+        {Array.from({ length: leading }).map((_, i) => (
+          <span key={`vazio-${i}`} />
+        ))}
+        {Array.from({ length: daysInMonth }).map((_, i) => {
+          const day = i + 1;
+          const iso = isoOf(day);
+          const count = byDay.get(iso)?.length ?? 0;
+          const future = iso > today;
+          return (
+            <button
+              key={iso}
+              type="button"
+              className={`cal-day${count > 0 ? " has" : ""}${iso === today ? " today" : ""}${iso === selected ? " selected" : ""}`}
+              disabled={future || count === 0}
+              aria-label={count > 0 ? `Dia ${day}, ${count} ${count === 1 ? "treino" : "treinos"}` : `Dia ${day}`}
+              onClick={() => setSelected((cur) => (cur === iso ? null : iso))}
+            >
+              {day}
+              {count > 0 && <span className="cal-dot" aria-hidden="true" />}
+            </button>
+          );
+        })}
+      </div>
+      {selected ? (
+        <div className="cal-list">
+          {selectedList.map((s) => (
+            <div key={s.id} className="row">
+              <span className="row-label">
+                {programById(s.program_id)?.title ?? "Treino"}
+                <small>
+                  {formatDayMonth(s.performed_on)} · {s.drills_done}/{s.drills_total} exercícios · {s.minutes} min
+                </small>
+              </span>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <p className="row-note">Toque num dia com bolinha para ver o treino.</p>
+      )}
+    </div>
   );
 }

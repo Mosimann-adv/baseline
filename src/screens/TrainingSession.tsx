@@ -2,6 +2,7 @@ import { useEffect, useReducer, useRef, useState } from "react";
 import { Group, CountUp, Notice, PlainButton, PrimaryButton, Segmented } from "../components/ui";
 import { friendlyError } from "../lib/errors";
 import { keepAwake } from "../lib/native";
+import { clearResume, writeResume, type ResumeState } from "../lib/resumeSession";
 import { cue, say, unlockAudio } from "../lib/sounds";
 import type { Athlete, Drill, NewSessionInput, Program } from "../lib/types";
 
@@ -24,6 +25,27 @@ interface Action {
 
 const INITIAL: RunState = { phase: "ready", index: 0, endsAt: 0, pausedLeft: null, done: 0, startedAt: null };
 const YOUTUBE_ORIGIN = "https://www.youtube-nocookie.com";
+
+// Volta ao ponto em que o treino parou, já pausado: quem treina vê quanto restava e decide continuar.
+// "Prepare-se" recomeça a contagem de 3 s; marca fora dos limites do programa cai no começo.
+function initialFromResume(resume: ResumeState | null | undefined, drills: Drill[]): RunState {
+  if (!resume) return INITIAL;
+  if (resume.phase === "getready") {
+    return { ...INITIAL, phase: "getready", endsAt: Date.now() + 3000, startedAt: resume.startedAt ?? null };
+  }
+  const drill = drills[resume.index];
+  if (!drill) return INITIAL;
+  const limit = (resume.phase === "rest" ? drill.restSeconds : drill.seconds) + 5;
+  if (resume.secondsLeft <= 0 || resume.secondsLeft > limit) return INITIAL;
+  return {
+    ...INITIAL,
+    phase: resume.phase,
+    index: resume.index,
+    done: Math.max(0, Math.min(resume.done, resume.index + 1)),
+    pausedLeft: resume.secondsLeft * 1000,
+    startedAt: resume.startedAt ?? null,
+  };
+}
 
 // Contagem pelo relógio (endsAt), não por ticks: o intervalo atrasa com a tela bloqueada ou o app em segundo plano.
 function run(state: RunState, action: Action): RunState {
@@ -121,16 +143,18 @@ const clock = (ms: number) => {
 export function TrainingSession({
   athlete,
   program,
+  resume,
   onExit,
   onSave,
 }: {
   athlete: Athlete;
   program: Program;
+  resume?: ResumeState | null;
   onExit: () => void;
   onSave: (input: NewSessionInput) => Promise<void>;
 }) {
   const drills = program.drills;
-  const [state, dispatch] = useReducer(run, INITIAL);
+  const [state, dispatch] = useReducer(run, drills, (d) => initialFromResume(resume, d));
   const [now, setNow] = useState(() => Date.now());
   const [confirmExit, setConfirmExit] = useState(false);
   // Sair no meio do treino pede confirmação em dois passos, como as outras ações sem volta.
@@ -166,6 +190,29 @@ export function TrainingSession({
   useEffect(() => {
     if (running && state.endsAt <= now) dispatch({ type: "advance", now: Date.now(), drills });
   }, [running, state.endsAt, now, drills]);
+
+  // Guarda o treino pela metade a cada segundo de fase ativa: se o app fechar sem querer,
+  // dá para retomar do mesmo ponto. Antes de começar ou depois de terminar, nada a retomar.
+  const savedSecond =
+    state.phase === "work" || state.phase === "rest" || state.phase === "getready"
+      ? Math.ceil((state.pausedLeft ?? Math.max(0, state.endsAt - now)) / 1000)
+      : 0;
+  useEffect(() => {
+    if (state.phase === "work" || state.phase === "rest" || state.phase === "getready") {
+      writeResume({
+        athleteId: athlete.id,
+        programId: program.id,
+        phase: state.phase,
+        index: state.index,
+        done: state.done,
+        secondsLeft: savedSecond,
+        startedAt: state.startedAt,
+        savedAt: Date.now(),
+      });
+    } else if (state.phase === "done") {
+      clearResume();
+    }
+  }, [athlete.id, program.id, state.phase, state.index, state.done, state.pausedLeft, state.startedAt, savedSecond]);
 
   // App em segundo plano ou tela travada: pausa na hora, para os exercícios não passarem sem a pessoa ver.
   // Ao voltar, o treino fica em "Pausado" com o tempo que restava, e quem treina decide continuar.
