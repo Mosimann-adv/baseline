@@ -1,4 +1,4 @@
-import { useEffect, useState, type ReactNode } from "react";
+import { lazy, Suspense, useEffect, useState, type ReactNode } from "react";
 import { useAuth } from "./state/auth";
 import { useAthletes } from "./state/athletes";
 import { useSessions } from "./state/sessions";
@@ -20,14 +20,25 @@ import { AthleteHome } from "./screens/AthleteHome";
 import { Channel } from "./screens/Channel";
 import { ProgramDetail } from "./screens/ProgramDetail";
 import { TrainingSession } from "./screens/TrainingSession";
-import { Progress } from "./screens/Progress";
 import { TestSession } from "./screens/TestSession";
-import { GuardianArea } from "./screens/GuardianArea";
 import { LegalScreen } from "./screens/LegalScreen";
 import { ConfirmParent } from "./screens/ConfirmParent";
 import { TabBar, type TabId } from "./components/TabBar";
-import { Notice, PrimaryButton, Screen } from "./components/ui";
+import { ListSkeleton, Notice, PrimaryButton, Screen } from "./components/ui";
 import type { Athlete } from "./lib/types";
+
+// Telas pesadas fora do caminho crítico: Evolução (gráficos) e Conta (formulários).
+// Carregam sob demanda para a primeira pintura da Home ficar leve.
+const Progress = lazy(() => import("./screens/Progress").then((m) => ({ default: m.Progress })));
+const GuardianArea = lazy(() => import("./screens/GuardianArea").then((m) => ({ default: m.GuardianArea })));
+
+function LazyFallback() {
+  return (
+    <Screen title="Carregando">
+      <ListSkeleton />
+    </Screen>
+  );
+}
 
 type Origin = "first" | "account";
 
@@ -252,27 +263,29 @@ function Family({ guardianId, email }: { guardianId: string; email: string }) {
 
   if (view.name === "account") {
     return (
-      <GuardianArea
-        guardianId={guardianId}
-        email={email}
-        athletes={family.athletes}
-        consents={family.consents}
-        sessions={training.sessions}
-        tests={skill.tests}
-        accountKind={meta.kind}
-        parent={parent}
-        onRefreshParent={() => void loadParentStatus(guardianId, meta.kind).then(setParent)}
-        onBack={() => setView({ name: "picker" })}
-        onAddAthlete={() => setView({ name: "newAthlete", from: "account" })}
-        onAddSelf={() => setView({ name: "newSelf", from: "account" })}
-        onUpdate={family.update}
-        onRevoke={family.revoke}
-        onAuthorize={family.authorize}
-        onDeleteAthlete={async (athleteId) => {
-          await family.remove(athleteId);
-          await Promise.all([training.reload(), skill.reload()]);
-        }}
-      />
+      <Suspense fallback={<LazyFallback />}>
+        <GuardianArea
+          guardianId={guardianId}
+          email={email}
+          athletes={family.athletes}
+          consents={family.consents}
+          sessions={training.sessions}
+          tests={skill.tests}
+          accountKind={meta.kind}
+          parent={parent}
+          onRefreshParent={() => void loadParentStatus(guardianId, meta.kind).then(setParent)}
+          onBack={() => setView({ name: "picker" })}
+          onAddAthlete={() => setView({ name: "newAthlete", from: "account" })}
+          onAddSelf={() => setView({ name: "newSelf", from: "account" })}
+          onUpdate={family.update}
+          onRevoke={family.revoke}
+          onAuthorize={family.authorize}
+          onDeleteAthlete={async (athleteId) => {
+            await family.remove(athleteId);
+            await Promise.all([training.reload(), skill.reload()]);
+          }}
+        />
+      </Suspense>
     );
   }
 
@@ -297,7 +310,9 @@ function Family({ guardianId, email }: { guardianId: string; email: string }) {
         }
       } else if (view.name === "progress") {
         return withTabs(
-          <Progress athlete={athlete} sessions={sessions} tests={tests} onBack={home} onStartTests={() => setView({ name: "tests", athleteId })} />,
+          <Suspense fallback={<LazyFallback />}>
+            <Progress athlete={athlete} sessions={sessions} tests={tests} onBack={home} onStartTests={() => setView({ name: "tests", athleteId })} />
+          </Suspense>,
           "progress",
         );
       } else if (view.name === "videos") {
