@@ -62,7 +62,7 @@ export function AthleteHome({
   for (const s of sessions) if (!lastDone.has(s.program_id)) lastDone.set(s.program_id, s.performed_on);
   const suggestion = [...programs].sort((a, b) => (lastDone.get(a.id) ?? "").localeCompare(lastDone.get(b.id) ?? ""))[0];
 
-  // Um aviso por vez no topo: bloqueado > retomar > offline. Teste vira chamada após o hero.
+  // Um aviso por vez no topo: bloqueado > retomar > offline. Teste vira chamada após a meta.
   const hasBlocked = pending.count > 0 && pending.blocked;
   const showResume = !hasBlocked && resume && resumeProgram;
   const showPending = !hasBlocked && !showResume && pending.count > 0;
