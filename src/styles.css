@@ -191,7 +191,7 @@ button.row:active { background: var(--fill); }
 
 /* ---------- Filtro por categoria ---------- */
 .chips {
-  display: flex; flex-wrap: wrap; gap: 8px; margin: 4px 0 8px; padding: 2px 4px;
+  display: flex; flex-wrap: wrap; gap: 8px; margin: 12px 0 8px; padding: 2px 4px;
 }
 .chip {
   flex: 0 0 auto; min-height: 36px; padding: 0 16px; border: 0; border-radius: 999px;
