@@ -268,6 +268,33 @@ button.row:active { background: var(--fill); }
   from { opacity: 0; transform: scale(0.98) translateY(6px); }
   to { opacity: 1; transform: none; }
 }
+/* Disclosure <details>: esconde o secundário sem sair da tela (calendário da Evolução). */
+.disclosure {
+  margin: 4px 0; border-radius: var(--radius-group); background: var(--bg-elevated);
+  overflow: hidden;
+}
+.disclosure summary {
+  list-style: none; cursor: pointer; min-height: 50px;
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  padding: 8px 16px; font-size: 15px; font-weight: 600; color: var(--blue-bright);
+  -webkit-tap-highlight-color: transparent;
+}
+.disclosure summary::-webkit-details-marker { display: none; }
+.disclosure summary::after {
+  content: ""; flex: 0 0 auto; width: 8px; height: 8px; margin-right: 4px;
+  border-right: 2px solid var(--text-3); border-top: 2px solid var(--text-3);
+  transform: rotate(135deg); transition: transform 0.2s var(--ease);
+}
+.disclosure[open] summary::after { transform: rotate(-45deg); }
+.disclosure-body { padding: 0 0 8px; display: grid; gap: 8px; }
+.disclosure-note { margin: 0; padding: 0 16px 12px; font-size: 13px; line-height: 1.45; color: var(--text-3); }
+/* Mini-abas internas (Evolução): uma história por vez em vez do scroll infinito. */
+.tabs-mini { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; gap: 2px; padding: 2px; margin: 4px 0 12px; background: var(--fill); border-radius: 999px; }
+.tabs-mini button {
+  min-height: 40px; border: 0; border-radius: 999px; background: transparent;
+  color: var(--text-2); font-size: 14px; font-weight: 600;
+}
+.tabs-mini button[aria-selected="true"] { background: var(--yellow); color: var(--navy-deep); }
 .drill-row { align-items: flex-start; }
 .drill-row .row-value { padding-top: 2px; font-variant-numeric: tabular-nums; }
 .drill-list-anchor { scroll-margin-top: 12px; }
