@@ -50,7 +50,6 @@
   --fill: rgba(248, 241, 224, 0.08);
   --fill-2: rgba(248, 241, 224, 0.15);
   --radius-group: 20px;
-  --radius-hero: 28px 28px 28px 90px;
   --ease: cubic-bezier(0.22, 1, 0.36, 1);
   --spring: cubic-bezier(0.34, 1.56, 0.64, 1);
   --shadow-navy: 0 12px 32px -12px rgba(10, 31, 53, 0.55);
@@ -252,7 +251,7 @@ button.row:active { background: var(--fill); }
 /* Hero "para hoje": destaque único da Home, com o canto "onda" do kit. */
 .hero-card {
   display: grid; gap: 8px; margin: 8px 0 4px; padding: 20px 18px 18px;
-  border-radius: var(--radius-hero);
+  border-radius: var(--radius-group);
   background: linear-gradient(135deg, var(--bg-raised) 0%, var(--navy-deep) 78%);
   box-shadow: var(--shadow-navy), inset 0 0 0 1px rgba(243, 196, 75, 0.28);
   animation: hero-in 0.32s var(--ease);
