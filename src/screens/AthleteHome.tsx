@@ -166,6 +166,33 @@ export function AthleteHome({
 
       {band ? (
         <>
+          {categories.length > 1 && (
+            <div className="chips" role="group" aria-label="Filtrar treinos por categoria">
+              <button
+                type="button"
+                className={`chip${category === "all" ? " active" : ""}`}
+                onClick={() => {
+                  setCategory("all");
+                  setShowAll(false);
+                }}
+              >
+                Todos
+              </button>
+              {categories.map((id) => (
+                <button
+                  key={id}
+                  type="button"
+                  className={`chip${category === id ? " active" : ""}`}
+                  onClick={() => {
+                    setCategory(id);
+                    setShowAll(false);
+                  }}
+                >
+                  {CATEGORY_LABELS[id]}
+                </button>
+              ))}
+            </div>
+          )}
           <Group header="Treinos para você">
             {listed.map((program) => (
               <button key={program.id} type="button" className="row row-nav" onClick={() => onOpenProgram(program.id)}>
@@ -185,23 +212,9 @@ export function AthleteHome({
             </button>
           )}
           {showAll && (
-            <>
-              {categories.length > 1 && (
-                <div className="chips" role="group" aria-label="Filtrar treinos por categoria">
-                  <button type="button" className={`chip${category === "all" ? " active" : ""}`} onClick={() => setCategory("all")}>
-                    Todos
-                  </button>
-                  {categories.map((id) => (
-                    <button key={id} type="button" className={`chip${category === id ? " active" : ""}`} onClick={() => setCategory(id)}>
-                      {CATEGORY_LABELS[id]}
-                    </button>
-                  ))}
-                </div>
-              )}
-              <button type="button" className="plain-button quiet" onClick={() => setShowAll(false)}>
-                Mostrar menos
-              </button>
-            </>
+            <button type="button" className="plain-button quiet" onClick={() => setShowAll(false)}>
+              Mostrar menos
+            </button>
           )}
         </>
       ) : (
