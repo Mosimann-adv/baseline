@@ -62,14 +62,37 @@ export function AthleteHome({
   for (const s of sessions) if (!lastDone.has(s.program_id)) lastDone.set(s.program_id, s.performed_on);
   const suggestion = [...programs].sort((a, b) => (lastDone.get(a.id) ?? "").localeCompare(lastDone.get(b.id) ?? ""))[0];
 
+  // Um aviso por vez no topo: bloqueado > retomar > offline. Teste vira chamada após o hero.
+  const hasBlocked = pending.count > 0 && pending.blocked;
+  const showResume = !hasBlocked && resume && resumeProgram;
+  const showPending = !hasBlocked && !showResume && pending.count > 0;
+
+  // Lista enxuta: 3 treinos à vista, resto atrás de "ver todos". Menos rolagem, mais decisão.
+  const [showAll, setShowAll] = useState(false);
+  const firstThree = visible.slice(0, 3);
+  const listed = showAll ? visible : firstThree;
+  const recent = sessions.slice(0, 2);
+
   return (
     <Screen eyebrow={band ? `${band.label} · ${age} anos` : `${age} anos`} title={`Oi, ${athlete.nickname}`}>
-      {resume && resumeProgram && (
-        <section className={`due-card${confirmDiscard ? " blocked" : " pending"}`}>
+      {hasBlocked && (
+        <section className="due-card blocked">
+          <div>
+            <p className="subtitle">Não enviado</p>
+            <p>{pending.error ?? "O aceite deste perfil foi revogado. O registro ficou neste aparelho."}</p>
+          </div>
+          <button type="button" className="secondary-button" onClick={onRetryPending}>
+            Tentar agora
+          </button>
+        </section>
+      )}
+
+      {showResume && resume && resumeProgram && (
+        <section className="due-card pending">
           <div>
             <p className="subtitle">Treino pela metade</p>
             <p>
-              Faltam {resumeLeft === 1 ? "1 exercício" : `${resumeLeft} exercícios`} de “{resumeProgram.title}”. Continuar de onde parou?
+              Faltam {resumeLeft === 1 ? "1 exercício" : `${resumeLeft} exercícios`} de “{resumeProgram.title}”.
             </p>
           </div>
           <div className="resume-actions">
@@ -87,14 +110,12 @@ export function AthleteHome({
         </section>
       )}
 
-      {pending.count > 0 && (
-        <section className={`due-card ${pending.blocked ? "blocked" : "pending"}`}>
+      {showPending && (
+        <section className="due-card pending">
           <div>
-            <p className="subtitle">{pending.blocked ? "Não enviado" : "Aguardando internet"}</p>
+            <p className="subtitle">Aguardando internet</p>
             <p>
-              {pending.blocked
-                ? pending.error ?? "O aceite deste perfil foi revogado. O registro ficou neste aparelho."
-                : `${pending.count === 1 ? "1 registro" : `${pending.count} registros`} fica neste aparelho e sobe quando houver conexão.`}
+              {pending.count === 1 ? "1 registro" : `${pending.count} registros`} neste aparelho. Sobe sozinho com conexão.
             </p>
           </div>
           <button type="button" className="secondary-button" onClick={onRetryPending}>
@@ -123,7 +144,7 @@ export function AthleteHome({
         <section className="due-card">
           <div>
             <p className="subtitle">{tests.length === 0 ? "Primeiro teste" : "Hora dos testes"}</p>
-            <p>{tests.length === 0 ? "Faça seus primeiros testes para acompanhar a evolução." : "Já passaram 4 semanas: veja o quanto você evoluiu."}</p>
+            <p>{tests.length === 0 ? "Meça sua base para ver a evolução." : "Já deu 4 semanas: meça de novo."}</p>
           </div>
           <button type="button" className="secondary-button" onClick={onStartTests}>
             Fazer testes
@@ -132,35 +153,21 @@ export function AthleteHome({
       )}
 
       {suggestion && (
-        <section className="hero-card" aria-label="Treino para hoje">
-          <p className="subtitle">Para hoje · {programMinutes(suggestion)} min</p>
+        <section className="suggestion-card">
+          <p className="subtitle">Treino sugerido</p>
           <h2>{suggestion.title}</h2>
-          <p className="hero-summary-clamp">{suggestion.summary}</p>
-          <p className="hero-meta">
-            {CATEGORY_LABELS[suggestion.category]} · {suggestion.drills.length} exercícios
+          <p>{suggestion.summary}</p>
+          <p className="suggestion-meta">
+            {CATEGORY_LABELS[suggestion.category]} · {programMinutes(suggestion)} min · {suggestion.drills.length} exercícios
           </p>
-          <div className="hero-actions">
-            <PrimaryButton onClick={() => onOpenProgram(suggestion.id)}>Começar treino</PrimaryButton>
-          </div>
+          <PrimaryButton onClick={() => onOpenProgram(suggestion.id)}>Ver treino</PrimaryButton>
         </section>
       )}
 
       {band ? (
         <>
-          {categories.length > 1 && (
-            <div className="chips" role="group" aria-label="Filtrar treinos por categoria">
-              <button type="button" className={`chip${category === "all" ? " active" : ""}`} onClick={() => setCategory("all")}>
-                Todos
-              </button>
-              {categories.map((id) => (
-                <button key={id} type="button" className={`chip${category === id ? " active" : ""}`} onClick={() => setCategory(id)}>
-                  {CATEGORY_LABELS[id]}
-                </button>
-              ))}
-            </div>
-          )}
-          <Group header="Treinos para você" footer={`Faixa ${band.label}: ${band.focus.toLowerCase()}.`}>
-            {visible.map((program) => (
+          <Group header="Treinos para você">
+            {listed.map((program) => (
               <button key={program.id} type="button" className="row row-nav" onClick={() => onOpenProgram(program.id)}>
                 <span className="row-label">
                   {program.title}
@@ -172,6 +179,30 @@ export function AthleteHome({
               </button>
             ))}
           </Group>
+          {visible.length > 3 && !showAll && (
+            <button type="button" className="row row-action" onClick={() => setShowAll(true)}>
+              Ver todos os treinos ({visible.length})
+            </button>
+          )}
+          {showAll && (
+            <>
+              {categories.length > 1 && (
+                <div className="chips" role="group" aria-label="Filtrar treinos por categoria">
+                  <button type="button" className={`chip${category === "all" ? " active" : ""}`} onClick={() => setCategory("all")}>
+                    Todos
+                  </button>
+                  {categories.map((id) => (
+                    <button key={id} type="button" className={`chip${category === id ? " active" : ""}`} onClick={() => setCategory(id)}>
+                      {CATEGORY_LABELS[id]}
+                    </button>
+                  ))}
+                </div>
+              )}
+              <button type="button" className="plain-button quiet" onClick={() => setShowAll(false)}>
+                Mostrar menos
+              </button>
+            </>
+          )}
         </>
       ) : (
         <Group header="Treinos">
@@ -181,14 +212,14 @@ export function AthleteHome({
 
       <Group header="Últimos treinos">
         {sessions.length === 0 ? (
-          <p className="row-note">Quando você terminar um treino, ele aparece aqui.</p>
+          <p className="row-note">Termine um treino e ele aparece aqui.</p>
         ) : (
-          sessions.slice(0, 3).map((s) => (
+          recent.map((s) => (
             <div key={s.id} className="row">
               <span className="row-label">
                 {programById(s.program_id)?.title ?? "Treino"}
                 <small>
-                  {formatDayMonth(s.performed_on)} · {s.drills_done}/{s.drills_total} exercícios · {s.minutes} min
+                  {formatDayMonth(s.performed_on)} · {s.drills_done}/{s.drills_total} · {s.minutes} min
                   {s.pending ? " · neste aparelho" : ""}
                 </small>
               </span>

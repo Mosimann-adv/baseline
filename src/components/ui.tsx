@@ -150,6 +150,17 @@ export function Notice({ tone = "info", children }: { tone?: "info" | "error" | 
   );
 }
 
+/** Esqueleto leve para trocas de aba/lazy: evita o splash cheio que desmonta a tela. */
+export function ListSkeleton() {
+  return (
+    <div className="stack" aria-busy="true" aria-label="Carregando">
+      <div className="skeleton-hero" />
+      <div className="skeleton-line" />
+      <div className="skeleton-list" />
+    </div>
+  );
+}
+
 /** Número que sobe do zero até o valor, como os números de impacto do site. Pula direto com reduced-motion. */
 export function CountUp({ value, duration = 600, suffix }: { value: number; duration?: number; suffix?: string }) {
   const [display, setDisplay] = useState(0);

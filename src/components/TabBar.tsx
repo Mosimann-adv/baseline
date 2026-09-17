@@ -36,6 +36,13 @@ const LABELS: Record<TabId, string> = {
   profile: "Perfil",
 };
 
+const ARIA_LABELS: Record<TabId, string> = {
+  trainings: "Treinos",
+  progress: "Evolução",
+  videos: "Vídeos",
+  profile: "Perfil — trocar de perfil e Conta",
+};
+
 /** Rodapé de navegação do contexto do atleta: Treinos, Evolução, Vídeos e Perfil (troca de perfil e Conta). */
 export function TabBar({ current, onSelect }: { current: TabId; onSelect: (tab: TabId) => void }) {
   return (
@@ -45,6 +52,7 @@ export function TabBar({ current, onSelect }: { current: TabId; onSelect: (tab: 
           key={id}
           type="button"
           className={`tab${current === id ? " active" : ""}`}
+          aria-label={ARIA_LABELS[id]}
           aria-current={current === id ? "page" : undefined}
           onClick={() => onSelect(id)}
         >
