@@ -32,8 +32,6 @@ export function Progress({
   const earned = badges.filter((badge) => badge.earned).length;
   // Tocar num teste abre o detalhe dele, com todas as marcas e o que o teste mede.
   const [openTestId, setOpenTestId] = useState<string | null>(null);
-  // Abas internas: uma história por vez em vez do scroll infinito.
-  const [tab, setTab] = useState<"resumo" | "testes" | "mais">("resumo");
   const openDef = band ? defs.find((def) => def.id === openTestId) : undefined;
 
   if (openDef) {
@@ -50,74 +48,31 @@ export function Progress({
 
   return (
     <Screen eyebrow={athlete.nickname} title="Evolução" onBack={onBack}>
-      <div className="tabs-mini" role="tablist" aria-label="Seções da evolução">
-        {(["resumo", "testes", "mais"] as const).map((id) => (
-          <button
-            key={id}
-            type="button"
-            role="tab"
-            aria-selected={tab === id}
-            onClick={() => setTab(id)}
-          >
-            {id === "resumo" ? "Resumo" : id === "testes" ? "Testes" : "Conquistas"}
-          </button>
-        ))}
+      <div className="metrics two">
+        <div className="metric">
+          <strong>
+            <CountUp value={streak} />
+          </strong>
+          <span>{streak === 1 ? "semana seguida na meta" : "semanas seguidas na meta"}</span>
+        </div>
+        <div className="metric">
+          <strong>
+            <CountUp value={sessions.length} />
+          </strong>
+          <span>{sessions.length === 1 ? "treino no total" : "treinos no total"}</span>
+        </div>
       </div>
 
-      {tab === "resumo" && (
-        <>
-          <div className="metrics two">
-            <div className="metric">
-              <strong>
-                <CountUp value={streak} />
-              </strong>
-              <span>{streak === 1 ? "semana seguida na meta" : "semanas seguidas na meta"}</span>
-            </div>
-            <div className="metric">
-              <strong>
-                <CountUp value={sessions.length} />
-              </strong>
-              <span>{sessions.length === 1 ? "treino no total" : "treinos no total"}</span>
-            </div>
-          </div>
+      <Group header="Últimas 8 semanas" footer={`Meta: ${goal} ${goal === 1 ? "treino" : "treinos"} por semana. A barra fica laranja quando a meta é cumprida.`}>
+        <div className="chart-box">
+          <WeeksChart weeks={weeks} goal={goal} />
+        </div>
+      </Group>
 
-          <Group header="Últimas 8 semanas" footer={`Meta: ${goal} por semana.`}>
-            <div className="chart-box">
-              <WeeksChart weeks={weeks} goal={goal} />
-            </div>
-          </Group>
-
-          {due ? (
-            <section className="due-card pending">
-              <div>
-                <p className="subtitle">Hora dos testes</p>
-                <p>Meça de novo e veja o quanto evoluiu.</p>
-              </div>
-              <button type="button" className="secondary-button" onClick={onStartTests}>
-                Fazer testes
-              </button>
-            </section>
-          ) : nextDate ? (
-            <p className="disclosure-note">Próxima bateria: {formatDayMonth(nextDate)}.</p>
-          ) : null}
-
-          <details className="disclosure">
-            <summary>Ver calendário do mês</summary>
-            <div className="disclosure-body">
-              {sessions.length === 0 ? (
-                <p className="row-note">Termine um treino e ele aparece aqui.</p>
-              ) : (
-                <MonthCalendar sessions={sessions} />
-              )}
-            </div>
-          </details>
-        </>
-      )}
-
-      {tab === "testes" && band && (
+      {band && (
         <Group
           header="Testes"
-          footer={nextDate ? `Próxima bateria: ${formatDayMonth(nextDate)}. Compare só com você.` : "Os testes se repetem a cada 4 semanas."}
+          footer={nextDate ? `Próxima bateria: ${formatDayMonth(nextDate)}. Compare só com você mesmo.` : "Os testes se repetem a cada 4 semanas."}
         >
           {defs.map((def) => {
             const progress = testProgress(def, tests);
@@ -142,28 +97,28 @@ export function Progress({
         </Group>
       )}
 
-      {tab === "testes" && !band && (
-        <Group header="Testes">
-          <p className="row-note">Confira o ano de nascimento do perfil na tela Conta.</p>
-        </Group>
-      )}
+      <Group header={`Conquistas · ${earned} de ${badges.length}`}>
+        <div className="badges">
+          {badges.map((badge) => (
+            <div key={badge.id} className={`badge${badge.earned ? " earned" : ""}`}>
+              <span className="badge-mark" aria-hidden="true">
+                {badge.earned ? "★" : "☆"}
+              </span>
+              <strong>{badge.title}</strong>
+              <span>{badge.description}</span>
+              <span className="visually-hidden">{badge.earned ? "Conquistada" : "Ainda não conquistada"}</span>
+            </div>
+          ))}
+        </div>
+      </Group>
 
-      {tab === "mais" && (
-        <Group header={`Conquistas · ${earned} de ${badges.length}`}>
-          <div className="badges">
-            {badges.map((badge) => (
-              <div key={badge.id} className={`badge${badge.earned ? " earned" : ""}`}>
-                <span className="badge-mark" aria-hidden="true">
-                  {badge.earned ? "★" : "☆"}
-                </span>
-                <strong>{badge.title}</strong>
-                {badge.earned && <span>{badge.description}</span>}
-                <span className="visually-hidden">{badge.earned ? "Conquistada" : "Ainda não conquistada"}</span>
-              </div>
-            ))}
-          </div>
-        </Group>
-      )}
+      <Group header="Calendário">
+        {sessions.length === 0 ? (
+          <p className="row-note">Quando você terminar um treino, ele aparece aqui.</p>
+        ) : (
+          <MonthCalendar sessions={sessions} />
+        )}
+      </Group>
     </Screen>
   );
 }

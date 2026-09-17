@@ -14,7 +14,7 @@ const FEATURED = [
 export function Channel() {
   return (
     <Screen eyebrow="Instituto Arvoredo" title="Canal do Arvoredo">
-      <p className="lead">Destaques do YouTube do Arvoredo.</p>
+      <p className="lead">Os vídeos do Arvoredo Basquetebol estão no YouTube.</p>
       <div className="stack">
         {FEATURED.map((video) => (
           <div key={video.id} className="video-block">

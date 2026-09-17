@@ -12,7 +12,7 @@ import { countAthleteRows } from "../lib/counts";
 import { shareText } from "../lib/native";
 import type { ParentStatus } from "../lib/parentConfirm";
 import { LEGAL_DOCS, type LegalId } from "../content/legal";
-import { APP_WEB, INSTITUTE_CNPJ, PIX_KEY, SUPPORT, appPublicUrl } from "../content/support";
+import { APP_WEB, INSTITUTE_CNPJ, INSTITUTE_NAME, PIX_KEY, SUPPORT, appPublicUrl } from "../content/support";
 
 import { LegalScreen } from "./LegalScreen";
 import type { Athlete, AthletePatch, Consent, Level, Position, SkillTestRecord, TrainingSession } from "../lib/types";
@@ -196,7 +196,7 @@ function AccountSettings({
         <Notice tone="success">Responsável confirmado{parent.parentEmail ? ` (${parent.parentEmail})` : ""}.</Notice>
       )}
 
-      <Group header="Perfis de treino" footer="Toque para corrigir, mudar a meta ou gerenciar o aceite.">
+      <Group header="Perfis de treino" footer="Toque em um perfil para corrigir os dados, mudar a meta semanal, revogar o aceite ou excluir.">
         {ordered.map((athlete) => {
           const active = activeConsent(consents, athlete);
           const status = athlete.is_self
@@ -230,7 +230,7 @@ function AccountSettings({
         )}
       </Group>
 
-      <Group header="Privacidade e dados" footer="A cópia inclui conta, perfis, aceites, treinos e testes.">
+      <Group header="Privacidade e dados" footer="A cópia inclui a conta, os perfis, os aceites, os treinos e os testes. Guarde em local seguro.">
         <button type="button" className="row row-action" disabled={exporting} onClick={() => void exportData()}>
           {exporting ? "Preparando arquivo…" : "Baixar cópia dos dados"}
         </button>
@@ -245,26 +245,19 @@ function AccountSettings({
 
       <Group
         header="Apoie o Arvoredo"
-        footer="App gratuito. Doação opcional ao Instituto — nunca no treino."
+        footer="O app é gratuito. A doação é opcional e vai para o Instituto, não para o app. Nunca aparece na tela de treino."
       >
         <div className="pix-box">
           <p className="pix-lead">Cada real vira treino, bola e oportunidade.</p>
+          <img className="pix-qr" src="pix-qr.png" alt="QR Code Pix do Instituto Arvoredo" width={150} height={150} />
+          <p className="pix-hint">Escaneie o QR Code ou copie a chave Pix. Qualquer valor ajuda a pagar materiais, viagens para campeonatos e uniformes.</p>
           <div className="pix-key">
             <span className="pix-key-text">{PIX_KEY}</span>
             <button type="button" className={copied ? "copy-btn copied" : "copy-btn"} onClick={() => void copyPix()}>
               {copied ? "Copiado" : "Copiar"}
             </button>
           </div>
-          <p className="pix-note">Chave Pix (CNPJ {INSTITUTE_CNPJ}).</p>
-          <details className="disclosure">
-            <summary>Ver QR Code</summary>
-            <div className="disclosure-body">
-              <div className="pix-box">
-                <img className="pix-qr" src="pix-qr.png" alt="QR Code Pix do Instituto Arvoredo" width={150} height={150} />
-                <p className="pix-hint">Escaneie o QR ou copie a chave acima.</p>
-              </div>
-            </div>
-          </details>
+          <p className="pix-note">Chave Pix (CNPJ {INSTITUTE_CNPJ}) do {INSTITUTE_NAME}.</p>
         </div>
         <a className="row row-nav" href={SUPPORT.whatsapp} target="_blank" rel="noopener noreferrer">
           <svg className="row-icon" viewBox="0 0 24 24" aria-hidden="true">
@@ -315,7 +308,7 @@ function AccountSettings({
         </button>
       </Group>
 
-      <Group header="Excluir conta" footer="Apaga conta, perfis e registros. Sem volta. A senha evita que apaguem por engano.">
+      <Group header="Excluir conta" footer="Apaga a conta, todos os perfis, os aceites e todos os registros. Não dá para desfazer. Pedimos a senha para uma criança no aparelho não apagar tudo por engano.">
         {confirming ? (
           <>
             <p className="row-note">Digite a senha desta conta para confirmar. Tudo será apagado agora.</p>
@@ -445,7 +438,7 @@ function ProfileSettings({
         <Notice>Você completou 18 anos. Dê o consentimento de adulto para continuar treinando.</Notice>
       )}
       <form onSubmit={save} className="stack">
-        <Group header="Perfil" footer="O nível e a idade mudam os treinos sugeridos.">
+        <Group header="Perfil" footer="Corrija os dados quando precisar. O nível e a idade mudam os treinos e testes sugeridos.">
           <Field id="edit-nickname" label="Apelido" value={nickname} onChange={setNickname} maxLength={24} autoComplete="off" />
           <label className="row" htmlFor="edit-year">
             <span className="row-label">Ano de nascimento</span>
