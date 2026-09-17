@@ -153,15 +153,17 @@ export function AthleteHome({
       )}
 
       {suggestion && (
-        <section className="hero-card" aria-label="Treino para hoje">
-          <p className="subtitle">Para hoje · {programMinutes(suggestion)} min</p>
-          <h2>{suggestion.title}</h2>
-          <p className="hero-summary-clamp">{suggestion.summary}</p>
-          <p className="hero-meta">
-            {CATEGORY_LABELS[suggestion.category]} · {suggestion.drills.length} exercícios
-          </p>
+        <section aria-label="Treino para hoje">
+          <button type="button" className="hero-card" onClick={() => onOpenProgram(suggestion.id)}>
+            <span className="subtitle">Para hoje · {programMinutes(suggestion)} min</span>
+            <span className="hero-title">{suggestion.title}</span>
+            <span className="hero-summary-clamp">{suggestion.summary}</span>
+            <span className="hero-meta">
+              {CATEGORY_LABELS[suggestion.category]} · {suggestion.drills.length} exercícios
+            </span>
+          </button>
           <div className="hero-actions">
-            <PrimaryButton onClick={() => onOpenProgram(suggestion.id)}>Começar treino</PrimaryButton>
+            <PrimaryButton onClick={() => onOpenProgram(suggestion.id)}>Ver treino</PrimaryButton>
           </div>
         </section>
       )}
