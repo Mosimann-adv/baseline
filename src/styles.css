@@ -257,22 +257,21 @@ button.row:active { background: var(--fill); }
 .suggestion-card p { margin: 0; font-size: 15px; line-height: 1.45; color: var(--text-2); }
 .suggestion-card .subtitle { color: var(--yellow); }
 .suggestion-card .suggestion-meta { font-size: 13px; color: var(--text-3); margin-bottom: 8px; }
-/* Hero "para hoje": vitrine tocável + CTA da página logo abaixo, fora do card.
-   Botão cheio dentro do card brigava com o canto "onda" e achatava o conjunto. */
+/* Hero "para hoje": vitrine escura com CTA compacto à esquerda.
+   Botão cheio esticado brigava com o canto "onda"; compacto respira. */
 .hero-card {
-  display: grid; gap: 8px; width: 100%; margin: 8px 0 0; padding: 20px 18px 18px;
-  border: 0; border-radius: var(--radius-hero);
+  display: grid; gap: 8px; margin: 8px 0 4px; padding: 20px 18px 18px;
+  border-radius: var(--radius-hero);
   background: linear-gradient(135deg, var(--bg-raised) 0%, var(--navy-deep) 78%);
   box-shadow: var(--shadow-navy), inset 0 0 0 1px rgba(243, 196, 75, 0.28);
-  color: inherit; font: inherit; text-align: left; cursor: pointer;
   animation: hero-in 0.32s var(--ease);
-  transition: transform 0.25s var(--spring);
 }
-.hero-card:active { transform: scale(0.99); }
 .hero-card .subtitle { color: var(--yellow); }
-.hero-title { display: block; font-size: 24px; font-weight: 700; line-height: 1.15; text-wrap: balance; }
-.hero-meta { display: block; font-size: 13px; color: var(--text-3); font-variant-numeric: tabular-nums; }
-.hero-actions { display: grid; margin: 8px 0 4px; }
+.hero-card h2 { margin: 0; font-size: 24px; font-weight: 700; line-height: 1.15; text-wrap: balance; }
+.hero-card .hero-summary-clamp, .hero-card .hero-meta { font-size: 15px; line-height: 1.5; }
+.hero-card .hero-summary-clamp { color: var(--text-2); }
+.hero-actions { display: grid; margin-top: 4px; }
+.hero-actions .primary-button { justify-self: start; min-height: 48px; padding: 0 28px; font-size: 16px; }
 .hero-summary-clamp {
   display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
   font-size: 15px; line-height: 1.5; color: var(--text-2);
