@@ -153,12 +153,12 @@ export function AthleteHome({
       )}
 
       {suggestion && (
-        <section className="suggestion-card">
-          <p className="subtitle">Treino sugerido</p>
+        <section className="suggestion-card hero-tone" aria-label="Treino para hoje">
+          <p className="subtitle">Para hoje · {programMinutes(suggestion)} min</p>
           <h2>{suggestion.title}</h2>
           <p>{suggestion.summary}</p>
           <p className="suggestion-meta">
-            {CATEGORY_LABELS[suggestion.category]} · {programMinutes(suggestion)} min · {suggestion.drills.length} exercícios
+            {CATEGORY_LABELS[suggestion.category]} · {suggestion.drills.length} exercícios
           </p>
           <PrimaryButton onClick={() => onOpenProgram(suggestion.id)}>Ver treino</PrimaryButton>
         </section>
