@@ -1,6 +1,6 @@
 # Continuidade do desenvolvimento — Baseline by Arvoredo
 
-Atualizado em 2026-09-13.
+Atualizado em 2026-09-19.
 
 Leia nesta ordem:
 1. `AGENTS.md` — regras que não mudam sem pedido explícito.
@@ -24,9 +24,11 @@ Leia nesta ordem:
   - ações sem volta pedem confirmação em dois passos.
 - **Escopo da v1:** não há área do treinador. O foco é quem treina:
   - treinos guiados com vídeo do exercício tocando na tela;
+  - treino retomável no aparelho, contagem de preparação, pausa automática em segundo plano, sinais sonoros e modo Foco para exercícios sem vídeo;
   - registro do treino (como foi de 1 a 5 e "algo doeu?" sim/não);
-  - testes de habilidade a cada 4 semanas, com gráficos;
-  - meta semanal, sequência de semanas e conquistas, sem comparar pessoas.
+  - testes de habilidade a cada 4 semanas, com gráficos, detalhe por teste e calendário mensal;
+  - meta semanal, sequência de semanas e conquistas, sem comparar pessoas;
+  - aba Vídeos com destaques conferidos do canal do Instituto Arvoredo.
 - **Faixas:** 6–8 Iniciação, 9–11 Minibasquete, 12–14 Fundamentos, 15–17 Desenvolvimento e **Adulto (18+)**. Na v1, a faixa Adulto usa os treinos e testes de 15–17 (`contentBand` em `src/lib/age.ts`).
 - **Stack:** Vite 8 + TypeScript 7 + React 19, empacotado com Capacitor 8 (Android primeiro, iPhone depois). O banco é o Supabase: Auth, RLS e funções RPC.
 - **Regras externas que o app segue** (por ter crianças no público):
@@ -70,7 +72,7 @@ Leia nesta ordem:
 | **Conta própria a partir de 16 anos** (2026-09-13; simplificada no mesmo dia) | Cadastro: e-mail, senha e “tenho 16 anos ou mais”. Sem ano de nascimento e sem e-mail de responsável no login. Idade fica no perfil. Contas teen antigas seguem válidas. |
 | **App gratuito na v1; Apoie o Arvoredo na tela Conta** (2026-09-13) | Sem anúncio, sem compra no treino. Doação opcional no estilo do site (Pix CNPJ `56660275000106`, QR, WhatsApp). Cotas Bola / Uniforme / Cesta para empresas no site. Captação principal continua fora da loja (incentivo, patrocínio). |
 | **Visual alinhado ao site do Instituto** (2026-09-13) | Cores oficiais do kit (Maré `#133358`, Oceano, Coral), Poppins embutida (self-host, ~24 KB), botão primário pill com virada para amarelo, labels uppercase, canto "onda", transições de tela e números animados. Escopo só de estilo; fonte do sistema saiu. |
-| **Rodapé de abas: Treinos · Evolução · Perfil** (2026-09-13) | Pedido do dono. "Perfil" reutiliza a tela "Quem vai treinar?" (troca de perfil e Conta); abas só existem com atleta válido; botão voltar físico não troca de aba; treinos filtráveis por chips de categoria. |
+| **Rodapé de abas: Treinos · Evolução · Vídeos · Perfil** (2026-09-13, ampliado em 2026-09-15) | "Perfil" reutiliza a tela "Quem vai treinar?" (troca de perfil e Conta); abas só existem com atleta válido; botão voltar físico não troca de aba; treinos filtráveis por chips de categoria. A aba Vídeos reúne destaques conferidos do canal do Instituto. |
 | **5 programas de ball handling para casa** (rascunho) | Pedido do dono: o mais útil é o que se treina em casa, sem cesta. Só vídeos já conferidos; validação do profissional pendente. |
 
 ## 4. Estado atual
@@ -85,8 +87,10 @@ Leia nesta ordem:
 | `aae6fd2`, `94a9b77`, `793555b` | Supabase e Vercel registrados; `.env.production`; build ignora variáveis vazias |
 | `f0dc858` | Adultos: perfil próprio, tela "Quem vai treinar?", faixa Adulto, consentimento do titular; migração 0005 |
 | `8774ff6` | Remove o PIN; textos legais na versão `rascunho-3` |
-| (este) | Fila offline; esqueci a senha; conta 16–17; projeto Android Capacitor (`br.org.arvoredo.baseline`); senha para excluir a conta; conversão 16/18 sem migrar histórico; rascunho dos formulários do Play em `docs/GOOGLE_PLAY.md`. Migração 0006. |
-| (próximo) | Visual alinhado ao site do Instituto (cores do kit, Poppins embutida, botão pill, onda, transições); rodapé de abas Treinos/Evolução/Perfil; treinos filtráveis por categoria; 5 programas de ball handling para casa; vídeo do treino repete o trecho (`start`) e pula introdução; suíte Vitest (`npm test`, 46 testes). |
+| `2e40daf`–`c43d3da` | Fila offline; esqueci a senha; conta 16–17 simplificada; projeto Android Capacitor (`br.org.arvoredo.baseline`); senha para excluir a conta; conversão 16/18 sem migrar histórico; rascunho dos formulários do Play; migração 0006. |
+| `feca402`–`02a698c` | Visual alinhado ao Instituto; Poppins embutida; rodapé de abas; filtros por categoria; 5 programas de ball handling para casa; trechos e repetição de vídeos; suíte Vitest. |
+| `7125ddb`–`7e40e56` | Prévia dos exercícios; ajustes dos vídeos conferidos; preparação e descanso; pausa automática em segundo plano; sons; treino retomável; calendário mensal; detalhe de teste; avatares; aba Vídeos; Open Graph e modo Foco. |
+| `8916f21`–`1fee8dc` | Rodada de refinamento da Home, Evolução e Conta: carregamento sob demanda, menos informação por tela, card "Para hoje" e categorias sempre visíveis sem rolagem horizontal. |
 
 Etapas do `README.md`:
 1. Fundação — pronta.
@@ -95,15 +99,16 @@ Etapas do `README.md`:
 4. Privacidade e loja — parte do app pronta; rascunho dos formulários em `docs/GOOGLE_PLAY.md` (preencher no Console).
 5. Teste e publicação — falta conta de organização, AAB assinado e a migração 0006 no banco real.
 
-**No ar:** https://baseline-six-sigma.vercel.app/ — o commit desta etapa entra no próximo deploy automático, **depois** de o dono rodar a migração 0006.
+**No ar:** https://baseline-six-sigma.vercel.app/ — cada push na `main` dispara o deploy automático. A migração 0006 continua necessária no banco real para o fluxo de conta 16–17.
 
 **Banco:** migrações 0001–0005 aplicadas. **0006 ainda não:** o dono precisa colar `supabase/migrations/0006_conta_16.sql` no SQL Editor antes de adolescentes 16–17 criarem conta no site real.
 
-**Verificação feita:** `npm test` (46 testes em `*.test.ts` ao lado dos arquivos), `npm run build` e `npm run build:demo` passam, o que inclui `tsc --noEmit`.
+**Verificação mais recente (2026-09-19):** `npm test` passa com 48 testes em 7 arquivos; `npm run build` e `npm run build:demo` passam, incluindo `tsc --noEmit`. O aviso do chunk principal de produção acima de 500 kB continua conhecido.
 
-**Não conferido:**
-- Nenhuma tela das etapas 3 e 4, nem de adultos e sem PIN, foi aberta em navegador por um agente: a automação de navegador travou nesta máquina.
-- O dono ainda não confirmou o teste de ponta a ponta no site real (roteiro na seção 9).
+**Não conferido nesta atualização:**
+- navegação visual em navegador e no Android;
+- deploy correspondente ao `HEAD` em produção;
+- teste de ponta a ponta no site real pelo dono (roteiro na seção 10.1).
 
 ## 5. Como rodar
 
@@ -195,7 +200,7 @@ src/
   main.tsx              faixa "demonstração" quando VITE_DEMO=1; AuthProvider + App
   App.tsx               navegação por estado (union View, sem router) e rotas públicas por hash
   components/ui.tsx     Screen, Group, Field, SwitchRow, Segmented, PrimaryButton, PlainButton, Notice, CountUp
-  components/TabBar.tsx rodapé de abas do atleta: Treinos · Evolução · Perfil ("Quem vai treinar?")
+  components/TabBar.tsx rodapé de abas do atleta: Treinos · Evolução · Vídeos · Perfil ("Quem vai treinar?")
   state/
     auth.tsx            sessão do adulto dono da conta: signUp, signIn, signOut, deleteAccount
     athletes.ts         perfis + aceites: create (menor, RPC), createSelf (adulto, RPC), update, revoke, authorize, remove
@@ -217,6 +222,8 @@ src/
     counts.ts           contagem exata de treinos e testes por perfil (além do recorte de 300)
     account.ts          adult vs teen; meta da sessão; idade manda sobre o tipo gravado
     native.ts           botão voltar, tela ligada, compartilhar arquivo e texto no Android
+    resumeSession.ts    ponto do treino em andamento salvo no aparelho
+    sounds.ts           bipes e aviso por voz durante o treino
   content/
     programs.ts         16 programas por faixa e nível (11 + 5 de ball handling para casa, rascunho); VIDEOS com IDs verificados; start pula introdução
     tests.ts            7 testes de habilidade; sprint e salto só a partir de 12 anos
@@ -227,7 +234,8 @@ src/
     ProfileChoice       "Quem vai treinar?" para conta sem perfis
     NewAthlete          cria perfil: kind "self" (16+) ou "minor" (com declaração de responsável)
     WhoTrains           escolha de perfil; perfil sem aceite aparece bloqueado
-    AthleteHome, ProgramDetail, TrainingSession, Progress, TestSession
+    AthleteHome, ProgramDetail, TrainingSession, Progress, TestDetail, TestSession
+    Channel             aba Vídeos com destaques conferidos do canal do Instituto
     GuardianArea        tela Conta (perfis, aceites, dados, Apoie o Arvoredo, código do responsável, textos legais, sair, excluir)
     ConfirmParent       página pública #/confirmar-responsavel
     LegalScreen         renderiza os textos de legal.ts
@@ -281,7 +289,7 @@ supabase/migrations/    0001 fundação · 0002 treinos · 0003 evolução · 00
 7. **Conversão 16/18** — feita como aviso, sem migrar histórico: o perfil de menor permanece na conta do responsável; a pessoa pode criar login próprio se quiser. Aos 18, o adolescente vira adulto pela idade e precisa do termo de adulto para seguir treinando.
 8. **Vídeos dos exercícios** — 40 de 44 com ID conferido (Jr. NBA, USA Basketball e os cinco já usados). Sem vídeo: cintura, polichinelo, pular num pé só, equilíbrio de cegonha.
 
-Não há mais item de código da v1 além da revisão jurídica, da validação do profissional e do que depende do dono (migração 0006, Play, AAB).
+Depois disso também foram concluídos o treino retomável, os sinais sonoros, o modo Foco, o calendário mensal, o detalhe dos testes, a aba Vídeos e a rodada de refinamento visual da Home/Evolução/Conta. **Não há item de código aberto da v1 neste documento.** O próximo trabalho depende de nova decisão do dono, da revisão jurídica, da validação do profissional ou das ações externas já listadas (migração 0006, Play e AAB).
 
 ### 10.3 Captação de recursos (decidida em 2026-09-13)
 

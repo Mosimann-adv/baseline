@@ -1,6 +1,6 @@
 # Baseline by Arvoredo
 
-App de treinos de basquete para adultos, para adolescentes a partir de 16 anos e para crianças e adolescentes acompanhados por um responsável. A conta é a partir de 16 anos: quem cria declara ter 16 anos ou mais. Cada perfil treina, registra e acompanha a própria evolução. O app é gratuito; na tela Conta há um Apoie o Arvoredo (Pix), no estilo do site do Instituto.
+App de treinos de basquete para adultos, para adolescentes a partir de 16 anos e para crianças e adolescentes acompanhados por um responsável. A conta é a partir de 16 anos: quem cria declara ter 16 anos ou mais. Cada perfil treina, registra e acompanha a própria evolução. O app inclui treino guiado retomável, evolução por testes, calendário e uma aba com vídeos do Instituto. É gratuito; na tela Conta há um Apoie o Arvoredo (Pix), no estilo do site do Instituto.
 
 Stack: Vite + TypeScript + React, empacotado para Android com Capacitor. Dados no Supabase.
 
@@ -13,6 +13,8 @@ Stack: Vite + TypeScript + React, empacotado para Android com Capacitor. Dados n
 npm install
 npm run dev                  # usa o projeto Supabase de .env.production
 npm run dev -- --mode demo   # demonstração sem servidor (dados no navegador)
+npm test                     # suíte Vitest
+npm run build                # typecheck + build de produção
 ```
 
 ## Banco (Supabase)

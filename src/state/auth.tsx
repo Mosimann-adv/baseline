@@ -98,7 +98,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           demoSignOut();
           setSession(null);
         } else {
-          await requireSupabase().auth.signOut();
+          const { error } = await requireSupabase().auth.signOut();
+          if (error) throw error;
         }
       },
       async deleteAccount(password: string) {

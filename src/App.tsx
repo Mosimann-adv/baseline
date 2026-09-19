@@ -105,7 +105,7 @@ function usePublicDoc(): [LegalId | "confirmar-responsavel" | null, () => void] 
 }
 
 function Family({ guardianId, email }: { guardianId: string; email: string }) {
-  const { session } = useAuth();
+  const { session, signOut } = useAuth();
   const meta = metaFromSession(session);
   const family = useAthletes(guardianId);
   const training = useSessions(guardianId);
@@ -350,6 +350,7 @@ function Family({ guardianId, email }: { guardianId: string; email: string }) {
       }
       onPick={(athleteId) => setView({ name: "athlete", athleteId })}
       onAccount={() => setView({ name: "account" })}
+      onSignOut={signOut}
     />,
     "profile",
   );

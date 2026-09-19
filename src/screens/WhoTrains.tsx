@@ -1,6 +1,8 @@
-import { Group, Screen } from "../components/ui";
+import { useState } from "react";
+import { Group, Notice, Screen } from "../components/ui";
 import { ageThisYear, bandFor } from "../lib/age";
 import { avatarFor } from "../lib/avatar";
+import { friendlyError } from "../lib/errors";
 import type { Athlete } from "../lib/types";
 
 export function WhoTrains({
@@ -9,15 +11,30 @@ export function WhoTrains({
   lockLabel,
   onPick,
   onAccount,
+  onSignOut,
 }: {
   athletes: Athlete[];
   isLocked: (athlete: Athlete) => boolean;
   lockLabel?: (athlete: Athlete) => string;
   onPick: (id: string) => void;
   onAccount: () => void;
+  onSignOut: () => Promise<void>;
 }) {
   // O perfil do próprio dono da conta vem primeiro. Criar e gerenciar perfis fica na tela Conta.
   const ordered = [...athletes].sort((a, b) => Number(b.is_self) - Number(a.is_self));
+  const [signingOut, setSigningOut] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  async function signOut() {
+    setSigningOut(true);
+    setError(null);
+    try {
+      await onSignOut();
+    } catch (err) {
+      setError(friendlyError(err));
+      setSigningOut(false);
+    }
+  }
 
   return (
     <Screen title="Quem vai treinar?">
@@ -58,7 +75,11 @@ export function WhoTrains({
             <small>Perfis, autorizações, privacidade e dados</small>
           </span>
         </button>
+        <button type="button" className="row row-action" disabled={signingOut} onClick={() => void signOut()}>
+          {signingOut ? "Saindo…" : "Sair da conta"}
+        </button>
       </Group>
+      {error && <Notice tone="error">{error}</Notice>}
     </Screen>
   );
 }

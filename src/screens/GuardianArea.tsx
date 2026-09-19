@@ -70,6 +70,7 @@ function AccountSettings({
   const [sub, setSub] = useState<Sub>(null);
   const [confirming, setConfirming] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [signingOut, setSigningOut] = useState(false);
   const [exporting, setExporting] = useState(false);
   const [exportNote, setExportNote] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
@@ -117,6 +118,17 @@ function AccountSettings({
     } catch (err) {
       setError(friendlyError(err));
       setBusy(false);
+    }
+  }
+
+  async function leaveAccount() {
+    setSigningOut(true);
+    setError(null);
+    try {
+      await signOut();
+    } catch (err) {
+      setError(friendlyError(err));
+      setSigningOut(false);
     }
   }
 
@@ -310,8 +322,8 @@ function AccountSettings({
           <span className="row-label">E-mail</span>
           <span className="row-value">{email}</span>
         </div>
-        <button type="button" className="row row-action" onClick={() => void signOut()}>
-          Sair da conta
+        <button type="button" className="row row-action" disabled={signingOut} onClick={() => void leaveAccount()}>
+          {signingOut ? "Saindo…" : "Sair da conta"}
         </button>
       </Group>
 
