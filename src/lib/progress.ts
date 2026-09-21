@@ -1,6 +1,7 @@
 import { localIsoDate, startOfWeekIso } from "./dates";
 import { TEST_INTERVAL_DAYS } from "../content/tests";
-import type { SkillTestDef, SkillTestRecord, TrainingSession } from "./types";
+import { programById } from "../content/programs";
+import type { Category, SkillTestDef, SkillTestRecord, TrainingSession } from "./types";
 
 export function addDaysIso(iso: string, days: number): string {
   const date = new Date(`${iso}T12:00:00`);
@@ -98,6 +99,61 @@ export function testProgress(test: SkillTestDef, tests: SkillTestRecord[]): Test
     last,
     improved: points.length > 1 && (test.better === "max" ? last > first : last < first),
   };
+}
+
+const FUNDAMENTAL_ORDER: Category[] = ["drible", "arremesso", "passe", "defesa", "fisico"];
+
+const TESTS_BY_FUNDAMENTAL: Record<Category, readonly string[]> = {
+  drible: ["mao-fraca-30s", "zigue-zague"],
+  arremesso: ["arremessos-perto", "lance-livre", "arremessos-1min"],
+  passe: [],
+  defesa: [],
+  fisico: ["sprint-10m", "salto-vertical"],
+};
+
+export interface FundamentalProgress {
+  category: Category;
+  sessions: number;
+  recentSessions: number;
+  minutes: number;
+  lastTrained: string | null;
+  tested: boolean;
+  improved: boolean;
+  availableTests: number;
+}
+
+/**
+ * Resume a prática de cada fundamento sem transformar frequência em nota de
+ * habilidade. `recentSessions` considera os últimos 28 dias, a mesma janela
+ * usada entre baterias de testes.
+ */
+export function fundamentalsProgress(
+  sessions: TrainingSession[],
+  tests: SkillTestRecord[],
+  testDefs: SkillTestDef[],
+  today = localIsoDate(),
+): FundamentalProgress[] {
+  const recentStart = addDaysIso(today, -(TEST_INTERVAL_DAYS - 1));
+
+  return FUNDAMENTAL_ORDER.map((category) => {
+    const ofCategory = sessions.filter((session) => programById(session.program_id)?.category === category);
+    const relatedDefs = testDefs.filter((def) => TESTS_BY_FUNDAMENTAL[category].includes(def.id));
+    const relatedProgress = relatedDefs.map((def) => testProgress(def, tests));
+
+    return {
+      category,
+      sessions: ofCategory.length,
+      recentSessions: ofCategory.filter((session) => session.performed_on >= recentStart && session.performed_on <= today).length,
+      minutes: ofCategory.reduce((total, session) => total + session.minutes, 0),
+      lastTrained: ofCategory.reduce<string | null>(
+        (last, session) => (last === null || session.performed_on > last ? session.performed_on : last),
+        null,
+      ),
+      tested: relatedProgress.some((progress) => progress.last !== null),
+      improved: relatedProgress.some((progress) => progress.improved),
+      availableTests: relatedDefs.length,
+    };
+  });
 }
 
 export interface Achievement {

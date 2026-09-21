@@ -1,12 +1,22 @@
 import { useMemo, useState } from "react";
-import { CountUp, Group, Screen } from "../components/ui";
+import { CountUp, Group, PrimaryButton, Screen } from "../components/ui";
 import { ageThisYear, bandFor } from "../lib/age";
 import { formatDayMonth, localIsoDate } from "../lib/dates";
-import { achievements, goalStreak, isTestDue, lastWeeks, nextTestDate, testProgress, type WeekSummary } from "../lib/progress";
+import {
+  achievements,
+  fundamentalsProgress,
+  goalStreak,
+  isTestDue,
+  lastWeeks,
+  nextTestDate,
+  testProgress,
+  type FundamentalProgress,
+  type WeekSummary,
+} from "../lib/progress";
 import { formatTestValue, testsFor } from "../content/tests";
-import { programById } from "../content/programs";
+import { CATEGORY_LABELS, programById, programsFor } from "../content/programs";
 import { TestDetail } from "./TestDetail";
-import type { Athlete, SkillTestRecord, TrainingSession } from "../lib/types";
+import type { Athlete, Category, Program, SkillTestDef, SkillTestRecord, TrainingSession } from "../lib/types";
 
 export function Progress({
   athlete,
@@ -14,12 +24,14 @@ export function Progress({
   tests,
   onBack,
   onStartTests,
+  onOpenProgram,
 }: {
   athlete: Athlete;
   sessions: TrainingSession[];
   tests: SkillTestRecord[];
   onBack: () => void;
   onStartTests: () => void;
+  onOpenProgram: (programId: string) => void;
 }) {
   const band = bandFor(ageThisYear(athlete.birth_year));
   const goal = athlete.weekly_goal;
@@ -33,7 +45,7 @@ export function Progress({
   // Tocar num teste abre o detalhe dele, com todas as marcas e o que o teste mede.
   const [openTestId, setOpenTestId] = useState<string | null>(null);
   // Abas internas: uma história por vez em vez do scroll infinito.
-  const [tab, setTab] = useState<"resumo" | "testes" | "mais">("resumo");
+  const [tab, setTab] = useState<"mapa" | "testes" | "mais">("mapa");
   const openDef = band ? defs.find((def) => def.id === openTestId) : undefined;
 
   if (openDef) {
@@ -51,7 +63,7 @@ export function Progress({
   return (
     <Screen eyebrow={athlete.nickname} title="Evolução" onBack={onBack}>
       <div className="tabs-mini" role="tablist" aria-label="Seções da evolução">
-        {(["resumo", "testes", "mais"] as const).map((id) => (
+        {(["mapa", "testes", "mais"] as const).map((id) => (
           <button
             key={id}
             type="button"
@@ -59,13 +71,21 @@ export function Progress({
             aria-selected={tab === id}
             onClick={() => setTab(id)}
           >
-            {id === "resumo" ? "Resumo" : id === "testes" ? "Testes" : "Conquistas"}
+            {id === "mapa" ? "Mapa" : id === "testes" ? "Testes" : "Conquistas"}
           </button>
         ))}
       </div>
 
-      {tab === "resumo" && (
+      {tab === "mapa" && (
         <>
+          <FundamentalsMap
+            athlete={athlete}
+            sessions={sessions}
+            tests={tests}
+            defs={defs}
+            onOpenProgram={onOpenProgram}
+          />
+
           <div className="metrics two">
             <div className="metric">
               <strong>
@@ -166,6 +186,164 @@ export function Progress({
       )}
     </Screen>
   );
+}
+
+const FUNDAMENTAL_COPY: Record<Category, string> = {
+  drible: "Controle de bola, ritmo e confiança com as duas mãos.",
+  arremesso: "Mecânica, equilíbrio e repetição perto ou longe da cesta.",
+  passe: "Precisão, leitura e conexão com quem joga junto.",
+  defesa: "Postura, deslocamento e reação sem cruzar os pés.",
+  fisico: "Coordenação, velocidade, salto e aterrissagem segura.",
+};
+
+function FundamentalsMap({
+  athlete,
+  sessions,
+  tests,
+  defs,
+  onOpenProgram,
+}: {
+  athlete: Athlete;
+  sessions: TrainingSession[];
+  tests: SkillTestRecord[];
+  defs: SkillTestDef[];
+  onOpenProgram: (programId: string) => void;
+}) {
+  const band = bandFor(ageThisYear(athlete.birth_year));
+  const fundamentals = useMemo(() => fundamentalsProgress(sessions, tests, defs), [sessions, tests, defs]);
+  const availablePrograms = useMemo(
+    () => (band ? programsFor(band.id, athlete.level) : []),
+    [band, athlete.level],
+  );
+  const focus = useMemo(
+    () =>
+      [...fundamentals]
+        .filter((item) => availablePrograms.some((program) => program.category === item.category))
+        .sort(
+          (a, b) =>
+            a.recentSessions - b.recentSessions ||
+            a.sessions - b.sessions ||
+            (a.lastTrained ?? "").localeCompare(b.lastTrained ?? ""),
+        )[0]?.category ??
+      "drible",
+    [fundamentals, availablePrograms],
+  );
+  const [selectedCategory, setSelectedCategory] = useState<Category>(focus);
+  const selected = fundamentals.find((item) => item.category === selectedCategory) ?? fundamentals[0];
+  const suggestion = suggestedProgram(selected.category, availablePrograms, sessions);
+
+  return (
+    <section className="fundamentals-map" aria-labelledby="fundamentals-title">
+      <div className="fundamentals-head">
+        <div>
+          <p className="subtitle">Seu jogo</p>
+          <h2 id="fundamentals-title">Mapa de fundamentos</h2>
+        </div>
+        <span className="map-window">últimos 28 dias</span>
+      </div>
+      <p className="fundamentals-intro">
+        Veja o que você vem praticando e toque em uma área para escolher o próximo treino.
+      </p>
+
+      <div className="skill-court" aria-label="Fundamentos do basquete">
+        <span className="court-line court-half" aria-hidden="true" />
+        <span className="court-line court-key" aria-hidden="true" />
+        <span className="court-line court-arc" aria-hidden="true" />
+        {fundamentals.map((item) => (
+          <FundamentalNode
+            key={item.category}
+            item={item}
+            selected={item.category === selected.category}
+            recommended={item.category === focus}
+            onSelect={() => setSelectedCategory(item.category)}
+          />
+        ))}
+      </div>
+
+      <p className="map-legend">Os números mostram treinos registrados nos últimos 28 dias, não uma nota de habilidade.</p>
+
+      <article className="fundamental-detail" aria-live="polite">
+        <div className="fundamental-detail-head">
+          <div>
+            <p className="subtitle">{selected.category === focus ? "Foco sugerido" : "Fundamento"}</p>
+            <h3>{CATEGORY_LABELS[selected.category]}</h3>
+          </div>
+          {selected.improved && <span className="progress-signal">teste evoluiu</span>}
+        </div>
+        <p className="fundamental-description">{FUNDAMENTAL_COPY[selected.category]}</p>
+        <div className="fundamental-stats">
+          <div>
+            <strong>{selected.sessions}</strong>
+            <span>{selected.sessions === 1 ? "treino" : "treinos"}</span>
+          </div>
+          <div>
+            <strong>{selected.minutes}</strong>
+            <span>minutos</span>
+          </div>
+          <div>
+            <strong>{selected.lastTrained ? formatDayMonth(selected.lastTrained) : "—"}</strong>
+            <span>último</span>
+          </div>
+        </div>
+        <p className="fundamental-note">{fundamentalNote(selected)}</p>
+        {suggestion ? (
+          <PrimaryButton onClick={() => onOpenProgram(suggestion.id)}>Treinar {suggestion.title}</PrimaryButton>
+        ) : (
+          <p className="fundamental-unavailable">Ainda não há um treino deste fundamento para esta faixa.</p>
+        )}
+      </article>
+    </section>
+  );
+}
+
+function FundamentalNode({
+  item,
+  selected,
+  recommended,
+  onSelect,
+}: {
+  item: FundamentalProgress;
+  selected: boolean;
+  recommended: boolean;
+  onSelect: () => void;
+}) {
+  const label = CATEGORY_LABELS[item.category];
+  return (
+    <button
+      type="button"
+      className={`skill-node skill-node-${item.category}${selected ? " selected" : ""}${item.recentSessions > 0 ? " practiced" : ""}`}
+      aria-pressed={selected}
+      aria-label={`${label}: ${item.recentSessions} ${item.recentSessions === 1 ? "treino registrado nos últimos 28 dias" : "treinos registrados nos últimos 28 dias"}${recommended ? ", foco sugerido" : ""}${item.improved ? ", teste evoluiu" : ""}`}
+      onClick={onSelect}
+    >
+      {recommended && <span className="skill-node-focus" aria-hidden="true" />}
+      {item.improved && <span className="skill-node-up" aria-hidden="true">↗</span>}
+      <span className="skill-node-count">{item.recentSessions}</span>
+      <span className="skill-node-label">{label}</span>
+    </button>
+  );
+}
+
+function suggestedProgram(category: Category, programs: Program[], sessions: TrainingSession[]): Program | undefined {
+  const lastDone = new Map<string, string>();
+  for (const session of sessions) {
+    const last = lastDone.get(session.program_id);
+    if (!last || session.performed_on > last) lastDone.set(session.program_id, session.performed_on);
+  }
+  return programs
+    .filter((program) => program.category === category)
+    .sort((a, b) => (lastDone.get(a.id) ?? "").localeCompare(lastDone.get(b.id) ?? ""))[0];
+}
+
+function fundamentalNote(item: FundamentalProgress): string {
+  if (item.improved) return "Sua marca mais recente melhorou em relação à primeira medição.";
+  if (item.tested) return "Você já tem uma marca de teste para acompanhar neste fundamento.";
+  if (item.availableTests > 0) return "Faça os testes para acompanhar suas marcas além da frequência de treino.";
+  if (item.recentSessions > 0) {
+    return `${item.recentSessions} ${item.recentSessions === 1 ? "treino registrado" : "treinos registrados"} nos últimos 28 dias.`;
+  }
+  if (item.sessions > 0) return "Faz mais de 28 dias desde a última prática registrada deste fundamento.";
+  return "Comece por um treino e este ponto do mapa passa a contar sua história.";
 }
 
 function WeeksChart({ weeks, goal }: { weeks: WeekSummary[]; goal: number }) {

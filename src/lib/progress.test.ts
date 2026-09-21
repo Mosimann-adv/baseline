@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { addDaysIso, achievements, bestGoalStreak, goalStreak, isTestDue, lastWeeks, nextTestDate, testProgress } from "./progress";
+import { addDaysIso, achievements, bestGoalStreak, fundamentalsProgress, goalStreak, isTestDue, lastWeeks, nextTestDate, testProgress } from "./progress";
 import type { SkillTestDef, SkillTestRecord, TrainingSession } from "./types";
 
 // Sexta-feira 11 de setembro de 2026.
@@ -124,6 +124,65 @@ describe("testes de habilidade", () => {
     const progress = testProgress(timeDef, [record("2026-09-01", 17.2), record("2026-08-04", 18.4)]);
     expect(progress.best).toBe(17.2);
     expect(progress.improved).toBe(true);
+  });
+});
+
+describe("mapa de fundamentos", () => {
+  const dribbleTest: SkillTestDef = {
+    id: "mao-fraca-30s",
+    name: "Mão fraca",
+    unit: "dribles",
+    better: "max",
+    bands: ["15-17"],
+    protocol: "",
+    min: 0,
+    max: 150,
+    step: "int",
+  };
+  const record = (date: string, value: number): SkillTestRecord => ({
+    id: date,
+    guardian_id: "g1",
+    athlete_id: "a1",
+    tested_on: date,
+    results: { "mao-fraca-30s": value },
+    created_at: `${date}T12:00:00Z`,
+  });
+
+  it("separa treinos por fundamento e calcula recência e minutos", () => {
+    const map = fundamentalsProgress(
+      [
+        { ...session("2026-09-10", 8), id: "d1", program_id: "mao-fraca" },
+        { ...session("2026-08-01", 12), id: "d2", program_id: "mao-fraca" },
+        { ...session("2026-09-09", 6), id: "a1", program_id: "arremesso-base" },
+      ],
+      [],
+      [dribbleTest],
+      "2026-09-11",
+    );
+
+    expect(map.find((item) => item.category === "drible")).toMatchObject({
+      sessions: 2,
+      recentSessions: 1,
+      minutes: 20,
+      lastTrained: "2026-09-10",
+    });
+    expect(map.find((item) => item.category === "arremesso")).toMatchObject({ sessions: 1, minutes: 6 });
+    expect(map.find((item) => item.category === "passe")).toMatchObject({ sessions: 0, lastTrained: null });
+  });
+
+  it("leva a evolução dos testes ao fundamento correspondente", () => {
+    const map = fundamentalsProgress(
+      [],
+      [record("2026-09-01", 24), record("2026-08-04", 18)],
+      [dribbleTest],
+      "2026-09-11",
+    );
+    expect(map.find((item) => item.category === "drible")).toMatchObject({
+      tested: true,
+      improved: true,
+      availableTests: 1,
+    });
+    expect(map.find((item) => item.category === "fisico")).toMatchObject({ tested: false, availableTests: 0 });
   });
 });
 

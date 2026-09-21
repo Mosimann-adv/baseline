@@ -311,7 +311,14 @@ function Family({ guardianId, email }: { guardianId: string; email: string }) {
       } else if (view.name === "progress") {
         return withTabs(
           <Suspense fallback={<LazyFallback />}>
-            <Progress athlete={athlete} sessions={sessions} tests={tests} onBack={home} onStartTests={() => setView({ name: "tests", athleteId })} />
+            <Progress
+              athlete={athlete}
+              sessions={sessions}
+              tests={tests}
+              onBack={home}
+              onStartTests={() => setView({ name: "tests", athleteId })}
+              onOpenProgram={(programId) => setView({ name: "program", athleteId, programId })}
+            />
           </Suspense>,
           "progress",
         );
