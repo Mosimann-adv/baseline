@@ -219,7 +219,7 @@ export const PROGRAMS: Program[] = [
     levels: ["intermediario", "avancado"],
     equipment: "Bola e cesta de 3,05 m.",
     drills: [
-      { id: "um-drible", name: "Um drible e arremesso", cue: "Um drible forte para o lado, pare com os dois pés e arremesse.", seconds: 90, restSeconds: 30, video: VIDEOS.paradaArremesso },
+      { id: "um-drible", name: "Um drible e arremesso", cue: "Um drible forte, pare com os dois pés e arremesse.", seconds: 90, restSeconds: 30, video: VIDEOS.paradaArremesso },
       { id: "crossover-parada", name: "Crossover e parada", cue: "Crossover, parada em dois tempos e arremesso com o corpo de frente para a cesta.", seconds: 90, restSeconds: 30, video: VIDEOS.crossoverArremesso },
       { id: "sequencia", name: "Sequência de arremessos", cue: "Cinco arremessos seguidos de pontos diferentes. Anote quantos caíram.", seconds: 90, restSeconds: 0, video: { ...VIDEOS.arremesso, previewOnly: true } },
     ],
