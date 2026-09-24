@@ -28,10 +28,14 @@ const YOUTUBE_ORIGIN = "https://www.youtube-nocookie.com";
 
 // Volta ao ponto em que o treino parou, já pausado: quem treina vê quanto restava e decide continuar.
 // "Prepare-se" recomeça a contagem de 3 s; marca fora dos limites do programa cai no começo.
+// O relógio de duração é rebaseado: o tempo com o app fechado não entra como treino
+// (agora − (salvo − começou) mantém só o que correu de verdade).
 function initialFromResume(resume: ResumeState | null | undefined, drills: Drill[]): RunState {
   if (!resume) return INITIAL;
+  const startedAt =
+    resume.startedAt !== null && resume.savedAt > resume.startedAt ? Date.now() - (resume.savedAt - resume.startedAt) : resume.startedAt;
   if (resume.phase === "getready") {
-    return { ...INITIAL, phase: "getready", endsAt: Date.now() + 3000, startedAt: resume.startedAt ?? null };
+    return { ...INITIAL, phase: "getready", endsAt: Date.now() + 3000, startedAt };
   }
   const drill = drills[resume.index];
   if (!drill) return INITIAL;
@@ -43,7 +47,7 @@ function initialFromResume(resume: ResumeState | null | undefined, drills: Drill
     index: resume.index,
     done: Math.max(0, Math.min(resume.done, resume.index + 1)),
     pausedLeft: resume.secondsLeft * 1000,
-    startedAt: resume.startedAt ?? null,
+    startedAt,
   };
 }
 
@@ -485,6 +489,13 @@ function Finish({
   const [busy, setBusy] = useState(false);
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // Sair sem salvar descarta o registro: pede confirmação em dois passos, como as outras ações sem volta.
+  const [confirmDiscard, setConfirmDiscard] = useState(false);
+  useEffect(() => {
+    if (!confirmDiscard) return;
+    const id = window.setTimeout(() => setConfirmDiscard(false), 4000);
+    return () => window.clearTimeout(id);
+  }, [confirmDiscard]);
   const total = program.drills.length;
 
   // Confirma o salvamento na tela antes de voltar — sem internet, o treino fica na fila e sobe depois.
@@ -558,8 +569,8 @@ function Finish({
           <PrimaryButton onClick={() => void save()} disabled={busy}>
             {busy ? "Salvando…" : "Salvar treino"}
           </PrimaryButton>
-          <PlainButton onClick={onExit} disabled={busy}>
-            Sair sem salvar
+          <PlainButton onClick={() => (confirmDiscard ? onExit() : setConfirmDiscard(true))} disabled={busy}>
+            {confirmDiscard ? "Descartar mesmo?" : "Sair sem salvar"}
           </PlainButton>
         </div>
       )}

@@ -40,6 +40,12 @@ export function NewAthlete({
   const points = consentPointsFor(draft);
   const teen = self && birthYear !== null && ageThisYear(birthYear) < 18;
   const ready = nickname.trim().length > 0 && birthYear !== null && consent && (self || isGuardian);
+  // O que falta para salvar, dito na hora: botão cinza sem explicação prende quem está com pressa.
+  const missing: string[] = [];
+  if (!nickname.trim()) missing.push("o apelido");
+  if (birthYear === null) missing.push("o ano de nascimento");
+  if (!self && !isGuardian) missing.push("a declaração de responsável");
+  if (!consent) missing.push(self ? "o seu consentimento" : "a autorização");
 
   async function submit(e: FormEvent) {
     e.preventDefault();
@@ -69,7 +75,11 @@ export function NewAthlete({
               className="row-select"
               value={birthYear ?? ""}
               disabled={Boolean(lockedBirthYear)}
-              onChange={(e) => setBirthYear(e.target.value ? Number(e.target.value) : null)}
+              onChange={(e) => {
+                setBirthYear(e.target.value ? Number(e.target.value) : null);
+                // O termo lido muda com a idade (adulto ↔ menor): aceite marcado para o texto errado não vale.
+                setConsent(false);
+              }}
             >
               <option value="">Escolher</option>
               {years.map((year) => (
@@ -123,6 +133,9 @@ export function NewAthlete({
         )}
 
         {error && <Notice tone="error">{error}</Notice>}
+        {!ready && !busy && (
+          <p className="row-note">Para salvar, falta: {missing.join(" · ")}.</p>
+        )}
         <PrimaryButton type="submit" disabled={!ready || busy}>
           {busy ? "Salvando…" : self ? "Criar meu perfil" : "Cadastrar atleta"}
         </PrimaryButton>

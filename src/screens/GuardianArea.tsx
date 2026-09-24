@@ -1,4 +1,4 @@
-import { useEffect, useState, type FormEvent } from "react";
+import { useEffect, useRef, useState, type FormEvent } from "react";
 import { Field, Group, Notice, PrimaryButton, Screen, Segmented, SwitchRow } from "../components/ui";
 import { useAuth } from "../state/auth";
 import { ageThisYear, allowedBirthYears, bandFor, selfBirthYears } from "../lib/age";
@@ -10,6 +10,7 @@ import { LEVELS, POSITIONS } from "../lib/profile";
 import { canCreateMinorProfiles, type AccountKind } from "../lib/account";
 import { countAthleteRows } from "../lib/counts";
 import { shareText } from "../lib/native";
+import { setSoundOn, setVoiceOn, soundOn, voiceOn } from "../lib/sounds";
 import type { ParentStatus } from "../lib/parentConfirm";
 import { LEGAL_DOCS, type LegalId } from "../content/legal";
 import { APP_WEB, INSTITUTE_CNPJ, PIX_KEY, SUPPORT, appPublicUrl } from "../content/support";
@@ -77,10 +78,23 @@ function AccountSettings({
   const [shareNote, setShareNote] = useState<string | null>(null);
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
+  // Som e voz do treino: preferência deste aparelho, guardada longe do fluxo de treino.
+  const [sound, setSound] = useState(soundOn);
+  const [voice, setVoice] = useState(voiceOn);
+  const errorRef = useRef<HTMLDivElement>(null);
+  const prevError = useRef<string | null>(null);
 
   useEffect(() => {
     window.scrollTo(0, 0);
   }, [sub]);
+
+  // O erro fica no rodapé, fora da vista quando a ação foi no topo: rola até ele ao aparecer.
+  useEffect(() => {
+    if (prevError.current === null && error !== null) {
+      errorRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+    }
+    prevError.current = error;
+  }, [error]);
 
   if (sub?.kind === "doc") return <LegalScreen doc={LEGAL_DOCS[sub.id]} onBack={() => setSub(null)} />;
 
@@ -160,6 +174,8 @@ function AccountSettings({
     try {
       const data = await collectFamilyData(guardianId, email);
       const result = await saveJsonFile(data, `baseline-dados-${localIsoDate()}.json`);
+      // Cancelar o compartilhamento do sistema não é erro: sai em silêncio.
+      if (result === "cancelled") return;
       if (result === "shared") setExportNote("Arquivo compartilhado.");
       if (result === "downloaded") setExportNote("Arquivo baixado. Guarde em local seguro.");
     } catch (err) {
@@ -317,6 +333,27 @@ function AccountSettings({
         </a>
       </Group>
 
+      <Group header="Som e voz" footer="Vale para os treinos neste aparelho.">
+        <SwitchRow
+          id="sound-pref"
+          label="Bipes do treino"
+          checked={sound}
+          onChange={(value) => {
+            setSound(value);
+            setSoundOn(value);
+          }}
+        />
+        <SwitchRow
+          id="voice-pref"
+          label="Voz anuncia o próximo exercício"
+          checked={voice}
+          onChange={(value) => {
+            setVoice(value);
+            setVoiceOn(value);
+          }}
+        />
+      </Group>
+
       <Group header="Conta">
         <div className="row">
           <span className="row-label">E-mail</span>
@@ -355,7 +392,11 @@ function AccountSettings({
           </button>
         )}
       </Group>
-      {error && <Notice tone="error">{error}</Notice>}
+      {error && (
+        <div ref={errorRef}>
+          <Notice tone="error">{error}</Notice>
+        </div>
+      )}
     </Screen>
   );
 }
@@ -398,10 +439,12 @@ function ProfileSettings({
   const [testCount, setTestCount] = useState(initialTests);
 
   useEffect(() => {
-    void countAthleteRows(guardianId, athlete.id).then((counts) => {
-      setSessionCount(counts.sessions);
-      setTestCount(counts.tests);
-    });
+    void countAthleteRows(guardianId, athlete.id)
+      .then((counts) => {
+        setSessionCount(counts.sessions);
+        setTestCount(counts.tests);
+      })
+      .catch(() => undefined);
   }, [guardianId, athlete.id]);
 
   const self = athlete.is_self;

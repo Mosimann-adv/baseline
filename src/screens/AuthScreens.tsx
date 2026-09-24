@@ -1,10 +1,32 @@
-import { useState, type FormEvent } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 import { useAuth } from "../state/auth";
 import { friendlyError } from "../lib/errors";
 import { isDemo } from "../lib/supabase";
 import { LEGAL_DOCS, type LegalId } from "../content/legal";
 import { LegalScreen } from "./LegalScreen";
 import { Field, Group, Notice, PlainButton, PrimaryButton, Screen, SwitchRow } from "../components/ui";
+
+// Reenvio do código de recuperação: cooldown persistente para não esbarrar no limite de e-mails.
+const OTP_SENT_KEY = "baseline.otp.sentAt";
+const OTP_COOLDOWN_S = 60;
+
+function readOtpSentAt(): number | null {
+  try {
+    const raw = localStorage.getItem(OTP_SENT_KEY);
+    const value = raw ? Number(raw) : NaN;
+    return Number.isFinite(value) && value > 0 ? value : null;
+  } catch {
+    return null;
+  }
+}
+
+function markOtpSentAt(now: number): void {
+  try {
+    localStorage.setItem(OTP_SENT_KEY, String(now));
+  } catch {
+    // Sem armazenamento: o cooldown vale só nesta tela.
+  }
+}
 
 type Mode = "welcome" | "signin" | "signup" | "forgot" | "code" | "newpass";
 
@@ -27,6 +49,7 @@ export function AuthFlow() {
       <ForgotPassword
         onBack={() => setMode("signin")}
         onSent={(email) => {
+          markOtpSentAt(Date.now());
           setRecoverEmail(email);
           setMode("code");
         }}
@@ -145,10 +168,30 @@ function ForgotPassword({ onBack, onSent }: { onBack: () => void; onSent: (email
 }
 
 function EnterCode({ email, onBack, onVerified }: { email: string; onBack: () => void; onVerified: () => void }) {
-  const { verifyPasswordCode } = useAuth();
+  const { verifyPasswordCode, requestPasswordCode } = useAuth();
   const [code, setCode] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [resending, setResending] = useState(false);
+  const [sentAt, setSentAt] = useState<number | null>(() => readOtpSentAt());
+  const [now, setNow] = useState(() => Date.now());
+  const remaining = sentAt === null ? 0 : Math.max(0, OTP_COOLDOWN_S - Math.floor((now - sentAt) / 1000));
+
+  // Chegou aqui pelo envio da tela anterior: garante o cooldown mesmo recarregando a página.
+  useEffect(() => {
+    if (readOtpSentAt() === null) {
+      const at = Date.now();
+      markOtpSentAt(at);
+      setSentAt(at);
+    }
+  }, []);
+
+  // Conta regressiva do cooldown, um segundo por vez.
+  useEffect(() => {
+    if (remaining <= 0) return;
+    const id = window.setTimeout(() => setNow(Date.now()), 1000);
+    return () => window.clearTimeout(id);
+  }, [remaining, sentAt]);
 
   async function submit(e: FormEvent) {
     e.preventDefault();
@@ -163,6 +206,23 @@ function EnterCode({ email, onBack, onVerified }: { email: string; onBack: () =>
     }
   }
 
+  async function resend() {
+    if (resending || remaining > 0) return;
+    setResending(true);
+    setError(null);
+    try {
+      await requestPasswordCode(email.trim());
+      const at = Date.now();
+      markOtpSentAt(at);
+      setSentAt(at);
+      setNow(at);
+    } catch (err) {
+      setError(friendlyError(err));
+    } finally {
+      setResending(false);
+    }
+  }
+
   return (
     <Screen title="Código" onBack={onBack}>
       <form onSubmit={submit} className="stack">
@@ -173,6 +233,11 @@ function EnterCode({ email, onBack, onVerified }: { email: string; onBack: () =>
         <PrimaryButton type="submit" disabled={busy || code.trim().length < 6}>
           {busy ? "Conferindo…" : "Continuar"}
         </PrimaryButton>
+        {!isDemo && (
+          <PlainButton onClick={() => void resend()} disabled={busy || resending || remaining > 0 || !email.includes("@")}>
+            {resending ? "Enviando…" : remaining > 0 ? `Reenviar em ${remaining}s` : "Reenviar código"}
+          </PlainButton>
+        )}
       </form>
     </Screen>
   );

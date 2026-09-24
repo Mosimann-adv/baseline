@@ -15,6 +15,7 @@ export function AthleteHome({
   onOpenProgram,
   onStartTests,
   onRetryPending,
+  onOpenAccount,
   onResume,
 }: {
   athlete: Athlete;
@@ -23,7 +24,8 @@ export function AthleteHome({
   pending: { count: number; blocked: boolean; error: string | null };
   onOpenProgram: (programId: string) => void;
   onStartTests: () => void;
-  onRetryPending: () => void;
+  onRetryPending: () => void | Promise<void>;
+  onOpenAccount: () => void;
   onResume: (resume: ResumeState) => void;
 }) {
   const age = ageThisYear(athlete.birth_year);
@@ -67,6 +69,17 @@ export function AthleteHome({
   const showResume = !hasBlocked && resume && resumeProgram;
   const showPending = !hasBlocked && !showResume && pending.count > 0;
 
+  // "Tentar agora" da fila pode esperar a rede: mostra "Tentando…" enquanto reenvia.
+  const [retrying, setRetrying] = useState(false);
+  async function retryPending() {
+    setRetrying(true);
+    try {
+      await onRetryPending();
+    } finally {
+      setRetrying(false);
+    }
+  }
+
   // Lista enxuta: 3 treinos à vista, resto atrás de "ver todos". Menos rolagem, mais decisão.
   const [showAll, setShowAll] = useState(false);
   const firstThree = visible.slice(0, 3);
@@ -81,8 +94,8 @@ export function AthleteHome({
             <p className="subtitle">Não enviado</p>
             <p>{pending.error ?? "O aceite deste perfil foi revogado. O registro ficou neste aparelho."}</p>
           </div>
-          <button type="button" className="secondary-button" onClick={onRetryPending}>
-            Tentar agora
+          <button type="button" className="secondary-button" onClick={onOpenAccount}>
+            Resolver na Conta
           </button>
         </section>
       )}
@@ -118,8 +131,8 @@ export function AthleteHome({
               {pending.count === 1 ? "1 registro" : `${pending.count} registros`} neste aparelho. Sobe sozinho com conexão.
             </p>
           </div>
-          <button type="button" className="secondary-button" onClick={onRetryPending}>
-            Tentar agora
+          <button type="button" className="secondary-button" onClick={() => void retryPending()} disabled={retrying}>
+            {retrying ? "Tentando…" : "Tentar agora"}
           </button>
         </section>
       )}

@@ -1,6 +1,6 @@
 # Continuidade do desenvolvimento — Baseline by Arvoredo
 
-Atualizado em 2026-09-21.
+Atualizado em 2026-09-24.
 
 Leia nesta ordem:
 1. `AGENTS.md` — regras que não mudam sem pedido explícito.
@@ -75,6 +75,7 @@ Leia nesta ordem:
 | **Rodapé de abas: Treinos · Evolução · Vídeos · Perfil** (2026-09-13, ampliado em 2026-09-15) | "Perfil" reutiliza a tela "Quem vai treinar?" (troca de perfil e Conta); abas só existem com atleta válido; botão voltar físico não troca de aba; treinos filtráveis por chips de categoria. A aba Vídeos reúne destaques conferidos do canal do Instituto. |
 | **Mapa de fundamentos na Evolução** (2026-09-21) | A aba abre num mapa de meia quadra com Drible, Arremesso, Passe, Defesa e Preparo físico. Mostra treinos, minutos, recência e evolução nos testes, sem transformar frequência em nota de habilidade nem comparar atletas. Cada fundamento sugere um treino disponível da faixa. |
 | **5 programas de ball handling para casa** (rascunho) | Pedido do dono: o mais útil é o que se treina em casa, sem cesta. Só vídeos já conferidos; validação do profissional pendente. |
+| **Som e voz do treino ficam na tela Conta** (2026-09-24) | Primeira versão pôs os switches na tela inicial do treino; o dono achou poluído e pediu "configurações gerais, mais escondido". Preferência é do aparelho (localStorage); desligar corta bipes e voz na hora. |
 
 ## 4. Estado atual
 
@@ -92,8 +93,10 @@ Leia nesta ordem:
 | `feca402`–`02a698c` | Visual alinhado ao Instituto; Poppins embutida; rodapé de abas; filtros por categoria; 5 programas de ball handling para casa; trechos e repetição de vídeos; suíte Vitest. |
 | `7125ddb`–`7e40e56` | Prévia dos exercícios; ajustes dos vídeos conferidos; preparação e descanso; pausa automática em segundo plano; sons; treino retomável; calendário mensal; detalhe de teste; avatares; aba Vídeos; Open Graph e modo Foco. |
 | `8916f21`–`1fee8dc` | Rodada de refinamento da Home, Evolução e Conta: carregamento sob demanda, menos informação por tela, card "Para hoje" e categorias sempre visíveis sem rolagem horizontal. |
+| `392e330` | Mapa interativo de fundamentos na Evolução, com cálculo testado e navegação direta para o treino sugerido. |
+| Commit da rodada de 2026-09-24 | Refinamento de UX revisado com agente externo (Terminal, favorável a 10 de 10): Conta acessível sem perfis; falha de rede pós-carga vira aviso em vez de tela de erro; splash eterno resolvido (catch + 15 s); minutos do treino retomado rebaseados com `savedAt`; "Sair sem salvar" em dois passos; aceite desmarcado ao mudar o ano + hint do que falta; card bloqueado com "Resolver na Conta" e retry com feedback; export cancelado em silêncio e erro da Conta rola até a vista; "Reenviar código" com cooldown persistente de 60 s; som e voz na tela Conta. |
 
-**Mudança local ainda sem commit (2026-09-21):** mapa interativo de fundamentos na Evolução, com cálculo testado em `src/lib/progress.test.ts` e navegação direta para o treino sugerido.
+**Mudança local ainda sem commit (2026-09-24):** nenhuma.
 
 Etapas do `README.md`:
 1. Fundação — pronta.
@@ -106,7 +109,7 @@ Etapas do `README.md`:
 
 **Banco:** migrações 0001–0005 aplicadas. **0006 ainda não:** o dono precisa colar `supabase/migrations/0006_conta_16.sql` no SQL Editor antes de adolescentes 16–17 criarem conta no site real.
 
-**Verificação mais recente (2026-09-21):** `npm test` passa com 50 testes em 7 arquivos; `npm run build` e `npm run build:demo` passam, incluindo `tsc --noEmit`. O aviso do chunk principal de produção acima de 500 kB continua conhecido.
+**Verificação mais recente (2026-09-24):** `npm test` passa com 50 testes em 7 arquivos; `npm run build` e `npm run build:demo` passam, incluindo `tsc --noEmit`. O aviso do chunk principal de produção acima de 500 kB continua conhecido.
 
 **Não conferido nesta atualização:**
 - navegação visual em navegador e no Android;

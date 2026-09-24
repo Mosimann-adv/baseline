@@ -63,7 +63,7 @@ function publicRouteFromHash(hash: string): LegalId | "confirmar-responsavel" | 
 }
 
 export default function App() {
-  const { session, loading } = useAuth();
+  const { session, loading, authError } = useAuth();
   const [publicDoc, closePublicDoc] = usePublicDoc();
 
   // Endereços públicos (#/privacidade, #/termos, #/excluir-conta, #/confirmar-responsavel) abrem sem login.
@@ -84,6 +84,7 @@ export default function App() {
 
   if (!isSupabaseConfigured) return <SetupNotice />;
   if (loading) return <Splash />;
+  if (authError) return <AuthBroken />;
   if (!session) return <AuthFlow />;
   return <Family key={session.user.id} guardianId={session.user.id} email={session.user.email ?? ""} />;
 }
@@ -129,6 +130,14 @@ function Family({ guardianId, email }: { guardianId: string; email: string }) {
     window.scrollTo(0, 0);
   }, [view.name]);
 
+  // Depois da primeira carga bem-sucedida, falha de reload vira aviso — não derruba a tela aberta.
+  const [loadedOnce, setLoadedOnce] = useState(false);
+  useEffect(() => {
+    if (!family.loading && !training.loading && !skill.loading && !(family.error ?? training.error ?? skill.error)) {
+      setLoadedOnce(true);
+    }
+  }, [family.loading, training.loading, skill.loading, family.error, training.error, skill.error]);
+
   useEffect(() => {
     if (meta.kind !== "teen") return;
     void loadParentStatus(guardianId, meta.kind).then(async (status) => {
@@ -166,16 +175,28 @@ function Family({ guardianId, email }: { guardianId: string; email: string }) {
 
   if (family.loading || training.loading || skill.loading) return <Splash />;
   const loadError = family.error ?? training.error ?? skill.error;
-  if (loadError) {
+  const retryLoads = () => void Promise.all([family.reload(), training.reload(), skill.reload()]);
+  // Sem dados nenhum, a tela de erro é a única saída honesta.
+  if (loadError && !loadedOnce) {
     return (
-      <Screen title="Sem conexão">
+      <Screen title={loadError.startsWith("Sem conexão") ? "Sem conexão" : "Algo não funcionou"}>
         <div className="stack">
           <Notice tone="error">{loadError}</Notice>
-          <PrimaryButton onClick={() => void Promise.all([family.reload(), training.reload(), skill.reload()])}>Tentar de novo</PrimaryButton>
+          <PrimaryButton onClick={retryLoads}>Tentar de novo</PrimaryButton>
         </div>
       </Screen>
     );
   }
+  // Com dados já em memória, a falha de atualização vira aviso no topo e a tela segue usável.
+  const staleBanner =
+    loadError && loadedOnce ? (
+      <div className="stale-banner" role="status">
+        <p>Não conseguimos atualizar. Você está vendo os dados salvos no aparelho.</p>
+        <button type="button" className="secondary-button" onClick={retryLoads}>
+          Tentar de novo
+        </button>
+      </div>
+    ) : null;
 
   const canTrain = (athlete: Athlete) => {
     if (meta.kind === "teen" && athlete.is_self && !parent.confirmed) return false;
@@ -183,50 +204,6 @@ function Family({ guardianId, email }: { guardianId: string; email: string }) {
   };
   const backTo = (from: Origin): View => (from === "first" ? { name: "picker" } : { name: "account" });
   const allowMinors = canCreateMinorProfiles(meta.kind);
-
-  if (view.name === "newSelf") {
-    const from = view.from;
-    return (
-      <NewAthlete
-        kind="self"
-        first={from === "first"}
-        lockedBirthYear={meta.birthYear}
-        onBack={() => setView(backTo(from))}
-        onCreate={async (input) => {
-          const athlete = await family.createSelf(input);
-          setView({ name: "athlete", athleteId: athlete.id });
-          return athlete;
-        }}
-      />
-    );
-  }
-
-  if (view.name === "newAthlete" && allowMinors) {
-    const from = view.from;
-    return (
-      <NewAthlete
-        kind="minor"
-        first={from === "first"}
-        onBack={() => setView(backTo(from))}
-        onCreate={async (input) => {
-          const athlete = await family.create(input);
-          // Primeiro perfil da conta vai direto para o treino; os seguintes aparecem na escolha de perfil.
-          setView(from === "first" ? { name: "athlete", athleteId: athlete.id } : { name: "picker" });
-          return athlete;
-        }}
-      />
-    );
-  }
-
-  if (family.athletes.length === 0) {
-    return (
-      <ProfileChoice
-        kind={meta.kind}
-        onSelf={() => setView({ name: "newSelf", from: "first" })}
-        onMinor={() => setView({ name: "newAthlete", from: "first" })}
-      />
-    );
-  }
 
   const toPicker = () => {
     localStorage.removeItem(lastAthleteKey(guardianId));
@@ -261,105 +238,160 @@ function Family({ guardianId, email }: { guardianId: string; email: string }) {
       node
     );
 
-  if (view.name === "account") {
-    return (
-      <Suspense fallback={<LazyFallback />}>
-        <GuardianArea
-          guardianId={guardianId}
-          email={email}
-          athletes={family.athletes}
-          consents={family.consents}
-          sessions={training.sessions}
-          tests={skill.tests}
-          accountKind={meta.kind}
-          parent={parent}
-          onRefreshParent={() => void loadParentStatus(guardianId, meta.kind).then(setParent)}
-          onBack={() => setView({ name: "picker" })}
-          onAddAthlete={() => setView({ name: "newAthlete", from: "account" })}
-          onAddSelf={() => setView({ name: "newSelf", from: "account" })}
-          onUpdate={family.update}
-          onRevoke={family.revoke}
-          onAuthorize={family.authorize}
-          onDeleteAthlete={async (athleteId) => {
-            await family.remove(athleteId);
-            await Promise.all([training.reload(), skill.reload()]);
+  const body = () => {
+    if (view.name === "newSelf") {
+      const from = view.from;
+      return (
+        <NewAthlete
+          kind="self"
+          first={from === "first"}
+          lockedBirthYear={meta.birthYear}
+          onBack={() => setView(backTo(from))}
+          onCreate={async (input) => {
+            const athlete = await family.createSelf(input);
+            setView({ name: "athlete", athleteId: athlete.id });
+            return athlete;
           }}
         />
-      </Suspense>
-    );
-  }
+      );
+    }
 
-  if (view.name !== "picker" && "athleteId" in view) {
-    // Perfil sem aceite ativo não abre: cai na escolha de perfil, onde aparece bloqueado.
-    const athlete = family.athletes.find((a) => a.id === view.athleteId && canTrain(a));
-    if (athlete) {
-      const athleteId = athlete.id;
-      const sessions = training.sessions.filter((s) => s.athlete_id === athleteId);
-      const tests = skill.tests.filter((t) => t.athlete_id === athleteId);
-      const home = () => setView({ name: "athlete", athleteId });
-      const pending = pendingSummary(guardianId, athleteId);
-      const retry = () => void Promise.all([training.sync(), skill.sync()]);
+    if (view.name === "newAthlete" && allowMinors) {
+      const from = view.from;
+      return (
+        <NewAthlete
+          kind="minor"
+          first={from === "first"}
+          onBack={() => setView(backTo(from))}
+          onCreate={async (input) => {
+            const athlete = await family.create(input);
+            // Primeiro perfil da conta vai direto para o treino; os seguintes aparecem na escolha de perfil.
+            setView(from === "first" ? { name: "athlete", athleteId: athlete.id } : { name: "picker" });
+            return athlete;
+          }}
+        />
+      );
+    }
 
-      if (view.name === "program" || view.name === "training") {
-        const program = programById(view.programId);
-        if (program && view.name === "training") {
-          return <TrainingSession athlete={athlete} program={program} resume={view.resume} onExit={home} onSave={training.create} />;
-        }
-        if (program) {
-          return <ProgramDetail program={program} onBack={home} onStart={() => setView({ name: "training", athleteId, programId: program.id })} />;
-        }
-      } else if (view.name === "progress") {
-        return withTabs(
-          <Suspense fallback={<LazyFallback />}>
-            <Progress
+    // A Conta fica acessível mesmo sem perfis: apagar o último perfil não pode prender a pessoa fora dela.
+    if (view.name === "account") {
+      return (
+        <Suspense fallback={<LazyFallback />}>
+          <GuardianArea
+            guardianId={guardianId}
+            email={email}
+            athletes={family.athletes}
+            consents={family.consents}
+            sessions={training.sessions}
+            tests={skill.tests}
+            accountKind={meta.kind}
+            parent={parent}
+            onRefreshParent={() => void loadParentStatus(guardianId, meta.kind).then(setParent)}
+            onBack={() => setView({ name: "picker" })}
+            onAddAthlete={() => setView({ name: "newAthlete", from: "account" })}
+            onAddSelf={() => setView({ name: "newSelf", from: "account" })}
+            onUpdate={family.update}
+            onRevoke={family.revoke}
+            onAuthorize={family.authorize}
+            onDeleteAthlete={async (athleteId) => {
+              await family.remove(athleteId);
+              await Promise.all([training.reload(), skill.reload()]);
+            }}
+          />
+        </Suspense>
+      );
+    }
+
+    if (family.athletes.length === 0) {
+      return (
+        <ProfileChoice
+          kind={meta.kind}
+          onSelf={() => setView({ name: "newSelf", from: "first" })}
+          onMinor={() => setView({ name: "newAthlete", from: "first" })}
+        />
+      );
+    }
+
+    if (view.name !== "picker" && "athleteId" in view) {
+      // Perfil sem aceite ativo não abre: cai na escolha de perfil, onde aparece bloqueado.
+      const athlete = family.athletes.find((a) => a.id === view.athleteId && canTrain(a));
+      if (athlete) {
+        const athleteId = athlete.id;
+        const sessions = training.sessions.filter((s) => s.athlete_id === athleteId);
+        const tests = skill.tests.filter((t) => t.athlete_id === athleteId);
+        const home = () => setView({ name: "athlete", athleteId });
+        const pending = pendingSummary(guardianId, athleteId);
+        const retry = () => void Promise.all([training.sync(), skill.sync()]);
+
+        if (view.name === "program" || view.name === "training") {
+          const program = programById(view.programId);
+          if (program && view.name === "training") {
+            return <TrainingSession athlete={athlete} program={program} resume={view.resume} onExit={home} onSave={training.create} />;
+          }
+          if (program) {
+            return <ProgramDetail program={program} onBack={home} onStart={() => setView({ name: "training", athleteId, programId: program.id })} />;
+          }
+        } else if (view.name === "progress") {
+          return withTabs(
+            <Suspense fallback={<LazyFallback />}>
+              <Progress
+                athlete={athlete}
+                sessions={sessions}
+                tests={tests}
+                onBack={home}
+                onStartTests={() => setView({ name: "tests", athleteId })}
+                onOpenProgram={(programId) => setView({ name: "program", athleteId, programId })}
+              />
+            </Suspense>,
+            "progress",
+          );
+        } else if (view.name === "videos") {
+          return withTabs(<Channel />, "videos");
+        } else if (view.name === "tests") {
+          return <TestSession athlete={athlete} tests={tests} onBack={() => setView({ name: "progress", athleteId })} onSave={skill.create} />;
+        } else {
+          return withTabs(
+            <AthleteHome
               athlete={athlete}
               sessions={sessions}
               tests={tests}
-              onBack={home}
-              onStartTests={() => setView({ name: "tests", athleteId })}
+              pending={pending}
               onOpenProgram={(programId) => setView({ name: "program", athleteId, programId })}
-            />
-          </Suspense>,
-          "progress",
-        );
-      } else if (view.name === "videos") {
-        return withTabs(<Channel />, "videos");
-      } else if (view.name === "tests") {
-        return <TestSession athlete={athlete} tests={tests} onBack={() => setView({ name: "progress", athleteId })} onSave={skill.create} />;
-      } else {
-        return withTabs(
-          <AthleteHome
-            athlete={athlete}
-            sessions={sessions}
-            tests={tests}
-            pending={pending}
-            onOpenProgram={(programId) => setView({ name: "program", athleteId, programId })}
-            onStartTests={() => setView({ name: "tests", athleteId })}
-            onRetryPending={retry}
-            onResume={(r) => setView({ name: "training", athleteId, programId: r.programId, resume: r })}
-          />,
-          "trainings",
-        );
+              onStartTests={() => setView({ name: "tests", athleteId })}
+              onRetryPending={retry}
+              onOpenAccount={() => setView({ name: "account" })}
+              onResume={(r) => setView({ name: "training", athleteId, programId: r.programId, resume: r })}
+            />,
+            "trainings",
+          );
+        }
       }
     }
-  }
 
-  return withTabs(
-    <WhoTrains
-      athletes={family.athletes}
-      isLocked={(athlete) => !canTrain(athlete)}
-      lockLabel={(athlete) =>
-        meta.kind === "teen" && athlete.is_self && !parent.confirmed
-          ? "Aguardando o responsável"
-          : athlete.is_self
-            ? "Precisa de consentimento"
-            : "Precisa de autorização"
-      }
-      onPick={(athleteId) => setView({ name: "athlete", athleteId })}
-      onAccount={() => setView({ name: "account" })}
-      onSignOut={signOut}
-    />,
-    "profile",
+    return withTabs(
+      <WhoTrains
+        athletes={family.athletes}
+        isLocked={(athlete) => !canTrain(athlete)}
+        lockLabel={(athlete) =>
+          meta.kind === "teen" && athlete.is_self && !parent.confirmed
+            ? "Aguardando o responsável"
+            : athlete.is_self
+              ? "Precisa de consentimento"
+              : "Precisa de autorização"
+        }
+        onPick={(athleteId) => setView({ name: "athlete", athleteId })}
+        onAccount={() => setView({ name: "account" })}
+        onSignOut={signOut}
+      />,
+      "profile",
+    );
+  };
+
+  return (
+    <>
+      {staleBanner}
+      {body()}
+    </>
   );
 }
 
@@ -377,6 +409,19 @@ function SetupNotice() {
       <Notice tone="error">
         Crie o arquivo .env.local com VITE_SUPABASE_URL e VITE_SUPABASE_ANON_KEY do projeto Supabase do Baseline (veja .env.example) e reinicie o app.
       </Notice>
+    </Screen>
+  );
+}
+
+// A sessão não pôde ser verificada (storage bloqueado, rede parada na abertura): em vez de
+// splash eterno, uma tela com saída clara.
+function AuthBroken() {
+  return (
+    <Screen title="Não conseguimos abrir">
+      <div className="stack">
+        <Notice tone="error">Não deu para verificar sua sessão. Confira a internet e tente de novo.</Notice>
+        <PrimaryButton onClick={() => window.location.reload()}>Tentar de novo</PrimaryButton>
+      </div>
     </Screen>
   );
 }

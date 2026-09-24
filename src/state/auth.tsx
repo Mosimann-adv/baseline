@@ -13,6 +13,8 @@ export interface SignUpInput {
 interface AuthValue {
   session: Session | null;
   loading: boolean;
+  /** A sessão não pôde ser verificada (rede, storage bloqueado): a interface mostra saída clara em vez de splash eterno. */
+  authError: boolean;
   signUp: (input: SignUpInput) => Promise<{ needsConfirmation: boolean }>;
   signIn: (email: string, password: string) => Promise<void>;
   enterDemo: (kind: AccountKind) => void;
@@ -28,21 +30,43 @@ const AuthContext = createContext<AuthValue | null>(null);
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(() => (isDemo ? demoSession() : null));
   const [loading, setLoading] = useState(!isDemo && Boolean(supabase));
+  const [authError, setAuthError] = useState(false);
 
   useEffect(() => {
     if (isDemo || !supabase) return;
-    supabase.auth.getSession().then(({ data }) => {
-      setSession(data.session);
+    // Rede parada ou storage bloqueado não pode deixar o app no splash para sempre.
+    let stale = false;
+    const timeout = window.setTimeout(() => {
+      stale = true;
+      setAuthError(true);
       setLoading(false);
-    });
+    }, 15000);
+    supabase.auth
+      .getSession()
+      .then(({ data }) => {
+        if (stale) return;
+        window.clearTimeout(timeout);
+        setSession(data.session);
+        setLoading(false);
+      })
+      .catch(() => {
+        if (stale) return;
+        window.clearTimeout(timeout);
+        setAuthError(true);
+        setLoading(false);
+      });
     const { data } = supabase.auth.onAuthStateChange((_event, next) => setSession(next));
-    return () => data.subscription.unsubscribe();
+    return () => {
+      window.clearTimeout(timeout);
+      data.subscription.unsubscribe();
+    };
   }, []);
 
   const value = useMemo<AuthValue>(
     () => ({
       session,
       loading,
+      authError,
       async signUp(input) {
         if (isDemo) {
           setSession(demoSignIn(input.email, { kind: "adult" }));
@@ -118,7 +142,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
       },
     }),
-    [session, loading],
+    [session, loading, authError],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
