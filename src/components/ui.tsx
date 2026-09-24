@@ -3,11 +3,14 @@ import { useEffect, useState, type ButtonHTMLAttributes, type HTMLInputTypeAttri
 export function Screen({
   title,
   eyebrow,
+  titleAside,
   onBack,
   children,
 }: {
   title: string;
   eyebrow?: string;
+  /** Enfeite ao lado do título (ex.: a bola quicando na aba Treinos). */
+  titleAside?: ReactNode;
   onBack?: () => void;
   children: ReactNode;
 }) {
@@ -25,7 +28,14 @@ export function Screen({
       </div>
       <div className="large-title-block">
         {eyebrow && <p className="subtitle">{eyebrow}</p>}
-        <h1 className="large-title">{title}</h1>
+        {titleAside ? (
+          <div className="large-title-row">
+            <h1 className="large-title">{title}</h1>
+            {titleAside}
+          </div>
+        ) : (
+          <h1 className="large-title">{title}</h1>
+        )}
       </div>
       {children}
     </main>
@@ -216,5 +226,38 @@ export function CountUp({ value, duration = 600, suffix }: { value: number; dura
       {display}
       {suffix}
     </>
+  );
+}
+
+/** Bola de basquete parada no chão; um toque faz ela quicar três vezes. Parada quando o aparelho pede menos movimento. */
+export function BouncingBall() {
+  // "round" remonta a bola a cada toque, para a animação recomeçar do chão mesmo no meio de um quique.
+  const [round, setRound] = useState(0);
+  return (
+    <button
+      type="button"
+      className="bouncing-ball"
+      aria-label="Quicar a bola"
+      onClick={() => {
+        navigator.vibrate?.(10);
+        setRound((r) => r + 1);
+      }}
+    >
+      <span key={round} className={`bouncing-ball-stage${round > 0 ? " bouncing" : ""}`} aria-hidden="true">
+        <svg className="bouncing-ball-ball" viewBox="0 0 32 32">
+          <g className="bouncing-ball-spin">
+            <circle cx="16" cy="16" r="14.5" fill="#eea047" stroke="#0b2340" strokeWidth="1.6" />
+            <path
+              d="M16 1.5v29M1.5 16h29M6 5.6c4.2 4.6 4.2 16.2 0 20.8M26 5.6c-4.2 4.6-4.2 16.2 0 20.8"
+              fill="none"
+              stroke="#0b2340"
+              strokeWidth="1.6"
+              strokeLinecap="round"
+            />
+          </g>
+        </svg>
+        <span className="bouncing-ball-shadow" />
+      </span>
+    </button>
   );
 }

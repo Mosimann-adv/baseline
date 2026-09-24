@@ -324,3 +324,20 @@ export function programMinutes(program: Program): number {
   const seconds = program.drills.reduce((total, drill) => total + drill.seconds + drill.restSeconds, 0);
   return Math.max(1, Math.round(seconds / 60));
 }
+
+/** Treino que precisa de cesta, lido do equipamento. O resto dá para fazer em casa ou num espaço livre. */
+export function needsHoop(program: Program): boolean {
+  return /cesta/i.test(program.equipment);
+}
+
+export interface ProgramShelf {
+  category: Category;
+  programs: Program[];
+}
+
+/** Uma prateleira por fundamento, na ordem de CATEGORY_LABELS, mantendo a ordem dos treinos e sem prateleira vazia. */
+export function programShelves(programs: Program[]): ProgramShelf[] {
+  return (Object.keys(CATEGORY_LABELS) as Category[])
+    .map((category) => ({ category, programs: programs.filter((program) => program.category === category) }))
+    .filter((shelf) => shelf.programs.length > 0);
+}

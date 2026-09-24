@@ -1,48 +1,31 @@
 import { useEffect, useState } from "react";
-import { Group, PrimaryButton, Screen } from "../components/ui";
+import { BouncingBall, Group, Screen } from "../components/ui";
 import { ageThisYear, bandFor } from "../lib/age";
-import { formatDayMonth, startOfWeekIso } from "../lib/dates";
 import { clearResume, readResume, type ResumeState } from "../lib/resumeSession";
-import { goalStreak, isTestDue } from "../lib/progress";
-import { CATEGORY_LABELS, programById, programMinutes, programsFor } from "../content/programs";
-import type { Athlete, Category, SkillTestRecord, TrainingSession } from "../lib/types";
+import { CATEGORY_LABELS, needsHoop, programById, programMinutes, programShelves, programsFor } from "../content/programs";
+import type { Athlete } from "../lib/types";
+
+type Place = "all" | "free" | "hoop";
+const PLACE_LABELS: Record<Place, string> = { all: "Tudo", free: "Sem cesta", hoop: "Com cesta" };
 
 export function AthleteHome({
   athlete,
-  sessions,
-  tests,
   pending,
   onOpenProgram,
-  onStartTests,
   onRetryPending,
   onOpenAccount,
-  onUpdateGoal,
   onResume,
 }: {
   athlete: Athlete;
-  sessions: TrainingSession[];
-  tests: SkillTestRecord[];
   pending: { count: number; blocked: boolean; error: string | null };
   onOpenProgram: (programId: string) => void;
-  onStartTests: () => void;
   onRetryPending: () => void | Promise<void>;
   onOpenAccount: () => void;
-  onUpdateGoal: (goal: number) => Promise<void> | void;
   onResume: (resume: ResumeState) => void;
 }) {
   const age = ageThisYear(athlete.birth_year);
   const band = bandFor(age);
   const programs = band ? programsFor(band.id, athlete.level) : [];
-  const [category, setCategory] = useState<Category | "all">("all");
-  const categories = [...new Set(programs.map((program) => program.category))];
-  const visible = category === "all" ? programs : programs.filter((program) => program.category === category);
-  const goal = athlete.weekly_goal;
-  const weekStart = startOfWeekIso();
-  const thisWeek = sessions.filter((s) => s.performed_on >= weekStart);
-  const weekMinutes = thisWeek.reduce((total, s) => total + s.minutes, 0);
-  const streak = goalStreak(sessions, goal);
-  const goalPct = Math.min(100, Math.round((thisWeek.length / goal) * 100));
-  const testDue = band !== null && isTestDue(tests);
 
   // Treino pela metade: lido ao abrir a tela, porque voltar de um treino remonta a Home.
   const [resume, setResume] = useState<ResumeState | null>(() => readResume(athlete.id));
@@ -61,12 +44,13 @@ export function AthleteHome({
     setConfirmDiscard(false);
   };
 
-  // Sugestão: o treino da faixa feito há mais tempo (ou nunca feito), respeitando a ordem por nível.
-  const lastDone = new Map<string, string>();
-  for (const s of sessions) if (!lastDone.has(s.program_id)) lastDone.set(s.program_id, s.performed_on);
-  const suggestion = [...programs].sort((a, b) => (lastDone.get(a.id) ?? "").localeCompare(lastDone.get(b.id) ?? ""))[0];
+  // Filtro por lugar; some quando todos os treinos da faixa são do mesmo tipo.
+  const [place, setPlace] = useState<Place>("all");
+  const hasBothPlaces = programs.some(needsHoop) && programs.some((program) => !needsHoop(program));
+  const visible = programs.filter((program) => place === "all" || (place === "hoop") === needsHoop(program));
+  const shelves = programShelves(visible);
 
-  // Um aviso por vez no topo: bloqueado > retomar > offline. Teste vira chamada após a meta.
+  // Um aviso por vez no topo: bloqueado > retomar > offline. Meta, testes e histórico ficam na Evolução.
   const hasBlocked = pending.count > 0 && pending.blocked;
   const showResume = !hasBlocked && resume && resumeProgram;
   const showPending = !hasBlocked && !showResume && pending.count > 0;
@@ -82,27 +66,8 @@ export function AthleteHome({
     }
   }
 
-  // Meta ajustada na hora, sem sair da Home: − / + entre 1 e 7.
-  const [updatingGoal, setUpdatingGoal] = useState(false);
-  async function changeGoal(delta: number) {
-    const next = goal + delta;
-    if (updatingGoal || next < 1 || next > 7) return;
-    setUpdatingGoal(true);
-    try {
-      await onUpdateGoal(next);
-    } finally {
-      setUpdatingGoal(false);
-    }
-  }
-
-  // Lista enxuta: 3 treinos à vista, resto atrás de "ver todos". Menos rolagem, mais decisão.
-  const [showAll, setShowAll] = useState(false);
-  const firstThree = visible.slice(0, 3);
-  const listed = showAll ? visible : firstThree;
-  const recent = sessions.slice(0, 2);
-
   return (
-    <Screen eyebrow={band ? `${band.label} · ${age} anos` : `${age} anos`} title={`Oi, ${athlete.nickname}`}>
+    <Screen eyebrow={band ? `${band.label} · ${age} anos` : `${age} anos`} title={`Oi, ${athlete.nickname}`} titleAside={<BouncingBall />}>
       {hasBlocked && (
         <section className="due-card blocked">
           <div>
@@ -152,139 +117,53 @@ export function AthleteHome({
         </section>
       )}
 
-      <section className={`goal-card${thisWeek.length >= goal ? " met" : ""}`} aria-label="Meta da semana">
-        <div className="goal-head">
-          <span>Meta da semana</span>
-          {thisWeek.length >= goal && (
-            <span className="met-badge" role="status">
-              Meta batida!
-            </span>
-          )}
-          <strong>
-            {thisWeek.length} de {goal} {goal === 1 ? "treino" : "treinos"}
-          </strong>
-        </div>
-        <div className="goal-bar" role="progressbar" aria-valuemin={0} aria-valuemax={goal} aria-valuenow={thisWeek.length}>
-          <span className={thisWeek.length >= goal ? "met" : ""} style={{ width: `${goalPct}%` }} />
-        </div>
-        <div className="goal-foot">
-          <p>
-            {weekMinutes} min nesta semana
-            {streak > 0 ? ` · ${streak} ${streak === 1 ? "semana seguida" : "semanas seguidas"} na meta` : ""}
-          </p>
-          <div className="goal-stepper" role="group" aria-label="Ajustar meta da semana">
-            <button type="button" aria-label="Diminuir meta" disabled={updatingGoal || goal <= 1} onClick={() => void changeGoal(-1)}>
-              −
-            </button>
-            <span aria-hidden="true">{goal}</span>
-            <button type="button" aria-label="Aumentar meta" disabled={updatingGoal || goal >= 7} onClick={() => void changeGoal(1)}>
-              +
-            </button>
-          </div>
-        </div>
-      </section>
-
-      {testDue && (
-        <section className="due-card">
-          <div>
-            <p className="subtitle">{tests.length === 0 ? "Primeiro teste" : "Hora dos testes"}</p>
-            <p>{tests.length === 0 ? "Meça sua base para ver a evolução." : "Já deu 4 semanas: meça de novo."}</p>
-          </div>
-          <button type="button" className="secondary-button" onClick={onStartTests}>
-            Fazer testes
-          </button>
-        </section>
-      )}
-
-      {suggestion && (
-        <section className="suggestion-card hero-tone" aria-label="Treino para hoje">
-          <p className="subtitle">Para hoje · {programMinutes(suggestion)} min</p>
-          <h2>{suggestion.title}</h2>
-          <p>{suggestion.summary}</p>
-          <p className="suggestion-meta">
-            {CATEGORY_LABELS[suggestion.category]} · {suggestion.drills.length} exercícios
-          </p>
-          <PrimaryButton onClick={() => onOpenProgram(suggestion.id)}>Ver treino</PrimaryButton>
-        </section>
-      )}
-
       {band ? (
         <>
-          {categories.length > 1 && (
-            <div className="chips" role="group" aria-label="Filtrar treinos por categoria">
-              <button
-                type="button"
-                className={`chip${category === "all" ? " active" : ""}`}
-                onClick={() => {
-                  setCategory("all");
-                  setShowAll(false);
-                }}
-              >
-                Todos
-              </button>
-              {categories.map((id) => (
+          {hasBothPlaces && (
+            <div className="chips" role="group" aria-label="Filtrar treinos por lugar">
+              {(Object.keys(PLACE_LABELS) as Place[]).map((id) => (
                 <button
                   key={id}
                   type="button"
-                  className={`chip${category === id ? " active" : ""}`}
-                  onClick={() => {
-                    setCategory(id);
-                    setShowAll(false);
-                  }}
+                  className={`chip${place === id ? " active" : ""}`}
+                  aria-pressed={place === id}
+                  onClick={() => setPlace(id)}
                 >
-                  {CATEGORY_LABELS[id]}
+                  {PLACE_LABELS[id]}
                 </button>
               ))}
             </div>
           )}
-          <Group header="Treinos para você">
-            {listed.map((program) => (
-              <button key={program.id} type="button" className="row row-nav" onClick={() => onOpenProgram(program.id)}>
-                <span className="row-label">
-                  {program.title}
-                  <small>
-                    {CATEGORY_LABELS[program.category]} · {programMinutes(program)} min
-                    {lastDone.has(program.id) ? ` · feito em ${formatDayMonth(lastDone.get(program.id)!)}` : ""}
-                  </small>
-                </span>
-              </button>
-            ))}
-          </Group>
-          {visible.length > 3 && !showAll && (
-            <button type="button" className="row row-action" onClick={() => setShowAll(true)}>
-              Ver todos os treinos ({visible.length})
-            </button>
-          )}
-          {showAll && (
-            <button type="button" className="plain-button quiet" onClick={() => setShowAll(false)}>
-              Mostrar menos
-            </button>
-          )}
+          {shelves.map((shelf) => (
+            <section key={shelf.category} className="shelf" aria-labelledby={`shelf-${shelf.category}`}>
+              <h2 className="shelf-head" id={`shelf-${shelf.category}`}>
+                <span>{CATEGORY_LABELS[shelf.category]}</span>
+                <small>{shelf.programs.length === 1 ? "1 treino" : `${shelf.programs.length} treinos`}</small>
+              </h2>
+              <div className={`shelf-row${shelf.programs.length === 1 ? " single" : ""}`}>
+                {shelf.programs.map((program) => (
+                  <button
+                    key={program.id}
+                    type="button"
+                    className={`program-card cat-${program.category}`}
+                    onClick={() => onOpenProgram(program.id)}
+                  >
+                    <strong>{program.title}</strong>
+                    <span className="program-card-meta">
+                      {programMinutes(program)} min · {program.drills.length} exercícios
+                    </span>
+                    <span className="place-pill">{needsHoop(program) ? "Com cesta" : "Sem cesta"}</span>
+                  </button>
+                ))}
+              </div>
+            </section>
+          ))}
         </>
       ) : (
         <Group header="Treinos">
           <p className="row-note">Confira o ano de nascimento do perfil na tela Conta.</p>
         </Group>
       )}
-
-      <Group header="Últimos treinos">
-        {sessions.length === 0 ? (
-          <p className="row-note">Termine um treino e ele aparece aqui.</p>
-        ) : (
-          recent.map((s) => (
-            <div key={s.id} className="row">
-              <span className="row-label">
-                {programById(s.program_id)?.title ?? "Treino"}
-                <small>
-                  {formatDayMonth(s.performed_on)} · {s.drills_done}/{s.drills_total} · {s.minutes} min
-                  {s.feeling ? ` · ${s.feeling}/5` : ""}
-                  {s.pending ? " · neste aparelho" : ""}
-                </small>
-              </span>
-            </div>
-          ))
-        )}
-      </Group>
     </Screen>
   );
 }

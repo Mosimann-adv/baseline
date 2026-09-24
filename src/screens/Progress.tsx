@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { CountUp, Group, PrimaryButton, Screen } from "../components/ui";
 import { ageThisYear, bandFor } from "../lib/age";
-import { formatDayMonth, localIsoDate } from "../lib/dates";
+import { formatDayMonth, localIsoDate, startOfWeekIso } from "../lib/dates";
 import {
   achievements,
   bestGoalStreak,
@@ -26,6 +26,7 @@ export function Progress({
   onBack,
   onStartTests,
   onOpenProgram,
+  onUpdateGoal,
 }: {
   athlete: Athlete;
   sessions: TrainingSession[];
@@ -33,6 +34,7 @@ export function Progress({
   onBack: () => void;
   onStartTests: () => void;
   onOpenProgram: (programId: string) => void;
+  onUpdateGoal: (goal: number) => Promise<void> | void;
 }) {
   const band = bandFor(ageThisYear(athlete.birth_year));
   const goal = athlete.weekly_goal;
@@ -80,6 +82,8 @@ export function Progress({
 
       {tab === "mapa" && (
         <>
+          <GoalCard sessions={sessions} goal={goal} streak={streak} onUpdateGoal={onUpdateGoal} />
+
           <FundamentalsMap
             athlete={athlete}
             sessions={sessions}
@@ -110,6 +114,25 @@ export function Progress({
             <div className="chart-box">
               <WeeksChart weeks={weeks} goal={goal} />
             </div>
+          </Group>
+
+          <Group header="Últimos treinos">
+            {sessions.length === 0 ? (
+              <p className="row-note">Termine um treino e ele aparece aqui.</p>
+            ) : (
+              sessions.slice(0, 3).map((s) => (
+                <div key={s.id} className="row">
+                  <span className="row-label">
+                    {programById(s.program_id)?.title ?? "Treino"}
+                    <small>
+                      {formatDayMonth(s.performed_on)} · {s.drills_done}/{s.drills_total} · {s.minutes} min
+                      {s.feeling ? ` · como foi: ${s.feeling}/5` : ""}
+                      {s.pending ? " · neste aparelho" : ""}
+                    </small>
+                  </span>
+                </div>
+              ))
+            )}
           </Group>
 
           {due ? (
@@ -190,6 +213,70 @@ export function Progress({
         </Group>
       )}
     </Screen>
+  );
+}
+
+/** Meta da semana com ajuste − / + (1 a 7), sem sair da Evolução. */
+function GoalCard({
+  sessions,
+  goal,
+  streak,
+  onUpdateGoal,
+}: {
+  sessions: TrainingSession[];
+  goal: number;
+  streak: number;
+  onUpdateGoal: (goal: number) => Promise<void> | void;
+}) {
+  const weekStart = startOfWeekIso();
+  const thisWeek = sessions.filter((s) => s.performed_on >= weekStart);
+  const weekMinutes = thisWeek.reduce((total, s) => total + s.minutes, 0);
+  const met = thisWeek.length >= goal;
+  const goalPct = Math.min(100, Math.round((thisWeek.length / goal) * 100));
+  const [updating, setUpdating] = useState(false);
+  async function changeGoal(delta: number) {
+    const next = goal + delta;
+    if (updating || next < 1 || next > 7) return;
+    setUpdating(true);
+    try {
+      await onUpdateGoal(next);
+    } finally {
+      setUpdating(false);
+    }
+  }
+
+  return (
+    <section className={`goal-card${met ? " met" : ""}`} aria-label="Meta da semana">
+      <div className="goal-head">
+        <span>Meta da semana</span>
+        {met && (
+          <span className="met-badge" role="status">
+            Meta batida!
+          </span>
+        )}
+        <strong>
+          {thisWeek.length} de {goal} {goal === 1 ? "treino" : "treinos"}
+        </strong>
+      </div>
+      <div className="goal-bar" role="progressbar" aria-valuemin={0} aria-valuemax={goal} aria-valuenow={thisWeek.length}>
+        <span className={met ? "met" : ""} style={{ width: `${goalPct}%` }} />
+      </div>
+      <div className="goal-foot">
+        <p>
+          {weekMinutes} min nesta semana
+          {streak > 0 ? ` · ${streak} ${streak === 1 ? "semana seguida" : "semanas seguidas"} na meta` : ""}
+        </p>
+        <div className="goal-stepper" role="group" aria-label="Ajustar meta da semana">
+          <button type="button" aria-label="Diminuir meta" disabled={updating || goal <= 1} onClick={() => void changeGoal(-1)}>
+            −
+          </button>
+          <span aria-hidden="true">{goal}</span>
+          <button type="button" aria-label="Aumentar meta" disabled={updating || goal >= 7} onClick={() => void changeGoal(1)}>
+            +
+          </button>
+        </div>
+      </div>
+    </section>
   );
 }
 

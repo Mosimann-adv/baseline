@@ -76,6 +76,7 @@ Leia nesta ordem:
 | **Mapa de fundamentos na Evolução** (2026-09-21) | A aba abre num mapa de meia quadra com Drible, Arremesso, Passe, Defesa e Preparo físico. Mostra treinos, minutos, recência e evolução nos testes, sem transformar frequência em nota de habilidade nem comparar atletas. Cada fundamento sugere um treino disponível da faixa. |
 | **5 programas de ball handling para casa** (rascunho) | Pedido do dono: o mais útil é o que se treina em casa, sem cesta. Só vídeos já conferidos; validação do profissional pendente. |
 | **Som e voz do treino ficam na tela Conta** (2026-09-24) | Primeira versão pôs os switches na tela inicial do treino; o dono achou poluído e pediu "configurações gerais, mais escondido". Preferência é do aparelho (localStorage); desligar corta bipes e voz na hora. |
+| **Aba Treinos em prateleiras por fundamento** (2026-09-24) | Pedido do dono: a tela tinha "muita coisa" e não era dinâmica. Saíram Para hoje, chips de categoria, Meta da semana, chamada de testes e Últimos treinos. Ficaram os avisos (bloqueado, retomar, offline), o filtro Tudo · Sem cesta · Com cesta (`needsHoop` lê o equipamento) e uma prateleira deslizante por fundamento (`programShelves`) com todos os treinos. O cartão mostra só nome, minutos, nº de exercícios e o selo de cesta; resumo e "feito há…" foram tirados a pedido do dono (poluía). Ao lado de "Oi, fulano" há uma bola (`BouncingBall` em `ui.tsx`) parada no chão que quica três vezes ao toque; com "menos movimento" no aparelho ela não anima. Meta (com −/+) e Últimos treinos foram para a aba Mapa da Evolução; teste na hora vira pontinho coral na aba Evolução. "Sem cesta" em vez de "Em casa" porque alguns treinos pedem 10 m livres. |
 | **Aba Vídeos com vídeo direto, sem pôster** (2026-09-24) | Pôster com play (iframe só no toque) foi implementado e o dono rejeitou: quer o vídeo direto na aba. Revertido; manter `loading="lazy"`. Não insistir no facade. |
 
 ## 4. Estado atual
@@ -97,8 +98,9 @@ Leia nesta ordem:
 | `392e330` | Mapa interativo de fundamentos na Evolução, com cálculo testado e navegação direta para o treino sugerido. |
 | Commit da rodada de 2026-09-24 | Refinamento de UX revisado com agente externo (Terminal, favorável a 10 de 10): Conta acessível sem perfis; falha de rede pós-carga vira aviso em vez de tela de erro; splash eterno resolvido (catch + 15 s); minutos do treino retomado rebaseados com `savedAt`; "Sair sem salvar" em dois passos; aceite desmarcado ao mudar o ano + hint do que falta; card bloqueado com "Resolver na Conta" e retry com feedback; export cancelado em silêncio e erro da Conta rola até a vista; "Reenviar código" com cooldown persistente de 60 s; som e voz na tela Conta. |
 | Segundo commit de 2026-09-24 | Rodada de design visível (propostas validadas com o Terminal; rejeitadas: cards de resumo duplicados na Evolução e `document.title` por tela): "+15 s" no descanso; contagem com pulso por segundo e últimos 3 s em coral; confete e avatar no fim do treino; meta batida com selo e ajuste −/+ na Home; "como foi" nos últimos treinos; conquistas bloqueadas dizem como ganhar; valores no gráfico de semanas; recorde de sequência; faixa de fatos e histórico próprio no detalhe do treino; acordeão de mão única; senha com mostrar/ocultar; chips e escala 1–5 em 44 px; vibração na troca de aba; splash com "Carregando…"; elevação sutil dos cartões. Pôster da aba Vídeos implementado e revertido por decisão do dono. |
+| Terceiro commit de 2026-09-24 | Aba Treinos em prateleiras por fundamento (cartão com nome, minutos, exercícios e selo de cesta; filtro Tudo · Sem cesta · Com cesta); meta da semana e últimos treinos na Evolução; pontinho coral na aba Evolução quando o teste está na hora; bola que quica ao toque ao lado do título. |
 
-**Mudança local ainda sem commit (2026-09-24):** nenhuma.
+**Mudança local ainda sem commit (2026-09-24):** nenhuma. Demo publicada com a versão atual (versão 10 do artifact).
 
 Etapas do `README.md`:
 1. Fundação — pronta.
@@ -111,7 +113,7 @@ Etapas do `README.md`:
 
 **Banco:** migrações 0001–0005 aplicadas. **0006 ainda não:** o dono precisa colar `supabase/migrations/0006_conta_16.sql` no SQL Editor antes de adolescentes 16–17 criarem conta no site real.
 
-**Verificação mais recente (2026-09-24):** `npm test` passa com 50 testes em 7 arquivos; `npm run build` e `npm run build:demo` passam, incluindo `tsc --noEmit`. O aviso do chunk principal de produção acima de 500 kB continua conhecido.
+**Verificação mais recente (2026-09-24):** `npm test` passa com 52 testes em 7 arquivos; `npm run build` e `npm run build:demo` passam, incluindo `tsc --noEmit`. O aviso do chunk principal de produção acima de 500 kB continua conhecido.
 
 **Não conferido nesta atualização:**
 - navegação visual em navegador e no Android;

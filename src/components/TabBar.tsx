@@ -44,7 +44,16 @@ const ARIA_LABELS: Record<TabId, string> = {
 };
 
 /** Rodapé de navegação do contexto do atleta: Treinos, Evolução, Vídeos e Perfil (troca de perfil e Conta). */
-export function TabBar({ current, onSelect }: { current: TabId; onSelect: (tab: TabId) => void }) {
+export function TabBar({
+  current,
+  onSelect,
+  badges = {},
+}: {
+  current: TabId;
+  onSelect: (tab: TabId) => void;
+  /** Pontinho de "tem algo para fazer aqui" (ex.: testes na hora, na Evolução). */
+  badges?: Partial<Record<TabId, boolean>>;
+}) {
   return (
     <nav className="tabbar" aria-label="Navegação principal">
       {(Object.keys(LABELS) as TabId[]).map((id) => (
@@ -52,7 +61,7 @@ export function TabBar({ current, onSelect }: { current: TabId; onSelect: (tab: 
           key={id}
           type="button"
           className={`tab${current === id ? " active" : ""}`}
-          aria-label={ARIA_LABELS[id]}
+          aria-label={badges[id] ? `${ARIA_LABELS[id]} — testes na hora` : ARIA_LABELS[id]}
           aria-current={current === id ? "page" : undefined}
           onClick={() => {
             // Toque perceptível: a mesma vibração curta do treino, onde houver suporte.
@@ -60,7 +69,10 @@ export function TabBar({ current, onSelect }: { current: TabId; onSelect: (tab: 
             onSelect(id);
           }}
         >
-          {ICONS[id]}
+          <span className="tab-icon">
+            {ICONS[id]}
+            {badges[id] && <span className="tab-dot" aria-hidden="true" />}
+          </span>
           <span>{LABELS[id]}</span>
         </button>
       ))}

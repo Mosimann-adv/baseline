@@ -10,6 +10,8 @@ import { listenBackButton } from "./lib/native";
 import { pendingSummary } from "./lib/offlineQueue";
 import type { ResumeState } from "./lib/resumeSession";
 import { loadParentStatus, registerParentEmail, type ParentStatus } from "./lib/parentConfirm";
+import { ageThisYear, bandFor } from "./lib/age";
+import { isTestDue } from "./lib/progress";
 import { programById } from "./content/programs";
 import { LEGAL_DOCS, legalIdFromHash, type LegalId } from "./content/legal";
 import { AuthFlow } from "./screens/AuthScreens";
@@ -212,6 +214,11 @@ function Family({ guardianId, email }: { guardianId: string; email: string }) {
 
   // Abas do rodapé: só existem com um atleta válido em memória.
   const tabAthlete = family.athletes.find((a) => a.id === lastAthleteId && canTrain(a));
+  // Pontinho na Evolução quando os testes estão na hora (a chamada saiu da aba Treinos).
+  const tabTestDue =
+    !!tabAthlete &&
+    bandFor(ageThisYear(tabAthlete.birth_year)) !== null &&
+    isTestDue(skill.tests.filter((t) => t.athlete_id === tabAthlete.id));
   const onTab = (tab: TabId) => {
     if (!tabAthlete) return;
     if (tab === "profile") {
@@ -232,7 +239,7 @@ function Family({ guardianId, email }: { guardianId: string; email: string }) {
     tabAthlete ? (
       <>
         <div className="has-tabbar">{node}</div>
-        <TabBar current={current} onSelect={onTab} />
+        <TabBar current={current} onSelect={onTab} badges={{ progress: tabTestDue }} />
       </>
     ) : (
       node
@@ -350,6 +357,7 @@ function Family({ guardianId, email }: { guardianId: string; email: string }) {
                 onBack={home}
                 onStartTests={() => setView({ name: "tests", athleteId })}
                 onOpenProgram={(programId) => setView({ name: "program", athleteId, programId })}
+                onUpdateGoal={(goal) => family.update(athleteId, { weekly_goal: goal })}
               />
             </Suspense>,
             "progress",
@@ -362,14 +370,10 @@ function Family({ guardianId, email }: { guardianId: string; email: string }) {
           return withTabs(
             <AthleteHome
               athlete={athlete}
-              sessions={sessions}
-              tests={tests}
               pending={pending}
               onOpenProgram={(programId) => setView({ name: "program", athleteId, programId })}
-              onStartTests={() => setView({ name: "tests", athleteId })}
               onRetryPending={retry}
               onOpenAccount={() => setView({ name: "account" })}
-              onUpdateGoal={(goal) => family.update(athleteId, { weekly_goal: goal })}
               onResume={(r) => setView({ name: "training", athleteId, programId: r.programId, resume: r })}
             />,
             "trainings",
