@@ -329,7 +329,16 @@ function Family({ guardianId, email }: { guardianId: string; email: string }) {
             return <TrainingSession athlete={athlete} program={program} resume={view.resume} onExit={home} onSave={training.create} />;
           }
           if (program) {
-            return <ProgramDetail program={program} onBack={home} onStart={() => setView({ name: "training", athleteId, programId: program.id })} />;
+            const programSessions = training.sessions.filter((s) => s.program_id === program.id);
+            return (
+              <ProgramDetail
+                program={program}
+                doneCount={programSessions.length}
+                lastDone={programSessions[0]?.performed_on ?? null}
+                onBack={home}
+                onStart={() => setView({ name: "training", athleteId, programId: program.id })}
+              />
+            );
           }
         } else if (view.name === "progress") {
           return withTabs(
@@ -360,6 +369,7 @@ function Family({ guardianId, email }: { guardianId: string; email: string }) {
               onStartTests={() => setView({ name: "tests", athleteId })}
               onRetryPending={retry}
               onOpenAccount={() => setView({ name: "account" })}
+              onUpdateGoal={(goal) => family.update(athleteId, { weekly_goal: goal })}
               onResume={(r) => setView({ name: "training", athleteId, programId: r.programId, resume: r })}
             />,
             "trainings",
@@ -399,6 +409,7 @@ function Splash() {
   return (
     <main className="splash" aria-busy="true">
       <img src="icons/icon-192.png" alt="" width={72} height={72} />
+      <p>Carregando…</p>
     </main>
   );
 }

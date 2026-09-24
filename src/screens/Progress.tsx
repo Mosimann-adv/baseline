@@ -4,6 +4,7 @@ import { ageThisYear, bandFor } from "../lib/age";
 import { formatDayMonth, localIsoDate } from "../lib/dates";
 import {
   achievements,
+  bestGoalStreak,
   fundamentalsProgress,
   goalStreak,
   isTestDue,
@@ -36,6 +37,7 @@ export function Progress({
   const band = bandFor(ageThisYear(athlete.birth_year));
   const goal = athlete.weekly_goal;
   const streak = goalStreak(sessions, goal);
+  const record = bestGoalStreak(sessions, goal);
   const weeks = lastWeeks(sessions, 8);
   const defs = band ? testsFor(band.id) : [];
   const nextDate = nextTestDate(tests);
@@ -92,6 +94,9 @@ export function Progress({
                 <CountUp value={streak} />
               </strong>
               <span>{streak === 1 ? "semana seguida na meta" : "semanas seguidas na meta"}</span>
+              {record > 0 && (
+                <span className="metric-record">recorde: {record === 1 ? "1 semana" : `${record} semanas`}</span>
+              )}
             </div>
             <div className="metric">
               <strong>
@@ -157,7 +162,7 @@ export function Progress({
             );
           })}
           <button type="button" className="row row-action" onClick={onStartTests}>
-            {due ? "Fazer testes agora" : "Fazer testes antes da data"}
+            {due ? "Fazer testes agora" : "Registrar novas marcas"}
           </button>
         </Group>
       )}
@@ -177,7 +182,7 @@ export function Progress({
                   {badge.earned ? "★" : "☆"}
                 </span>
                 <strong>{badge.title}</strong>
-                {badge.earned && <span>{badge.description}</span>}
+                <span>{badge.description}</span>
                 <span className="visually-hidden">{badge.earned ? "Conquistada" : "Ainda não conquistada"}</span>
               </div>
             ))}
@@ -362,8 +367,11 @@ function WeeksChart({ weeks, goal }: { weeks: WeekSummary[]; goal: number }) {
       <line className="goal-line" x1={0} x2={width} y1={y(goal)} y2={y(goal)} />
       {weeks.map((week, i) => {
         const top = y(week.sessions);
+        const center = i * slot + slot / 2;
+        const met = week.sessions > 0 && week.sessions >= goal;
         return (
           <g key={week.start}>
+            <title>{`${week.sessions} de ${goal} treinos`}</title>
             <rect
               className={week.sessions >= goal ? "bar met" : "bar"}
               x={i * slot + (slot - barWidth) / 2}
@@ -372,7 +380,12 @@ function WeeksChart({ weeks, goal }: { weeks: WeekSummary[]; goal: number }) {
               height={Math.max(2, height - padBottom - top)}
               rx={4}
             />
-            <text className="axis" x={i * slot + slot / 2} y={height - 5} textAnchor="middle">
+            {met && (
+              <text className="bar-value" x={center} y={Math.max(top - 5, 10)} textAnchor="middle">
+                {week.sessions}
+              </text>
+            )}
+            <text className="axis" x={center} y={height - 5} textAnchor="middle">
               {formatDayMonth(week.start)}
             </text>
           </g>

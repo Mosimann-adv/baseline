@@ -63,20 +63,49 @@ export function Field({
   maxLength?: number;
   placeholder?: string;
 }) {
+  // Senha com mostrar/ocultar: menos erro de digitação na tela mais frustrante do app.
+  const [reveal, setReveal] = useState(false);
+  const isPassword = type === "password";
   return (
     <label className="row" htmlFor={id}>
       <span className="row-label">{label}</span>
-      <input
-        id={id}
-        className="row-input"
-        type={type}
-        value={value}
-        autoComplete={autoComplete}
-        inputMode={inputMode}
-        maxLength={maxLength}
-        placeholder={placeholder}
-        onChange={(e) => onChange(e.target.value)}
-      />
+      <span className="field-wrap">
+        <input
+          id={id}
+          className="row-input"
+          type={isPassword && reveal ? "text" : type}
+          value={value}
+          autoComplete={autoComplete}
+          inputMode={inputMode}
+          maxLength={maxLength}
+          placeholder={placeholder}
+          onChange={(e) => onChange(e.target.value)}
+        />
+        {isPassword && (
+          <button
+            type="button"
+            className="field-reveal"
+            aria-label={reveal ? "Ocultar senha" : "Mostrar senha"}
+            aria-pressed={reveal}
+            onClick={() => setReveal((v) => !v)}
+          >
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              {reveal ? (
+                <>
+                  <path d="M3 3l18 18" />
+                  <path d="M10.6 10.7a2 2 0 002.9 2.9" />
+                  <path d="M6.7 6.8C4.9 8 3.5 9.8 2.5 12c2 4.4 5.4 7 9.5 7 1.8 0 3.4-.5 4.9-1.4M10.2 5.2A9.9 9.9 0 0112 5c4.1 0 7.5 2.6 9.5 7-.5 1-1 2-1.7 2.9" />
+                </>
+              ) : (
+                <>
+                  <path d="M2.5 12C4.5 7.6 7.9 5 12 5s7.5 2.6 9.5 7c-2 4.4-5.4 7-9.5 7s-7.5-2.6-9.5-7z" />
+                  <circle cx="12" cy="12" r="3" />
+                </>
+              )}
+            </svg>
+          </button>
+        )}
+      </span>
     </label>
   );
 }

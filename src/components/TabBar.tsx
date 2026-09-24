@@ -54,7 +54,11 @@ export function TabBar({ current, onSelect }: { current: TabId; onSelect: (tab: 
           className={`tab${current === id ? " active" : ""}`}
           aria-label={ARIA_LABELS[id]}
           aria-current={current === id ? "page" : undefined}
-          onClick={() => onSelect(id)}
+          onClick={() => {
+            // Toque perceptível: a mesma vibração curta do treino, onde houver suporte.
+            navigator.vibrate?.(10);
+            onSelect(id);
+          }}
         >
           {ICONS[id]}
           <span>{LABELS[id]}</span>

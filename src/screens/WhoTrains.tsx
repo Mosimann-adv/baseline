@@ -56,7 +56,7 @@ export function WhoTrains({
             <button
               key={athlete.id}
               type="button"
-              className={`athlete-card${locked ? " locked" : ""}`}
+              className={`athlete-card${locked ? " locked" : ""}${athlete.is_self && !locked ? " self" : ""}`}
               onClick={() => (locked ? onAccount() : onPick(athlete.id))}
             >
               <span className="avatar" aria-hidden="true" style={{ background: avatar.background }}>

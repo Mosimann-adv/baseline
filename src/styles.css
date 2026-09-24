@@ -145,7 +145,7 @@ button.row:active { background: var(--fill); }
 
 /* ---------- Controles ---------- */
 .segmented { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; gap: 2px; padding: 2px; background: var(--fill); border-radius: 10px; }
-.segment { min-height: 36px; border: 0; border-radius: 8px; background: transparent; color: var(--text-2); font-size: 14px; font-weight: 600; transition: background-color 0.2s ease, color 0.2s ease, box-shadow 0.2s ease; }
+.segment { min-height: 44px; border: 0; border-radius: 8px; background: transparent; color: var(--text-2); font-size: 14px; font-weight: 600; transition: background-color 0.2s ease, color 0.2s ease, box-shadow 0.2s ease, transform 0.15s ease; }
 .segment[aria-checked="true"] { background: var(--bg-raised); color: var(--text); box-shadow: 0 1px 3px rgba(0, 0, 0, 0.28); }
 .switch {
   -webkit-appearance: none; appearance: none; position: relative; flex: 0 0 auto;
@@ -194,9 +194,9 @@ button.row:active { background: var(--fill); }
   display: flex; flex-wrap: wrap; gap: 8px; margin: 12px 0 8px; padding: 2px 4px;
 }
 .chip {
-  flex: 0 0 auto; min-height: 36px; padding: 0 16px; border: 0; border-radius: 999px;
+  flex: 0 0 auto; min-height: 44px; padding: 0 18px; border: 0; border-radius: 999px;
   background: var(--fill); color: var(--text-2); font-size: 14px; font-weight: 500;
-  transition: background-color 0.2s ease, color 0.2s ease;
+  transition: background-color 0.2s ease, color 0.2s ease, transform 0.15s ease;
 }
 .chip.active { background: var(--yellow); color: var(--navy-deep); font-weight: 600; }
 
@@ -235,8 +235,9 @@ button.row:active { background: var(--fill); }
 }
 .consent-list { margin: 0; padding: 14px 16px 14px 34px; display: grid; gap: 8px; font-size: 15px; line-height: 1.45; color: var(--text-2); }
 
-.splash { min-height: 100dvh; display: grid; place-items: center; }
+.splash { min-height: 100dvh; display: grid; place-items: center; align-content: center; gap: 12px; }
 .splash img { border-radius: 16px; opacity: 0.9; }
+.splash p { margin: 0; font-size: 14px; color: var(--text-3); }
 
 /* ---------- Treinos ---------- */
 .lead { margin: 0 4px 8px; font-size: 16px; line-height: 1.5; color: var(--text-2); max-width: 42ch; }
@@ -444,13 +445,24 @@ button.row:active { background: var(--fill); }
 .fundamental-note, .fundamental-unavailable { margin: 12px 0 0; color: var(--text-3); font-size: 12px; line-height: 1.45; }
 .fundamental-detail .primary-button { margin-top: 14px; }
 .goal-card, .due-card { margin: 0 0 8px; padding: 14px 16px; border-radius: var(--radius-group); background: var(--bg-elevated); }
+.goal-card.met { box-shadow: inset 0 0 0 1.5px rgba(243, 196, 75, 0.55); }
 .goal-head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
 .goal-head span { font-size: 14px; color: var(--text-2); }
 .goal-head strong { font-size: 17px; font-weight: 600; font-variant-numeric: tabular-nums; }
+.met-badge { padding: 2px 10px; border-radius: 999px; background: var(--yellow); color: var(--navy-deep); font-size: 12px; font-weight: 600; }
 .goal-bar { height: 8px; margin: 10px 0 8px; border-radius: 999px; background: var(--fill-2); overflow: hidden; }
 .goal-bar span { display: block; height: 100%; border-radius: 999px; background: var(--blue-bright); transition: width 0.4s var(--ease); }
 .goal-bar span.met { background: linear-gradient(90deg, var(--yellow), var(--orange)); }
 .goal-card p { margin: 0; font-size: 13px; color: var(--text-3); font-variant-numeric: tabular-nums; }
+.goal-foot { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.goal-foot p { margin: 0; }
+.goal-stepper { display: flex; align-items: center; gap: 4px; }
+.goal-stepper button {
+  min-width: 40px; min-height: 40px; border: 0; border-radius: 12px; background: var(--fill);
+  color: var(--text); font-size: 20px; font-weight: 600; line-height: 1;
+}
+.goal-stepper button:active:not(:disabled) { background: var(--fill-2); transform: scale(0.94); }
+.goal-stepper span { min-width: 22px; text-align: center; font-size: 15px; font-weight: 600; font-variant-numeric: tabular-nums; }
 .due-card { display: flex; align-items: center; justify-content: space-between; gap: 12px; box-shadow: inset 0 0 0 1px rgba(125, 184, 232, 0.35); }
 .due-card .subtitle { color: var(--blue-bright); }
 .due-card p { margin: 0; font-size: 14px; line-height: 1.4; color: var(--text-2); }
@@ -490,7 +502,7 @@ button.row:active { background: var(--fill); }
 .cal-list { margin-top: 4px; }
 .resume-actions { flex: 0 0 auto; display: flex; flex-direction: column; gap: 4px; align-items: stretch; }
 .resume-actions .secondary-button { min-height: 40px; }
-.plain-button.quiet { min-height: 32px; font-size: 13px; font-weight: 500; color: var(--text-3); }
+.plain-button.quiet { min-height: 40px; font-size: 13px; font-weight: 500; color: var(--text-3); }
 .test-chart { display: block; width: 100%; height: auto; }
 .test-chart .line { fill: none; stroke: var(--orange); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
 .test-chart .dot { fill: var(--orange); }
@@ -569,6 +581,61 @@ a.row { color: inherit; text-decoration: none; }
 }
 .stale-banner p { margin: 0; flex: 1; }
 .stale-banner .secondary-button { flex: 0 0 auto; min-height: 40px; background: var(--cream); color: var(--navy-deep); }
+
+/* ---------- Rodada de design (2026-09-24): treino vivo, celebração e acabamento ---------- */
+
+/* Senha com mostrar/ocultar. */
+.field-wrap { position: relative; flex: 0 1 60%; min-width: 0; display: flex; justify-content: flex-end; }
+.field-wrap .row-input { flex: 1; padding-right: 42px; }
+.field-reveal {
+  position: absolute; right: 0; top: 50%; transform: translateY(-50%);
+  display: grid; place-items: center; width: 40px; height: 40px;
+  border: 0; background: none; color: var(--text-3);
+}
+.field-reveal svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.field-reveal:active { color: var(--text); }
+
+/* Contagem viva: "prepare-se" pulsa a cada segundo; últimos 3 s piscam em coral com os bipes. */
+.countdown.tick { animation: tick-pop 0.45s var(--spring); }
+@keyframes tick-pop { from { transform: scale(1.14); opacity: 0.5; } to { transform: none; opacity: 1; } }
+.countdown.ending { color: var(--coral-soft); animation: urgency 1s ease-in-out infinite; }
+.training-body:not(:has(.drill-name)) .countdown.ending { color: var(--coral-soft); }
+@keyframes urgency { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+
+/* Descanso: +15 s e Pausar lado a lado. */
+.rest-row { display: flex; gap: 8px; }
+.rest-row .plain-button { flex: 1; min-height: 44px; border-radius: 12px; background: var(--fill); }
+
+/* Fim de treino: avatar do perfil e confete efêmero nas cores do kit. */
+.finish-head { display: grid; gap: 2px; }
+.finish-avatar {
+  display: grid; place-items: center; width: 64px; height: 64px; margin-bottom: 10px; border-radius: 50%;
+  color: var(--navy-deep); font-family: var(--font-display); font-size: 28px;
+  box-shadow: var(--shadow-navy); animation: avatar-pop 0.5s var(--spring);
+}
+@keyframes avatar-pop { from { transform: scale(0.6); opacity: 0; } to { transform: none; opacity: 1; } }
+.confetti { position: fixed; inset: 0; z-index: 15; pointer-events: none; overflow: hidden; }
+.confetti span { position: absolute; top: -4vh; border-radius: 2px; opacity: 0; animation: confetti-fall 2s ease-in forwards; }
+@keyframes confetti-fall {
+  0% { transform: translate(0, 0) rotate(0deg); opacity: 1; }
+  80% { opacity: 1; }
+  100% { transform: translate(var(--drift, 0px), 110vh) rotate(540deg); opacity: 0; }
+}
+
+/* "Você" em destaque na escolha de perfil. */
+.athlete-card.self { box-shadow: inset 0 0 0 1.5px rgba(243, 196, 75, 0.45); }
+
+/* Elevação discreta nos cartões e resposta ao toque nos controles de seleção. */
+.group, .metric, .badge, .due-card { box-shadow: inset 0 1px 0 rgba(248, 241, 224, 0.05); }
+.chip:active, .tabs-mini button:active { transform: scale(0.96); }
+.tab:active { transform: scale(0.95); }
+
+/* Classes usadas pelas telas da Evolução, detalhe de treino e Vídeos. */
+.weeks-chart .bar-value { fill: var(--orange); font-size: 10px; font-weight: 600; font-family: var(--font); font-variant-numeric: tabular-nums; text-anchor: middle; }
+.metric-record { font-size: 12px; line-height: 1.4; color: var(--text-3); }
+.program-facts { display: flex; flex-wrap: wrap; gap: 8px; margin: 0 4px 10px; }
+.program-facts span { padding: 4px 12px; border-radius: 999px; background: var(--fill); color: var(--text-2); font-size: 13px; font-weight: 500; }
+.program-history { margin: -2px 4px 10px; font-size: 14px; color: var(--text-3); }
 
 @media (hover: hover) {
   button.row:hover { background: var(--fill); }

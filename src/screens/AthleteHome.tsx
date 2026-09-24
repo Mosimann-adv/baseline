@@ -16,6 +16,7 @@ export function AthleteHome({
   onStartTests,
   onRetryPending,
   onOpenAccount,
+  onUpdateGoal,
   onResume,
 }: {
   athlete: Athlete;
@@ -26,6 +27,7 @@ export function AthleteHome({
   onStartTests: () => void;
   onRetryPending: () => void | Promise<void>;
   onOpenAccount: () => void;
+  onUpdateGoal: (goal: number) => Promise<void> | void;
   onResume: (resume: ResumeState) => void;
 }) {
   const age = ageThisYear(athlete.birth_year);
@@ -77,6 +79,19 @@ export function AthleteHome({
       await onRetryPending();
     } finally {
       setRetrying(false);
+    }
+  }
+
+  // Meta ajustada na hora, sem sair da Home: − / + entre 1 e 7.
+  const [updatingGoal, setUpdatingGoal] = useState(false);
+  async function changeGoal(delta: number) {
+    const next = goal + delta;
+    if (updatingGoal || next < 1 || next > 7) return;
+    setUpdatingGoal(true);
+    try {
+      await onUpdateGoal(next);
+    } finally {
+      setUpdatingGoal(false);
     }
   }
 
@@ -137,9 +152,14 @@ export function AthleteHome({
         </section>
       )}
 
-      <section className="goal-card" aria-label="Meta da semana">
+      <section className={`goal-card${thisWeek.length >= goal ? " met" : ""}`} aria-label="Meta da semana">
         <div className="goal-head">
           <span>Meta da semana</span>
+          {thisWeek.length >= goal && (
+            <span className="met-badge" role="status">
+              Meta batida!
+            </span>
+          )}
           <strong>
             {thisWeek.length} de {goal} {goal === 1 ? "treino" : "treinos"}
           </strong>
@@ -147,10 +167,21 @@ export function AthleteHome({
         <div className="goal-bar" role="progressbar" aria-valuemin={0} aria-valuemax={goal} aria-valuenow={thisWeek.length}>
           <span className={thisWeek.length >= goal ? "met" : ""} style={{ width: `${goalPct}%` }} />
         </div>
-        <p>
-          {weekMinutes} min nesta semana
-          {streak > 0 ? ` · ${streak} ${streak === 1 ? "semana seguida" : "semanas seguidas"} na meta` : ""}
-        </p>
+        <div className="goal-foot">
+          <p>
+            {weekMinutes} min nesta semana
+            {streak > 0 ? ` · ${streak} ${streak === 1 ? "semana seguida" : "semanas seguidas"} na meta` : ""}
+          </p>
+          <div className="goal-stepper" role="group" aria-label="Ajustar meta da semana">
+            <button type="button" aria-label="Diminuir meta" disabled={updatingGoal || goal <= 1} onClick={() => void changeGoal(-1)}>
+              −
+            </button>
+            <span aria-hidden="true">{goal}</span>
+            <button type="button" aria-label="Aumentar meta" disabled={updatingGoal || goal >= 7} onClick={() => void changeGoal(1)}>
+              +
+            </button>
+          </div>
+        </div>
       </section>
 
       {testDue && (
@@ -246,6 +277,7 @@ export function AthleteHome({
                 {programById(s.program_id)?.title ?? "Treino"}
                 <small>
                   {formatDayMonth(s.performed_on)} · {s.drills_done}/{s.drills_total} · {s.minutes} min
+                  {s.feeling ? ` · ${s.feeling}/5` : ""}
                   {s.pending ? " · neste aparelho" : ""}
                 </small>
               </span>

@@ -76,6 +76,7 @@ Leia nesta ordem:
 | **Mapa de fundamentos na Evolução** (2026-09-21) | A aba abre num mapa de meia quadra com Drible, Arremesso, Passe, Defesa e Preparo físico. Mostra treinos, minutos, recência e evolução nos testes, sem transformar frequência em nota de habilidade nem comparar atletas. Cada fundamento sugere um treino disponível da faixa. |
 | **5 programas de ball handling para casa** (rascunho) | Pedido do dono: o mais útil é o que se treina em casa, sem cesta. Só vídeos já conferidos; validação do profissional pendente. |
 | **Som e voz do treino ficam na tela Conta** (2026-09-24) | Primeira versão pôs os switches na tela inicial do treino; o dono achou poluído e pediu "configurações gerais, mais escondido". Preferência é do aparelho (localStorage); desligar corta bipes e voz na hora. |
+| **Aba Vídeos com vídeo direto, sem pôster** (2026-09-24) | Pôster com play (iframe só no toque) foi implementado e o dono rejeitou: quer o vídeo direto na aba. Revertido; manter `loading="lazy"`. Não insistir no facade. |
 
 ## 4. Estado atual
 
@@ -95,6 +96,7 @@ Leia nesta ordem:
 | `8916f21`–`1fee8dc` | Rodada de refinamento da Home, Evolução e Conta: carregamento sob demanda, menos informação por tela, card "Para hoje" e categorias sempre visíveis sem rolagem horizontal. |
 | `392e330` | Mapa interativo de fundamentos na Evolução, com cálculo testado e navegação direta para o treino sugerido. |
 | Commit da rodada de 2026-09-24 | Refinamento de UX revisado com agente externo (Terminal, favorável a 10 de 10): Conta acessível sem perfis; falha de rede pós-carga vira aviso em vez de tela de erro; splash eterno resolvido (catch + 15 s); minutos do treino retomado rebaseados com `savedAt`; "Sair sem salvar" em dois passos; aceite desmarcado ao mudar o ano + hint do que falta; card bloqueado com "Resolver na Conta" e retry com feedback; export cancelado em silêncio e erro da Conta rola até a vista; "Reenviar código" com cooldown persistente de 60 s; som e voz na tela Conta. |
+| Segundo commit de 2026-09-24 | Rodada de design visível (propostas validadas com o Terminal; rejeitadas: cards de resumo duplicados na Evolução e `document.title` por tela): "+15 s" no descanso; contagem com pulso por segundo e últimos 3 s em coral; confete e avatar no fim do treino; meta batida com selo e ajuste −/+ na Home; "como foi" nos últimos treinos; conquistas bloqueadas dizem como ganhar; valores no gráfico de semanas; recorde de sequência; faixa de fatos e histórico próprio no detalhe do treino; acordeão de mão única; senha com mostrar/ocultar; chips e escala 1–5 em 44 px; vibração na troca de aba; splash com "Carregando…"; elevação sutil dos cartões. Pôster da aba Vídeos implementado e revertido por decisão do dono. |
 
 **Mudança local ainda sem commit (2026-09-24):** nenhuma.
 

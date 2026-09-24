@@ -1,5 +1,6 @@
-import { useEffect, useReducer, useRef, useState } from "react";
+import { useEffect, useMemo, useReducer, useRef, useState } from "react";
 import { Group, CountUp, Notice, PlainButton, PrimaryButton, Segmented } from "../components/ui";
+import { avatarFor } from "../lib/avatar";
 import { friendlyError } from "../lib/errors";
 import { keepAwake } from "../lib/native";
 import { clearResume, writeResume, type ResumeState } from "../lib/resumeSession";
@@ -18,7 +19,7 @@ interface RunState {
 }
 
 interface Action {
-  type: "start" | "advance" | "skip" | "pause" | "resume" | "finish";
+  type: "start" | "advance" | "skip" | "extend" | "pause" | "resume" | "finish";
   now: number;
   drills: Drill[];
 }
@@ -85,6 +86,11 @@ function run(state: RunState, action: Action): RunState {
       if (state.phase !== "work") return state;
       if (state.index >= last) return { ...state, phase: "done", pausedLeft: null };
       return workFrom(state.index + 1);
+    case "extend":
+      // Descanso que não corta: ir buscar água ou atender não pode custar o próximo exercício.
+      if (state.phase !== "rest") return state;
+      if (state.pausedLeft !== null) return { ...state, pausedLeft: state.pausedLeft + 15000 };
+      return { ...state, endsAt: state.endsAt + 15000 };
   }
   return state;
 }
@@ -311,6 +317,9 @@ export function TrainingSession({
   const drill = drills[state.index];
   const next = drills[state.index + 1];
   const left = state.pausedLeft ?? Math.max(0, state.endsAt - now);
+  // A contagem avisa de longe: nos últimos 3 s ela pulsa em coral, junto com os bipes.
+  const ending = (state.phase === "work" || state.phase === "rest") && state.pausedLeft === null && left > 0 && left <= 3000;
+  const countdownClass = `countdown${ending ? " ending" : ""}`;
   const progress = ((state.index + (state.phase === "rest" ? 1 : 0)) / drills.length) * 100;
 
   return (
@@ -340,14 +349,14 @@ export function TrainingSession({
           <p className="phase-label">Prepare-se</p>
           <h1 className="drill-name">{drills[0].name}</h1>
           <p className="drill-cue">{drills[0].cue}</p>
-          <p className="countdown" aria-live="off">
+          <p className="countdown tick" key={left} aria-live="off">
             {clock(left)}
           </p>
         </section>
       ) : state.phase === "rest" ? (
         <section className={`training-body${next?.video ? " with-video" : ""}`} aria-live="polite">
           <p className="phase-label">Descanso</p>
-          <p className="countdown">{clock(left)}</p>
+          <p className={countdownClass} key={left}>{clock(left)}</p>
           {next && (
             <>
               <p className="training-next">
@@ -411,7 +420,7 @@ export function TrainingSession({
             </p>
           )}
           {state.phase === "work" && (
-            <p className="countdown" aria-live="off">
+            <p className={countdownClass} aria-live="off">
               {clock(left)}
             </p>
           )}
@@ -445,9 +454,12 @@ export function TrainingSession({
         {state.phase === "rest" && (
           <>
             <PrimaryButton onClick={() => act("skip")}>Pular descanso</PrimaryButton>
-            <PlainButton onClick={() => act(state.pausedLeft === null ? "pause" : "resume")}>
-              {state.pausedLeft === null ? "Pausar" : "Continuar"}
-            </PlainButton>
+            <div className="rest-row">
+              <PlainButton onClick={() => act("extend")}>+15 s de descanso</PlainButton>
+              <PlainButton onClick={() => act(state.pausedLeft === null ? "pause" : "resume")}>
+                {state.pausedLeft === null ? "Pausar" : "Continuar"}
+              </PlainButton>
+            </div>
           </>
         )}
       </div>
@@ -468,6 +480,43 @@ const DISCOMFORT = [
   { value: "sim", label: "Sim" },
 ] as const;
 
+// Confete de chegada: partículas efêmeras nas cores do kit, só visual (aria-hidden).
+// prefers-reduced-motion anula a animação e elas somem.
+const CONFETTI_COLORS = ["#f3c44b", "#eea047", "#d96953", "#7db8e8", "#f8f1e0"];
+
+function Confetti() {
+  const pieces = useMemo(
+    () =>
+      Array.from({ length: 26 }, (_, i) => ({
+        left: Math.round(Math.random() * 100),
+        delay: Math.round(Math.random() * 700),
+        duration: 1600 + Math.round(Math.random() * 1200),
+        size: 6 + Math.round(Math.random() * 6),
+        drift: Math.round((Math.random() - 0.5) * 120),
+        color: CONFETTI_COLORS[i % CONFETTI_COLORS.length],
+      })),
+    [],
+  );
+  return (
+    <div className="confetti" aria-hidden="true">
+      {pieces.map((p, i) => (
+        <span
+          key={i}
+          style={{
+            left: `${p.left}%`,
+            animationDelay: `${p.delay}ms`,
+            animationDuration: `${p.duration}ms`,
+            width: p.size,
+            height: p.size * 1.4,
+            background: p.color,
+            ["--drift" as string]: `${p.drift}px`,
+          }}
+        />
+      ))}
+    </div>
+  );
+}
+
 function Finish({
   athlete,
   program,
@@ -483,6 +532,7 @@ function Finish({
   onExit: () => void;
   onSave: (input: NewSessionInput) => Promise<void>;
 }) {
+  const avatar = avatarFor(athlete.id);
   const [minutes] = useState(() => Math.max(1, Math.round((Date.now() - (startedAt ?? Date.now())) / 60000)));
   const [feeling, setFeeling] = useState<(typeof FEELINGS)[number]["value"] | null>(null);
   const [discomfort, setDiscomfort] = useState<"nao" | "sim" | null>(null);
@@ -527,8 +577,12 @@ function Finish({
 
   return (
     <main className="screen">
+      <Confetti />
       <div className="top-bar" />
-      <div className="large-title-block">
+      <div className="large-title-block finish-head">
+        <div className="finish-avatar" style={{ background: avatar.background }} aria-hidden="true">
+          {avatar.glyph}
+        </div>
         <p className="subtitle">{done === total ? "Treino completo" : "Treino encerrado"}</p>
         <h1 className="large-title">Mandou bem, {athlete.nickname}</h1>
       </div>

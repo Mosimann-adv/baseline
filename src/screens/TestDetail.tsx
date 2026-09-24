@@ -73,7 +73,7 @@ export function TestDetail({
       )}
 
       <button type="button" className="row row-action" onClick={onStartTests}>
-        {due ? "Fazer testes agora" : "Fazer testes antes da data"}
+        {due ? "Fazer testes agora" : "Registrar nova marca"}
       </button>
     </Screen>
   );
