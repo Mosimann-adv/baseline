@@ -14,23 +14,23 @@ import { ageThisYear, bandFor } from "./lib/age";
 import { isTestDue } from "./lib/progress";
 import { programById } from "./content/programs";
 import { LEGAL_DOCS, legalIdFromHash, type LegalId } from "./content/legal";
-import { AuthFlow } from "./screens/AuthScreens";
-import { NewAthlete } from "./screens/NewAthlete";
-import { ProfileChoice } from "./screens/ProfileChoice";
-import { WhoTrains } from "./screens/WhoTrains";
-import { AthleteHome } from "./screens/AthleteHome";
-import { Channel } from "./screens/Channel";
-import { ProgramDetail } from "./screens/ProgramDetail";
-import { TrainingSession } from "./screens/TrainingSession";
-import { TestSession } from "./screens/TestSession";
 import { LegalScreen } from "./screens/LegalScreen";
 import { ConfirmParent } from "./screens/ConfirmParent";
 import { TabBar, type TabId } from "./components/TabBar";
 import { ListSkeleton, Notice, PrimaryButton, Screen } from "./components/ui";
 import type { Athlete } from "./lib/types";
 
-// Telas pesadas fora do caminho crítico: Evolução (gráficos) e Conta (formulários).
-// Carregam sob demanda para a primeira pintura da Home ficar leve.
+// Telas fora do caminho crítico carregam sob demanda: a primeira pintura fica leve
+// e o vendor (react/supabase) não se mistura com o código das telas no cache.
+const AuthFlow = lazy(() => import("./screens/AuthScreens").then((m) => ({ default: m.AuthFlow })));
+const NewAthlete = lazy(() => import("./screens/NewAthlete").then((m) => ({ default: m.NewAthlete })));
+const ProfileChoice = lazy(() => import("./screens/ProfileChoice").then((m) => ({ default: m.ProfileChoice })));
+const WhoTrains = lazy(() => import("./screens/WhoTrains").then((m) => ({ default: m.WhoTrains })));
+const AthleteHome = lazy(() => import("./screens/AthleteHome").then((m) => ({ default: m.AthleteHome })));
+const Channel = lazy(() => import("./screens/Channel").then((m) => ({ default: m.Channel })));
+const ProgramDetail = lazy(() => import("./screens/ProgramDetail").then((m) => ({ default: m.ProgramDetail })));
+const TrainingSession = lazy(() => import("./screens/TrainingSession").then((m) => ({ default: m.TrainingSession })));
+const TestSession = lazy(() => import("./screens/TestSession").then((m) => ({ default: m.TestSession })));
 const Progress = lazy(() => import("./screens/Progress").then((m) => ({ default: m.Progress })));
 const GuardianArea = lazy(() => import("./screens/GuardianArea").then((m) => ({ default: m.GuardianArea })));
 
@@ -283,29 +283,27 @@ function Family({ guardianId, email }: { guardianId: string; email: string }) {
     // A Conta fica acessível mesmo sem perfis: apagar o último perfil não pode prender a pessoa fora dela.
     if (view.name === "account") {
       return (
-        <Suspense fallback={<LazyFallback />}>
-          <GuardianArea
-            guardianId={guardianId}
-            email={email}
-            athletes={family.athletes}
-            consents={family.consents}
-            sessions={training.sessions}
-            tests={skill.tests}
-            accountKind={meta.kind}
-            parent={parent}
-            onRefreshParent={() => void loadParentStatus(guardianId, meta.kind).then(setParent)}
-            onBack={() => setView({ name: "picker" })}
-            onAddAthlete={() => setView({ name: "newAthlete", from: "account" })}
-            onAddSelf={() => setView({ name: "newSelf", from: "account" })}
-            onUpdate={family.update}
-            onRevoke={family.revoke}
-            onAuthorize={family.authorize}
-            onDeleteAthlete={async (athleteId) => {
-              await family.remove(athleteId);
-              await Promise.all([training.reload(), skill.reload()]);
-            }}
-          />
-        </Suspense>
+        <GuardianArea
+          guardianId={guardianId}
+          email={email}
+          athletes={family.athletes}
+          consents={family.consents}
+          sessions={training.sessions}
+          tests={skill.tests}
+          accountKind={meta.kind}
+          parent={parent}
+          onRefreshParent={() => void loadParentStatus(guardianId, meta.kind).then(setParent)}
+          onBack={() => setView({ name: "picker" })}
+          onAddAthlete={() => setView({ name: "newAthlete", from: "account" })}
+          onAddSelf={() => setView({ name: "newSelf", from: "account" })}
+          onUpdate={family.update}
+          onRevoke={family.revoke}
+          onAuthorize={family.authorize}
+          onDeleteAthlete={async (athleteId) => {
+            await family.remove(athleteId);
+            await Promise.all([training.reload(), skill.reload()]);
+          }}
+        />
       );
     }
 
@@ -349,17 +347,15 @@ function Family({ guardianId, email }: { guardianId: string; email: string }) {
           }
         } else if (view.name === "progress") {
           return withTabs(
-            <Suspense fallback={<LazyFallback />}>
-              <Progress
-                athlete={athlete}
-                sessions={sessions}
-                tests={tests}
-                onBack={home}
-                onStartTests={() => setView({ name: "tests", athleteId })}
-                onOpenProgram={(programId) => setView({ name: "program", athleteId, programId })}
-                onUpdateGoal={(goal) => family.update(athleteId, { weekly_goal: goal })}
-              />
-            </Suspense>,
+            <Progress
+              athlete={athlete}
+              sessions={sessions}
+              tests={tests}
+              onBack={home}
+              onStartTests={() => setView({ name: "tests", athleteId })}
+              onOpenProgram={(programId) => setView({ name: "program", athleteId, programId })}
+              onUpdateGoal={(goal) => family.update(athleteId, { weekly_goal: goal })}
+            />,
             "progress",
           );
         } else if (view.name === "videos") {
@@ -404,7 +400,7 @@ function Family({ guardianId, email }: { guardianId: string; email: string }) {
   return (
     <>
       {staleBanner}
-      {body()}
+      <Suspense fallback={<LazyFallback />}>{body()}</Suspense>
     </>
   );
 }

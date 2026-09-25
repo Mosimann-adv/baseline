@@ -1,3 +1,7 @@
+/** RLS recusou treino/teste porque o perfil está sem aceite ativo. Usada na fila e nos hooks. */
+export const RLS_BLOCKED_MESSAGE =
+  "Este perfil está sem aceite ativo. Dê o consentimento ou a autorização de novo na tela Conta.";
+
 function messageOf(err: unknown): string {
   if (err instanceof Error) return err.message;
   if (typeof err === "object" && err !== null && "message" in err) return String((err as { message: unknown }).message);
@@ -43,8 +47,10 @@ export function friendlyError(err: unknown): string {
   if (/conta propria a partir de 16/i.test(msg)) return "Conta própria é a partir de 16 anos. Quem tem menos treina pelo perfil criado pelo responsável.";
   if (/tipo de perfil nao pode/i.test(msg)) return "O tipo do perfil não pode ser alterado.";
   if (/athletes_one_self/i.test(msg)) return "Você já tem um perfil próprio nesta conta.";
-  if (isRlsError(err)) return "Este perfil está sem aceite ativo. Dê o consentimento ou a autorização de novo na tela Conta.";
+  if (isRlsError(err)) return RLS_BLOCKED_MESSAGE;
   if (isDuplicateKey(err)) return "Este perfil já tem aceite ativo.";
+  if (/codigo bloqueado/i.test(msg)) return "Muitas tentativas erradas. Peça um código novo ao adolescente.";
+  if (/codigo expirado/i.test(msg)) return "O código venceu. Peça um novo ao adolescente.";
   if (/could not find the function|PGRST202/i.test(msg)) return "O servidor ainda não foi atualizado para esta versão do app. Tente de novo mais tarde.";
   if (isNetworkError(err)) return "Sem conexão. Confira a internet e tente de novo.";
   return "Algo não funcionou. Tente de novo em instantes.";

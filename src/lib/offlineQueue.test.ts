@@ -1,5 +1,28 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { dropFromQueue, enqueue, loadQueue, markBlocked, mergeSessions, newQueuedSession, pendingSummary, queuedSessions } from "./offlineQueue";
+import { RLS_BLOCKED_MESSAGE } from "./errors";
+import {
+  dropFromQueue,
+  enqueue,
+  flushQueue,
+  loadQueue,
+  markBlocked,
+  mergeSessions,
+  newQueuedSession,
+  newQueuedTest,
+  pendingSummary,
+  purgeAthleteFromQueue,
+  queuedSessions,
+} from "./offlineQueue";
+
+// Cliente falso: cada teste escolhe o erro que o insert devolve.
+const supabaseStub = vi.hoisted(() => ({ error: null as unknown }));
+vi.mock("./supabase", () => ({
+  requireSupabase: () => ({
+    from: () => ({
+      insert: async () => ({ error: supabaseStub.error }),
+    }),
+  }),
+}));
 
 const GUARDIAN = "g1";
 const ATHLETE = "a1";
@@ -68,5 +91,81 @@ describe("fila offline", () => {
     const merged = mergeSessions(GUARDIAN, [{ ...serverRow, pending: false }]);
     expect(merged).toHaveLength(1);
     expect(merged[0].pending).toBe(false);
+  });
+});
+
+describe("limpeza da fila", () => {
+  it("purge tira da fila todos os itens do perfil excluído e só deles", () => {
+    enqueue(newQueuedSession(GUARDIAN, input));
+    enqueue(newQueuedSession(GUARDIAN, { ...input, athleteId: "outro" }));
+    enqueue(newQueuedTest(GUARDIAN, { athleteId: ATHLETE, results: { salto: 150 } }));
+    purgeAthleteFromQueue(GUARDIAN, ATHLETE);
+    const restantes = loadQueue(GUARDIAN);
+    expect(restantes).toHaveLength(1);
+    expect(restantes[0].athleteId).toBe("outro");
+  });
+});
+
+describe("envio da fila", () => {
+  beforeEach(() => {
+    supabaseStub.error = null;
+  });
+
+  const networkError = { code: "", message: "Failed to fetch" };
+  const genericError = { code: "XX000", message: "falha do servidor" };
+  const rlsError = { code: "42501", message: "new row violates row-level security policy" };
+
+  it("envia o item e limpa a fila quando o banco aceita", async () => {
+    enqueue(newQueuedSession(GUARDIAN, input));
+    const result = await flushQueue(GUARDIAN);
+    expect(result.sent).toBe(1);
+    expect(loadQueue(GUARDIAN)).toHaveLength(0);
+  });
+
+  it("rede caiu: para sem marcar nem contar tentativa", async () => {
+    supabaseStub.error = networkError;
+    enqueue(newQueuedSession(GUARDIAN, input));
+    const result = await flushQueue(GUARDIAN);
+    expect(result.sent).toBe(0);
+    const [item] = loadQueue(GUARDIAN);
+    expect(item.attempts).toBeUndefined();
+    expect(item.blocked).toBeFalsy();
+  });
+
+  it("RLS: item fica bloqueado com o motivo do aceite", async () => {
+    supabaseStub.error = rlsError;
+    enqueue(newQueuedSession(GUARDIAN, input));
+    await flushQueue(GUARDIAN);
+    const summary = pendingSummary(GUARDIAN, ATHLETE);
+    expect(summary.blocked).toBe(true);
+    expect(summary.error).toBe(RLS_BLOCKED_MESSAGE);
+  });
+
+  it("erro comum: repete algumas vezes e depois desiste em segundo plano, sem perder o registro", async () => {
+    supabaseStub.error = genericError;
+    enqueue(newQueuedSession(GUARDIAN, input));
+    for (let i = 0; i < 8; i += 1) {
+      await flushQueue(GUARDIAN); // MAX_ATTEMPTS
+    }
+    const [item] = loadQueue(GUARDIAN);
+    expect(item.givenUp).toBe(true);
+    expect(item.attempts).toBe(8);
+
+    // Desistido não entra mais no envio automático: as tentativas param de subir.
+    await flushQueue(GUARDIAN);
+    expect(loadQueue(GUARDIAN)[0].attempts).toBe(8);
+    expect(pendingSummary(GUARDIAN, ATHLETE).count).toBe(1);
+  });
+
+  it("resetRetries faz o item desistido tentar de novo", async () => {
+    supabaseStub.error = genericError;
+    enqueue(newQueuedSession(GUARDIAN, input));
+    for (let i = 0; i < 8; i += 1) {
+      await flushQueue(GUARDIAN);
+    }
+    supabaseStub.error = null;
+    const result = await flushQueue(GUARDIAN, { resetRetries: true });
+    expect(result.sent).toBe(1);
+    expect(loadQueue(GUARDIAN)).toHaveLength(0);
   });
 });

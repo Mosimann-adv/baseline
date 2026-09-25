@@ -45,7 +45,7 @@
   --cream: #f8f1e0;
   --text: #f8f1e0;
   --text-2: rgba(248, 241, 224, 0.78);
-  --text-3: rgba(248, 241, 224, 0.66);
+  --text-3: rgba(248, 241, 224, 0.75);
   --separator: rgba(248, 241, 224, 0.1);
   --fill: rgba(248, 241, 224, 0.08);
   --fill-2: rgba(248, 241, 224, 0.15);
@@ -81,7 +81,7 @@ body {
 }
 button, input, select, textarea { font: inherit; color: inherit; }
 button { cursor: pointer; -webkit-tap-highlight-color: transparent; }
-button:disabled { cursor: default; opacity: 0.4; }
+button:disabled { cursor: default; opacity: 0.55; }
 button, label, .group-header { -webkit-user-select: none; user-select: none; }
 :focus { outline: none; }
 :focus-visible { outline: 2px solid var(--blue-bright); outline-offset: 2px; }
@@ -143,6 +143,8 @@ h1, h2, h3 { text-wrap: balance; }
 .large-title { margin: 0; font-family: var(--font-display); font-weight: 700; text-transform: lowercase; letter-spacing: 0.012em; font-size: 30px; line-height: 1.08; }
 .stack { display: grid; gap: var(--space-3); }
 .screen > .stack, .screen > section + section, .screen > section + .group-section { margin-top: var(--space-3); }
+/* Painéis das mini-abas (Evolução): mesmo respiro entre seções, agora dentro do tabpanel. */
+.tabpanel > section + section { margin-top: var(--space-3); }
 
 /* ---------- Listas agrupadas ---------- */
 .group-section + .group-section { margin-top: 8px; }
@@ -511,9 +513,11 @@ button.row:active { background: var(--fill); }
 .fundamental-detail .primary-button { margin-top: 14px; }
 .goal-card, .due-card { margin: 0 0 8px; padding: 14px 16px; border-radius: var(--radius-group); background: var(--bg-elevated); }
 .goal-card.met { box-shadow: inset 0 0 0 1.5px rgba(243, 196, 75, 0.55); }
-.goal-head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
+.goal-head { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 6px 12px; }
 .goal-head span { font-size: 14px; color: var(--text-2); }
 .goal-head strong { font-size: 17px; font-weight: 600; font-variant-numeric: tabular-nums; }
+/* Selo desce para a linha de baixo (order) e mantém o texto escuro: ".goal-head span" pintava de creme sobre amarelo. */
+.goal-head .met-badge { order: 3; white-space: nowrap; color: var(--navy-deep); }
 .met-badge { padding: 2px 10px; border-radius: 999px; background: var(--yellow); color: var(--navy-deep); font-size: 12px; font-weight: 600; }
 .goal-bar { height: 8px; margin: 10px 0 8px; border-radius: 999px; background: var(--fill-2); overflow: hidden; }
 .goal-bar span { display: block; height: 100%; border-radius: 999px; background: var(--blue-bright); transition: width 0.4s var(--ease); }
@@ -553,8 +557,11 @@ button.row:active { background: var(--fill); }
 .cal-nav strong { font-size: 15px; font-weight: 600; text-transform: capitalize; }
 .cal-arrow { min-width: 44px; min-height: 44px; border: 0; border-radius: 12px; background: var(--fill); font-size: 22px; line-height: 1; }
 .cal-arrow:disabled { opacity: 0.35; }
-.cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px; }
-.cal-weekday { padding: 6px 0; text-align: center; font-size: 11px; font-weight: 600; color: var(--text-3); }
+/* Calendário em tabela nativa (acessível sem role="grid"): espaçamento de célula via border-spacing. */
+.cal-table { width: 100%; border-collapse: separate; border-spacing: 2px; }
+.cal-table th { padding: 6px 0; font-size: 11px; font-weight: 600; color: var(--text-3); }
+.cal-table td { padding: 0; }
+.cal-table .cal-day { width: 100%; }
 .cal-day { position: relative; min-height: 44px; border: 0; border-radius: 12px; background: transparent; color: var(--text-3); font-size: 15px; font-variant-numeric: tabular-nums; }
 .cal-day.has { color: var(--text); background: var(--fill); }
 .cal-day.today { box-shadow: inset 0 0 0 1.5px var(--blue-bright); }

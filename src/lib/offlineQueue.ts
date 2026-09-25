@@ -1,11 +1,14 @@
 import { requireSupabase } from "./supabase";
 import { localIsoDate } from "./dates";
-import { isDuplicateKey, isNetworkError, isRlsError } from "./errors";
+import { isDuplicateKey, isNetworkError, isRlsError, RLS_BLOCKED_MESSAGE } from "./errors";
 import type { NewSessionInput, NewTestInput, SkillTestRecord, TrainingSession } from "./types";
 
 const keyFor = (guardianId: string) => `baseline.queue.${guardianId}`;
 
 export type QueueKind = "session" | "test";
+
+/** Erros comuns (falha de servidor, etc.) antes de o item desistir de tentar em segundo plano. */
+const MAX_ATTEMPTS = 8;
 
 export interface QueuedSession extends NewSessionInput {
   kind: "session";
@@ -15,6 +18,8 @@ export interface QueuedSession extends NewSessionInput {
   createdAt: string;
   blocked?: boolean;
   lastError?: string | null;
+  attempts?: number;
+  givenUp?: boolean;
 }
 
 export interface QueuedTest extends NewTestInput {
@@ -25,6 +30,8 @@ export interface QueuedTest extends NewTestInput {
   createdAt: string;
   blocked?: boolean;
   lastError?: string | null;
+  attempts?: number;
+  givenUp?: boolean;
 }
 
 export type QueueItem = QueuedSession | QueuedTest;
@@ -66,11 +73,54 @@ export function dropFromQueue(guardianId: string, id: string): void {
   );
 }
 
+/** Perfil excluído não tem mais para onde enviar: os itens dele saem da fila, ou voltariam a falhar para sempre. */
+export function purgeAthleteFromQueue(guardianId: string, athleteId: string): void {
+  write(
+    guardianId,
+    read(guardianId).filter((item) => item.athleteId !== athleteId),
+  );
+}
+
 export function markBlocked(guardianId: string, id: string, lastError: string): void {
   write(
     guardianId,
     read(guardianId).map((item) => (item.id === id ? { ...item, blocked: true, lastError } : item)),
   );
+}
+
+/** Tira a desistência: usado quando a pessoa toca em "Tentar agora" ou a internet volta. */
+export function resetQueueRetries(guardianId: string): void {
+  write(
+    guardianId,
+    read(guardianId).map((item) => (item.givenUp ? { ...item, givenUp: false, attempts: 0, blocked: false } : item)),
+  );
+}
+
+/** Linha no formato do banco (snake_case) para insert em training_sessions. */
+export function sessionRow(item: QueuedSession) {
+  return {
+    id: item.id,
+    guardian_id: item.guardianId,
+    athlete_id: item.athleteId,
+    program_id: item.programId,
+    performed_on: item.performedOn,
+    minutes: item.minutes,
+    drills_done: item.drillsDone,
+    drills_total: item.drillsTotal,
+    feeling: item.feeling,
+    discomfort: item.discomfort,
+  };
+}
+
+/** Linha no formato do banco (snake_case) para insert em skill_tests. */
+export function testRow(item: QueuedTest) {
+  return {
+    id: item.id,
+    guardian_id: item.guardianId,
+    athlete_id: item.athleteId,
+    tested_on: item.testedOn,
+    results: item.results,
+  };
 }
 
 export function queuedSessions(guardianId: string, athleteId?: string): TrainingSession[] {
@@ -124,40 +174,30 @@ export function mergeTests(guardianId: string, server: SkillTestRecord[]): Skill
 async function sendItem(item: QueueItem): Promise<"sent" | "blocked"> {
   const client = requireSupabase();
   if (item.kind === "session") {
-    const { error } = await client.from("training_sessions").insert({
-      id: item.id,
-      guardian_id: item.guardianId,
-      athlete_id: item.athleteId,
-      program_id: item.programId,
-      performed_on: item.performedOn,
-      minutes: item.minutes,
-      drills_done: item.drillsDone,
-      drills_total: item.drillsTotal,
-      feeling: item.feeling,
-      discomfort: item.discomfort,
-    });
+    const { error } = await client.from("training_sessions").insert(sessionRow(item));
     if (!error || isDuplicateKey(error)) return "sent";
-    if (isRlsError(error)) throw error;
     throw error;
   }
-  const { error } = await client.from("skill_tests").insert({
-    id: item.id,
-    guardian_id: item.guardianId,
-    athlete_id: item.athleteId,
-    tested_on: item.testedOn,
-    results: item.results,
-  });
+  const { error } = await client.from("skill_tests").insert(testRow(item));
   if (!error || isDuplicateKey(error)) return "sent";
-  if (isRlsError(error)) throw error;
   throw error;
 }
 
-/** Envia a fila. `23505` conta como enviado. Recusa por aceite: o item fica e recebe o motivo. */
-export async function flushQueue(guardianId: string): Promise<{ sent: number; blocked: number; remaining: number }> {
+/**
+ * Envia a fila. `23505` conta como enviado. Recusa por aceite: o item fica e recebe o motivo.
+ * Rede caiu: para e espera o próximo gatilho. Outros erros contam tentativas; após MAX_ATTEMPTS
+ * o item desiste em segundo plano — sem perder o registro — até alguém chamar com resetRetries.
+ */
+export async function flushQueue(
+  guardianId: string,
+  { resetRetries = false }: { resetRetries?: boolean } = {},
+): Promise<{ sent: number; blocked: number; remaining: number }> {
+  if (resetRetries) resetQueueRetries(guardianId);
   const items = read(guardianId);
   let sent = 0;
   let blocked = 0;
   for (const item of items) {
+    if (item.givenUp) continue;
     try {
       const result = await sendItem(item);
       if (result === "sent") {
@@ -167,11 +207,27 @@ export async function flushQueue(guardianId: string): Promise<{ sent: number; bl
     } catch (err) {
       if (isNetworkError(err)) break;
       if (isRlsError(err)) {
-        markBlocked(guardianId, item.id, "Este perfil está sem aceite ativo. Dê o consentimento ou a autorização de novo na tela Conta.");
+        markBlocked(guardianId, item.id, RLS_BLOCKED_MESSAGE);
         blocked += 1;
         continue;
       }
-      markBlocked(guardianId, item.id, "Não foi possível enviar. Tente de novo.");
+      const attempts = (item.attempts ?? 0) + 1;
+      if (attempts >= MAX_ATTEMPTS) {
+        write(
+          guardianId,
+          read(guardianId).map((current) =>
+            current.id === item.id
+              ? { ...current, attempts, givenUp: true, blocked: true, lastError: "Não conseguimos enviar depois de várias tentativas. Toque em “Tentar agora” para insistir de novo." }
+              : current,
+          ),
+        );
+      } else {
+        markBlocked(guardianId, item.id, "Não foi possível enviar. Tente de novo.");
+        write(
+          guardianId,
+          read(guardianId).map((current) => (current.id === item.id ? { ...current, attempts } : current)),
+        );
+      }
       blocked += 1;
     }
   }

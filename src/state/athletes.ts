@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import { isDemo, requireSupabase } from "../lib/supabase";
 import { demoAuthorize, demoCreateAthlete, demoCreateSelf, demoDeleteAthlete, demoLoad, demoRevoke, demoUpdateAthlete } from "../lib/demo";
 import { CONSENT_VERSION, consentVersionFor } from "../lib/consent";
+import { purgeAthleteFromQueue } from "../lib/offlineQueue";
 import type { Athlete, AthletePatch, Consent, NewAthleteInput } from "../lib/types";
 
 export function useAthletes(guardianId: string) {
@@ -148,9 +149,11 @@ export function useAthletes(guardianId: string) {
         const { error: deleteError } = await requireSupabase().from("athletes").delete().eq("id", athleteId);
         if (deleteError) throw deleteError;
       }
+      // Sem o perfil, a RLS recusaria esses envios para sempre: itens dele saem da fila.
+      purgeAthleteFromQueue(guardianId, athleteId);
       await reload();
     },
-    [reload],
+    [guardianId, reload],
   );
 
   return { athletes, consents, loading, error, reload, create, createSelf, update, revoke, authorize, remove };

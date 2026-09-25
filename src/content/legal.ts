@@ -2,7 +2,7 @@ import { INSTITUTE_CNPJ, INSTITUTE_NAME } from "./support";
 
 // RASCUNHO — pendente de revisão jurídica. Encarregado, e-mail de privacidade e CREF ainda faltam.
 // Mudou o texto de forma relevante? Troque LEGAL_VERSION.
-export const LEGAL_VERSION = "2026-09-rascunho-7";
+export const LEGAL_VERSION = "2026-09-rascunho-8";
 
 const ORG = INSTITUTE_NAME;
 const CNPJ = INSTITUTE_CNPJ;
@@ -62,7 +62,7 @@ export const LEGAL_DOCS: Record<LegalId, LegalDoc> = {
         title: "O que não coletamos",
         blocks: [
           "Nome completo, data de nascimento completa, foto, voz, escola, endereço, localização, contatos e identificador de publicidade.",
-          "No aparelho fica só a indicação de qual foi o último perfil aberto.",
+          "No aparelho, o app guarda apenas o necessário para funcionar: a sessão de login, qual foi o último perfil aberto, preferências de som e voz, o ponto de um treino em andamento e, quando não há internet no momento do treino, os registros ainda não enviados, que saem do aparelho assim que a conexão volta e o envio é concluído. Nada disso é enviado para fora do aparelho por conta própria; limpar os dados do app apaga tudo. No servidor, a cópia oficial é a que se baixa na tela Conta ou que se apaga com a exclusão da conta.",
         ],
       },
       {
