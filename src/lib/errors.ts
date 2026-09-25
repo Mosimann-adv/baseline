@@ -49,8 +49,6 @@ export function friendlyError(err: unknown): string {
   if (/athletes_one_self/i.test(msg)) return "Você já tem um perfil próprio nesta conta.";
   if (isRlsError(err)) return RLS_BLOCKED_MESSAGE;
   if (isDuplicateKey(err)) return "Este perfil já tem aceite ativo.";
-  if (/codigo bloqueado/i.test(msg)) return "Muitas tentativas erradas. Peça um código novo ao adolescente.";
-  if (/codigo expirado/i.test(msg)) return "O código venceu. Peça um novo ao adolescente.";
   if (/could not find the function|PGRST202/i.test(msg)) return "O servidor ainda não foi atualizado para esta versão do app. Tente de novo mais tarde.";
   if (isNetworkError(err)) return "Sem conexão. Confira a internet e tente de novo.";
   return "Algo não funcionou. Tente de novo em instantes.";

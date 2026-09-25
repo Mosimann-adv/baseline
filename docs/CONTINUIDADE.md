@@ -78,7 +78,7 @@ Leia nesta ordem:
 | **Som e voz do treino ficam na tela Conta** (2026-09-24) | Primeira versão pôs os switches na tela inicial do treino; o dono achou poluído e pediu "configurações gerais, mais escondido". Preferência é do aparelho (localStorage); desligar corta bipes e voz na hora. |
 | **Aba Treinos em prateleiras por fundamento** (2026-09-24) | Pedido do dono: a tela tinha "muita coisa" e não era dinâmica. Saíram Para hoje, chips de categoria, Meta da semana, chamada de testes e Últimos treinos. Ficaram os avisos (bloqueado, retomar, offline), o filtro Tudo · Sem cesta · Com cesta (`needsHoop` lê o equipamento) e uma prateleira deslizante por fundamento (`programShelves`) com todos os treinos. O cartão mostra só nome, minutos, nº de exercícios e o selo de cesta; resumo e "feito há…" foram tirados a pedido do dono (poluía). Ao lado de "Oi, fulano" há uma bola (`BouncingBall` em `ui.tsx`) parada no chão que quica três vezes ao toque; com "menos movimento" no aparelho ela não anima. Com mouse (`hover: hover` e `pointer: fine`), a prateleira vira grade com todos os cartões, porque no computador não dá para arrastar para o lado. Meta (com −/+) e Últimos treinos foram para a aba Mapa da Evolução; teste na hora vira pontinho coral na aba Evolução. "Sem cesta" em vez de "Em casa" porque alguns treinos pedem 10 m livres. |
 | **Aba Vídeos com vídeo direto, sem pôster** (2026-09-24) | Pôster com play (iframe só no toque) foi implementado e o dono rejeitou: quer o vídeo direto na aba. Revertido; manter `loading="lazy"`. Não insistir no facade. |
-| **Endurecimento da confirmação do responsável** (2026-09-25) | Auditoria apontou brute-force possível em `confirm_parent_code` (página pública, sem limite). Migração 0007: código vence em 15 minutos, 5 erros bloqueiam até um código novo (que zera o contador), status só mostra código válido; índice por e-mail do responsável. O app traduz as novas mensagens ("código vencido", "bloqueado") em `friendlyError`. |
+| **Endurecimento da confirmação do responsável: proposto e revertido** (2026-09-25) | Auditoria apontou brute-force possível em `confirm_parent_code` (página pública, sem limite) e chegou a virar a migração 0007 (validade de 15 minutos, 5 erros bloqueiam). O dono avaliou e **reverteu**: complexidade desnecessária num app ainda em fase de testes. Fica o registro do risco para revisitar antes de abrir para outras famílias (junto com SMTP próprio). |
 | **Fila offline com limite de tentativas e limpeza de órfãos** (2026-09-25) | Excluir perfil agora tira os itens dele da fila (`purgeAthleteFromQueue`) — antes, a RLS recusaria para sempre. Erros comuns contam tentativas (8) e o item desiste em segundo plano, sem perder o registro, até "Tentar agora" ou volta de internet (`resetRetries`). Rede caindo continua só pausando; RLS continua bloqueando com motivo. |
 | **Bundle: telas lazy e vendor separado** (2026-09-25) | Todas as telas passam a `React.lazy` (uma borda `Suspense` só, em `Family`); `manualChunks` separa `vendor-react` e `vendor-supabase`, que quase não mudam entre deploys. Chunk principal saiu de 538 kB para ~80 kB; o aviso de 500 kB sumiu. |
 | **CI no GitHub Actions** (2026-09-25) | `.github/workflows/ci.yml` roda `typecheck` + `vitest` a cada push na `main` e PR. Continua sem ESLint/Prettier por escolha de escopo. |
@@ -106,7 +106,7 @@ Leia nesta ordem:
 | Commit da rodada de 2026-09-24 | Refinamento de UX revisado com agente externo (Terminal, favorável a 10 de 10): Conta acessível sem perfis; falha de rede pós-carga vira aviso em vez de tela de erro; splash eterno resolvido (catch + 15 s); minutos do treino retomado rebaseados com `savedAt`; "Sair sem salvar" em dois passos; aceite desmarcado ao mudar o ano + hint do que falta; card bloqueado com "Resolver na Conta" e retry com feedback; export cancelado em silêncio e erro da Conta rola até a vista; "Reenviar código" com cooldown persistente de 60 s; som e voz na tela Conta. |
 | Segundo commit de 2026-09-24 | Rodada de design visível (propostas validadas com o Terminal; rejeitadas: cards de resumo duplicados na Evolução e `document.title` por tela): "+15 s" no descanso; contagem com pulso por segundo e últimos 3 s em coral; confete e avatar no fim do treino; meta batida com selo e ajuste −/+ na Home; "como foi" nos últimos treinos; conquistas bloqueadas dizem como ganhar; valores no gráfico de semanas; recorde de sequência; faixa de fatos e histórico próprio no detalhe do treino; acordeão de mão única; senha com mostrar/ocultar; chips e escala 1–5 em 44 px; vibração na troca de aba; splash com "Carregando…"; elevação sutil dos cartões. Pôster da aba Vídeos implementado e revertido por decisão do dono. |
 | Terceiro commit de 2026-09-24 | Aba Treinos em prateleiras por fundamento (cartão com nome, minutos, exercícios e selo de cesta; filtro Tudo · Sem cesta · Com cesta); meta da semana e últimos treinos na Evolução; pontinho coral na aba Evolução quando o teste está na hora; bola que quica ao toque ao lado do título. Depois: prateleira vira grade no computador. |
-| Commit da rodada de 2026-09-25 | Endurecimento e manutenção: migração 0007 (código do responsável com validade e limite de tentativas); fila offline com purge de perfil excluído, contador de tentativas com desistência e reset em "Tentar agora"; todas as telas lazy + `manualChunks` react/supabase (principal ~80 kB); hooks `useSessions`/`useTests` unificados em `createLog.ts`; mensagem de RLS como constante; CI com typecheck + testes; política de privacidade descreve dados no aparelho; telas grandes divididas e correções de acessibilidade (tabela no calendário, tabpanel, roving tabindex, contraste). |
+| Commit da rodada de 2026-09-25 | Manutenção: fila offline com purge de perfil excluído, contador de tentativas com desistência e reset em "Tentar agora"; todas as telas lazy + `manualChunks` react/supabase (principal ~80 kB); hooks `useSessions`/`useTests` unificados em `createLog.ts`; mensagem de RLS como constante; CI com typecheck + testes; política de privacidade descreve dados no aparelho; telas grandes divididas e correções de acessibilidade (tabela no calendário, tabpanel, roving tabindex, contraste). O endurecimento do código do responsável (0007) entrou nesta rodada e foi revertido no commit seguinte, por decisão do dono. |
 
 **Mudança local ainda sem commit (2026-09-25):** nenhuma depois do commit da rodada deste dia.
 
@@ -121,7 +121,7 @@ Etapas do `README.md`:
 
 **No ar:** https://baseline-six-sigma.vercel.app/ — cada push na `main` dispara o deploy automático. A migração 0006 continua necessária no banco real para o fluxo de conta 16–17.
 
-**Banco:** migrações 0001–0005 aplicadas. **0006 e 0007 ainda não:** o dono precisa colar `supabase/migrations/0006_conta_16.sql` e depois `supabase/migrations/0007_endurece_codigo_responsavel.sql` no SQL Editor antes de adolescentes 16–17 criarem conta no site real.
+**Banco:** migrações 0001–0005 aplicadas. **0006 ainda não:** o dono precisa colar `supabase/migrations/0006_conta_16.sql` no SQL Editor antes de adolescentes 16–17 criarem conta no site real.
 
 **Verificação mais recente (2026-09-25):** `npm test` passa com 58 testes em 7 arquivos; `npm run build` e `npm run build:demo` passam, incluindo `tsc --noEmit`. O chunk principal saiu de 538 kB para ~80 kB (`vendor-react` ~219 kB e `vendor-supabase` ~215 kB ficam em chunks próprios, estáveis entre deploys); o aviso de 500 kB não existe mais.
 
@@ -186,7 +186,6 @@ npx vite preview --outDir dist-demo   # servir a demo localmente
 | `0004_privacidade.sql` | Unicidade do aceite só entre ativos; revogação definitiva por trigger; insert de treino e teste exige aceite ativo |
 | `0005_adultos.sql` | `athletes.is_self` (um por conta, imutável); ano de nascimento a partir de 1900; idade por tipo no cadastro e na correção; `create_self_profile_with_consent` |
 | `0006_conta_16.sql` | Perfil próprio a partir de 16; tabela `parent_confirmations`; RPCs `parent_confirmation_status`, `register_parent_email`, `confirm_parent_code` |
-| `0007_endurece_codigo_responsavel.sql` | Código do responsável vence em 15 minutos (`expires_at`); 5 erros bloqueiam até código novo (`attempts`); status só mostra código válido; índice por `parent_email`. Rodar DEPOIS da 0006. |
 
 ### Como aplicar uma migração nova
 
@@ -331,7 +330,7 @@ Depois disso também foram concluídos o treino retomável, os sinais sonoros, o
 
 - [x] Projeto Supabase criado e migrações 0001–0005 aplicadas.
 - [x] Deploy web na Vercel funcionando com o Supabase.
-- [ ] Rodar as migrações **0006** (`supabase/migrations/0006_conta_16.sql`) e depois **0007** (`supabase/migrations/0007_endurece_codigo_responsavel.sql`) no SQL Editor, nesta ordem.
+- [ ] Rodar a migração **0006** (`supabase/migrations/0006_conta_16.sql`) no SQL Editor.
 - [ ] Confirmar a URL Configuration no Supabase (seção 10.1).
 - [ ] Testar de ponta a ponta no site real (seção 10.1).
 - [ ] SMTP próprio no Supabase antes de abrir para outras famílias.
@@ -352,6 +351,7 @@ Depois disso também foram concluídos o treino retomável, os sinais sonoros, o
 ## 12. Riscos e questões em aberto
 
 - **Sem PIN:** uma criança com o aparelho do adulto ainda abre a Conta. **Excluir a conta pede a senha.** Revogar aceite e excluir perfil continuam só com confirmação em dois passos.
+- **Código do responsável sem validade nem limite** (`confirm_parent_code`, 0006): a página pública aceita tentativas ilimitadas de um código de 6 dígitos. Endurecimento proposto (0007) foi revertido por decisão do dono — revisitar antes de abrir o app para outras famílias.
 - **Revogação guarda os registros** até novo aceite ou exclusão do perfil. A revisão jurídica pode preferir exclusão automática após um prazo.
 - **Menor que completa 16 ou 18 anos:** o perfil continua no responsável. O app avisa que a pessoa pode criar conta própria; o histórico **não migra**. Aos 18, conta de adolescente passa a ser adulta pela idade e o termo de adulto precisa ser aceito de novo.
 - **Faixa Adulto:** reaproveita o conteúdo de 15–17. Treinos específicos para adultos dependem do profissional de educação física.
