@@ -1,7 +1,11 @@
+import { readFileSync } from "node:fs";
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 
 declare const process: { env: Record<string, string | undefined> };
+
+// Versão do package.json vira __APP_VERSION__ no bundle (mostrada na tela Conta, para suporte).
+const pkg = JSON.parse(readFileSync(new URL("./package.json", import.meta.url), "utf8")) as { version: string };
 
 // Variável de ambiente tem prioridade sobre o .env.production, inclusive vazia. Na Vercel as duas
 // foram cadastradas sem valor e o site saiu sem Supabase; vazias, elas são ignoradas aqui.
@@ -14,6 +18,7 @@ for (const key of ["VITE_SUPABASE_URL", "VITE_SUPABASE_ANON_KEY"]) {
 export default defineConfig({
   plugins: [react()],
   base: "./",
+  define: { __APP_VERSION__: JSON.stringify(pkg.version) },
   build: {
     outDir: "dist",
     target: "es2022",

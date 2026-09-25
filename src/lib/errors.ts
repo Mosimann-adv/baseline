@@ -43,6 +43,9 @@ export function friendlyError(err: unknown): string {
     return "O servidor está no limite de envio de e-mails agora. Espere um pouco — pode levar até uma hora — ou entre com e-mail e senha.";
   if (/rate limit|too many/i.test(msg)) return "Muitas tentativas seguidas. Espere alguns minutos e tente de novo.";
   if (/idade fora da faixa/i.test(msg)) return "Perfis de crianças e adolescentes são para 6 a 17 anos.";
+  // O banco real segue na regra da 0005 (18+) até alguém aplicar a 0006 no SQL Editor.
+  // A mensagem fala a verdade do servidor que respondeu, não a do demo.
+  if (/perfil proprio exige 18/i.test(msg)) return "O perfil próprio está aberto a partir de 18 anos por enquanto.";
   if (/perfil proprio exige/i.test(msg)) return "O perfil próprio é para quem tem 16 anos ou mais.";
   if (/conta propria a partir de 16/i.test(msg)) return "Conta própria é a partir de 16 anos. Quem tem menos treina pelo perfil criado pelo responsável.";
   if (/tipo de perfil nao pode/i.test(msg)) return "O tipo do perfil não pode ser alterado.";

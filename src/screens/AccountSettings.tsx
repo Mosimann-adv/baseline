@@ -9,6 +9,7 @@ import { collectFamilyData, saveJsonFile } from "../lib/exportData";
 import { canCreateMinorProfiles, type AccountKind } from "../lib/account";
 import { shareText } from "../lib/native";
 import { setSoundOn, setVoiceOn, soundOn, voiceOn } from "../lib/sounds";
+import { APP_VERSION } from "../lib/version";
 import type { ParentStatus } from "../lib/parentConfirm";
 import { LEGAL_DOCS, type LegalId } from "../content/legal";
 import { APP_WEB, INSTITUTE_CNPJ, PIX_KEY, SUPPORT, appPublicUrl } from "../content/support";
@@ -387,6 +388,7 @@ export function AccountSettings({
           <Notice tone="error">{error}</Notice>
         </div>
       )}
+      <p className="row-note">Baseline v{APP_VERSION}</p>
     </Screen>
   );
 }

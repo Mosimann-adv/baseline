@@ -275,6 +275,10 @@ button.row:active { background: var(--fill); }
 .splash { min-height: 100dvh; display: grid; place-items: center; align-content: center; gap: 12px; }
 .splash img { border-radius: 16px; opacity: 0.9; }
 .splash p { margin: 0; font-size: 14px; color: var(--text-3); }
+/* Fallback do ErrorBoundary: o pouco que precisa funcionar quando uma tela quebrou. */
+.broken-screen h1 { margin: 0; font-size: 22px; }
+.broken-screen p { max-width: 320px; text-align: center; color: var(--text-2); }
+.broken-screen .primary-button { width: auto; padding-inline: 28px; }
 
 /* ---------- Treinos ---------- */
 .lead { margin: 0 4px 8px; font-size: 16px; line-height: 1.5; color: var(--text-2); max-width: 42ch; }

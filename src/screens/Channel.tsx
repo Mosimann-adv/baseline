@@ -1,4 +1,5 @@
-import { Group, Screen } from "../components/ui";
+import { useEffect, useState } from "react";
+import { Group, Notice, Screen } from "../components/ui";
 import { SUPPORT } from "../content/support";
 
 const YOUTUBE_NOCOOKIE = "https://www.youtube-nocookie.com";
@@ -12,9 +13,20 @@ const FEATURED = [
 
 /** Aba Vídeos: destaques do canal do Arvoredo Basquetebol no YouTube. */
 export function Channel() {
+  const [online, setOnline] = useState(() => navigator.onLine);
+  useEffect(() => {
+    const update = () => setOnline(navigator.onLine);
+    window.addEventListener("online", update);
+    window.addEventListener("offline", update);
+    return () => {
+      window.removeEventListener("online", update);
+      window.removeEventListener("offline", update);
+    };
+  }, []);
   return (
     <Screen eyebrow="Instituto Arvoredo" title="Canal do Arvoredo">
       <p className="lead">Destaques do YouTube do Arvoredo.</p>
+      {!online && <Notice>Sem internet agora: os vídeos precisam de conexão para abrir.</Notice>}
       <div className="stack">
         {FEATURED.map((video) => (
           <div key={video.id} className="video-block">

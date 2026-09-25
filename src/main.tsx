@@ -1,6 +1,7 @@
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import App from "./App";
+import { ErrorBoundary } from "./components/ErrorBoundary";
 import { AuthProvider } from "./state/auth";
 import { isDemo } from "./lib/supabase";
 import "./styles.css";
@@ -12,8 +13,10 @@ createRoot(document.getElementById("root")!).render(
         Modo demonstração · os dados ficam só neste navegador
       </p>
     )}
-    <AuthProvider>
-      <App />
-    </AuthProvider>
+    <ErrorBoundary>
+      <AuthProvider>
+        <App />
+      </AuthProvider>
+    </ErrorBoundary>
   </StrictMode>,
 );

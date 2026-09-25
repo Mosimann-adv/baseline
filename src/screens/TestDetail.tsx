@@ -99,7 +99,7 @@ function TestChart({ def, points }: { def: SkillTestDef; points: { date: string;
     <svg className="test-chart" viewBox={`0 0 ${width} ${height}`} role="img" aria-label={label}>
       <path className="line" d={path} />
       {points.map((point, i) => (
-        <g key={point.date}>
+        <g key={`${point.date}-${i}`}>
           <circle className="dot" cx={x(i)} cy={y(point.value)} r={4} />
           <text className="value" x={x(i)} y={y(point.value) - 8}>
             {chartNumber(def, point.value)}

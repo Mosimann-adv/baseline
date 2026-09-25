@@ -183,15 +183,37 @@ async function sendItem(item: QueueItem): Promise<"sent" | "blocked"> {
   throw error;
 }
 
+export type FlushResult = { sent: number; blocked: number; remaining: number };
+
 /**
  * Envia a fila. `23505` conta como enviado. Recusa por aceite: o item fica e recebe o motivo.
  * Rede caiu: para e espera o próximo gatilho. Outros erros contam tentativas; após MAX_ATTEMPTS
  * o item desiste em segundo plano — sem perder o registro — até alguém chamar com resetRetries.
+ * Single-flight: useSessions e useTests disparam flush nos mesmos momentos (montagem, evento
+ * online, "Tentar agora"); um flush em andamento atende a todos — dois em paralelo fariam
+ * leitura-modificação-escrita por cima um do outro no localStorage.
  */
-export async function flushQueue(
-  guardianId: string,
-  { resetRetries = false }: { resetRetries?: boolean } = {},
-): Promise<{ sent: number; blocked: number; remaining: number }> {
+let inflight: Promise<FlushResult> | null = null;
+let inflightReset = false;
+
+export function flushQueue(guardianId: string, { resetRetries = false }: { resetRetries?: boolean } = {}): Promise<FlushResult> {
+  if (inflight) {
+    if (!resetRetries || inflightReset) return inflight;
+    // O flush em curso não vai reviver os desistidos; este pedido pediu. Encadeia logo depois.
+    return inflight.then(() => startFlush(guardianId, true));
+  }
+  return startFlush(guardianId, resetRetries);
+}
+
+function startFlush(guardianId: string, resetRetries: boolean): Promise<FlushResult> {
+  inflightReset = resetRetries;
+  inflight = runFlush(guardianId, resetRetries).finally(() => {
+    inflight = null;
+  });
+  return inflight;
+}
+
+async function runFlush(guardianId: string, resetRetries: boolean): Promise<FlushResult> {
   if (resetRetries) resetQueueRetries(guardianId);
   const items = read(guardianId);
   let sent = 0;

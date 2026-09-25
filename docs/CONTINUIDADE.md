@@ -85,6 +85,7 @@ Leia nesta ordem:
 | **Política de privacidade descreve o que fica no aparelho** (2026-09-25) | O texto antigo dizia que no aparelho ficava "só o último perfil"; passou a listar sessão, preferências, treino em andamento e fila offline. `LEGAL_VERSION` subiu para `2026-09-rascunho-8` (versão informativa, não bloqueia aceite). |
 | **`useSessions` e `useTests` unificados** (2026-09-25) | Os dois hooks eram gêmeos (~100 linhas duplicadas); agora são configurações de `createLogHook` (`src/state/createLog.ts`). Mensagem de RLS virou constante (`RLS_BLOCKED_MESSAGE` em `lib/errors.ts`), mapeamento snake_case virou `sessionRow`/`testRow` na fila. |
 | **Divisão das telas grandes e acessibilidade** (2026-09-25) | `GuardianArea`, `TrainingSession` e `Progress` divididos em arquivos menores; calendário da Evolução saiu de `role="grid"` inválido para tabela nativa; abas com `tablist`/`tabpanel` e navegação por setas; `Segmented` com roving tabindex; contraste de texto secundário e botão desabilitado subiu. Feito em par com agente no Maestri. |
+| **Rodada de robustez nº 2** (2026-09-25) | Segunda auditoria: **ErrorBoundary** em `main.tsx` (exceção no render não fica mais em tela branca) e `lazyScreen` em `App.tsx` recarrega uma vez quando o chunk sumiu do servidor após deploy; contagem do descanso silenciosa para leitor de tela; `flushQueue` single-flight (os dois hooks disputavam o localStorage); versão do package.json aparece na tela Conta (`__APP_VERSION__`); `friendlyError` fala a regra real do banco (18+) enquanto a 0006 não roda; key de gráfico de testes única por dia+bateria; aba Vídeos avisa quando está sem internet; `docs/VIDEOS.md` corrigido para a contagem real (46 de 69; a antiga dizia 40 de 44) com a fila dos 23 sem vídeo e o desequilíbrio da faixa 6–8. **Ficou de fora por escolha do dono:** `android/res/values/colors.xml` faltando (build do AAB quebra hoje — resolver antes de gerar o AAB). |
 
 ## 4. Estado atual
 
@@ -314,7 +315,7 @@ supabase/migrations/    0001 fundação · 0002 treinos · 0003 evolução · 00
 5. **Formulários do Google Play** — rascunho em `docs/GOOGLE_PLAY.md`. Preencher no Console (dono).
 6. **Senha para excluir a conta** — feita (alternativa combinada ao PIN).
 7. **Conversão 16/18** — feita como aviso, sem migrar histórico: o perfil de menor permanece na conta do responsável; a pessoa pode criar login próprio se quiser. Aos 18, o adolescente vira adulto pela idade e precisa do termo de adulto para seguir treinando.
-8. **Vídeos dos exercícios** — 40 de 44 com ID conferido (Jr. NBA, USA Basketball e os cinco já usados). Sem vídeo: cintura, polichinelo, pular num pé só, equilíbrio de cegonha.
+8. **Vídeos dos exercícios** — 46 de 69 com ID conferido (Jr. NBA, USA Basketball e os cinco já usados). A contagem antiga de 40 de 44 não cobria os 5 programas de casa. Os 23 sem vídeo estão listados em `docs/VIDEOS.md`, junto da oferta por faixa: **6–8 tem só 3 programas, todos de drible e preparo físico** — falta conteúdo de arremesso, passe e defesa para a menor faixa.
 
 Depois disso também foram concluídos o treino retomável, os sinais sonoros, o modo Foco, o calendário mensal, o detalhe dos testes, a aba Vídeos, a rodada de refinamento visual da Home/Evolução/Conta e o mapa de fundamentos da Evolução. **Não há item de código aberto da v1 neste documento.** O próximo trabalho depende de nova decisão do dono, da revisão jurídica, da validação do profissional ou das ações externas já listadas (migração 0006, Play e AAB).
 
@@ -345,7 +346,7 @@ Depois disso também foram concluídos o treino retomável, os sinais sonoros, o
   Já preenchidos: CNPJ, endereço de treino, região São Paulo do Supabase, prazo de 15 dias úteis para exclusão por WhatsApp, app gratuito.
 - [x] CNPJ do Instituto preenchido (`56.660.275/0001-06`); app descrito como gratuito; Apoie o Arvoredo na tela Conta.
 - [ ] Validação dos 16 programas e dos 7 testes por profissional de educação física, inclusive o uso deles para adultos e dos 5 novos de ball handling em casa.
-- [ ] Vídeos: **40 de 44 exercícios** têm vídeo conferido; lista em `docs/VIDEOS.md`. Sem vídeo: bola em volta da cintura, polichinelo, pular num pé só, equilíbrio de cegonha.
+- [ ] Vídeos: **46 de 69 exercícios** têm vídeo conferido; os 23 sem vídeo e a oferta por faixa estão em `docs/VIDEOS.md`. Prioridade: um treino de arremesso/passe/defesa para 6–8 e vídeo para o programa "Duas bolas" (5 de 5 sem).
 - [ ] Copiar `docs/GOOGLE_PLAY.md` no Play Console.
 
 ## 12. Riscos e questões em aberto

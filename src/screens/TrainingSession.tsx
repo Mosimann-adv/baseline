@@ -237,7 +237,7 @@ export function TrainingSession({
       ) : state.phase === "rest" ? (
         <section className={`training-body${next?.video ? " with-video" : ""}`} aria-live="polite">
           <p className="phase-label">Descanso</p>
-          <p className={countdownClass} key={left}>{clock(left)}</p>
+          <p className={countdownClass} key={left} aria-live="off">{clock(left)}</p>
           {next && (
             <>
               <p className="training-next">

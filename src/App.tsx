@@ -1,4 +1,4 @@
-import { lazy, Suspense, useEffect, useState, type ReactNode } from "react";
+import { lazy, Suspense, useEffect, useState, type ComponentType, type LazyExoticComponent, type ReactNode } from "react";
 import { useAuth } from "./state/auth";
 import { useAthletes } from "./state/athletes";
 import { useSessions } from "./state/sessions";
@@ -22,17 +22,38 @@ import type { Athlete } from "./lib/types";
 
 // Telas fora do caminho crítico carregam sob demanda: a primeira pintura fica leve
 // e o vendor (react/supabase) não se mistura com o código das telas no cache.
-const AuthFlow = lazy(() => import("./screens/AuthScreens").then((m) => ({ default: m.AuthFlow })));
-const NewAthlete = lazy(() => import("./screens/NewAthlete").then((m) => ({ default: m.NewAthlete })));
-const ProfileChoice = lazy(() => import("./screens/ProfileChoice").then((m) => ({ default: m.ProfileChoice })));
-const WhoTrains = lazy(() => import("./screens/WhoTrains").then((m) => ({ default: m.WhoTrains })));
-const AthleteHome = lazy(() => import("./screens/AthleteHome").then((m) => ({ default: m.AthleteHome })));
-const Channel = lazy(() => import("./screens/Channel").then((m) => ({ default: m.Channel })));
-const ProgramDetail = lazy(() => import("./screens/ProgramDetail").then((m) => ({ default: m.ProgramDetail })));
-const TrainingSession = lazy(() => import("./screens/TrainingSession").then((m) => ({ default: m.TrainingSession })));
-const TestSession = lazy(() => import("./screens/TestSession").then((m) => ({ default: m.TestSession })));
-const Progress = lazy(() => import("./screens/Progress").then((m) => ({ default: m.Progress })));
-const GuardianArea = lazy(() => import("./screens/GuardianArea").then((m) => ({ default: m.GuardianArea })));
+// Depois de um deploy, o index.html em cache pode pedir um chunk que não existe mais:
+// um recarregamento resolve (uma vez só, para não virar loop offline).
+function lazyScreen<T extends ComponentType<any>>(load: () => Promise<{ default: T }>): LazyExoticComponent<T> {
+  const flag = "baseline.chunkReload";
+  return lazy(() =>
+    load().then(
+      (mod) => {
+        sessionStorage.removeItem(flag);
+        return mod;
+      },
+      (err: unknown) => {
+        if (navigator.onLine && !sessionStorage.getItem(flag)) {
+          sessionStorage.setItem(flag, "1");
+          window.location.reload();
+        }
+        throw err;
+      },
+    ),
+  );
+}
+
+const AuthFlow = lazyScreen(() => import("./screens/AuthScreens").then((m) => ({ default: m.AuthFlow })));
+const NewAthlete = lazyScreen(() => import("./screens/NewAthlete").then((m) => ({ default: m.NewAthlete })));
+const ProfileChoice = lazyScreen(() => import("./screens/ProfileChoice").then((m) => ({ default: m.ProfileChoice })));
+const WhoTrains = lazyScreen(() => import("./screens/WhoTrains").then((m) => ({ default: m.WhoTrains })));
+const AthleteHome = lazyScreen(() => import("./screens/AthleteHome").then((m) => ({ default: m.AthleteHome })));
+const Channel = lazyScreen(() => import("./screens/Channel").then((m) => ({ default: m.Channel })));
+const ProgramDetail = lazyScreen(() => import("./screens/ProgramDetail").then((m) => ({ default: m.ProgramDetail })));
+const TrainingSession = lazyScreen(() => import("./screens/TrainingSession").then((m) => ({ default: m.TrainingSession })));
+const TestSession = lazyScreen(() => import("./screens/TestSession").then((m) => ({ default: m.TestSession })));
+const Progress = lazyScreen(() => import("./screens/Progress").then((m) => ({ default: m.Progress })));
+const GuardianArea = lazyScreen(() => import("./screens/GuardianArea").then((m) => ({ default: m.GuardianArea })));
 
 function LazyFallback() {
   return (

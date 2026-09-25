@@ -14,12 +14,18 @@ import {
   queuedSessions,
 } from "./offlineQueue";
 
-// Cliente falso: cada teste escolhe o erro que o insert devolve.
-const supabaseStub = vi.hoisted(() => ({ error: null as unknown }));
+// Cliente falso: cada teste escolhe o erro que o insert devolve (e conta as chamadas).
+const supabaseStub = vi.hoisted(() => ({
+  error: null as unknown,
+  inserts: 0,
+}));
 vi.mock("./supabase", () => ({
   requireSupabase: () => ({
     from: () => ({
-      insert: async () => ({ error: supabaseStub.error }),
+      insert: async () => {
+        supabaseStub.inserts += 1;
+        return { error: supabaseStub.error };
+      },
     }),
   }),
 }));
@@ -109,6 +115,7 @@ describe("limpeza da fila", () => {
 describe("envio da fila", () => {
   beforeEach(() => {
     supabaseStub.error = null;
+    supabaseStub.inserts = 0;
   });
 
   const networkError = { code: "", message: "Failed to fetch" };
@@ -166,6 +173,15 @@ describe("envio da fila", () => {
     supabaseStub.error = null;
     const result = await flushQueue(GUARDIAN, { resetRetries: true });
     expect(result.sent).toBe(1);
+    expect(loadQueue(GUARDIAN)).toHaveLength(0);
+  });
+
+  it("flush simultâneo é single-flight: o item vai uma vez só", async () => {
+    enqueue(newQueuedSession(GUARDIAN, input));
+    const [a, b] = await Promise.all([flushQueue(GUARDIAN), flushQueue(GUARDIAN)]);
+    expect(a.sent).toBe(1);
+    expect(b.sent).toBe(1); // mesmo flush compartilhado
+    expect(supabaseStub.inserts).toBe(1);
     expect(loadQueue(GUARDIAN)).toHaveLength(0);
   });
 });
