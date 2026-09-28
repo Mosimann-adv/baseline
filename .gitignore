@@ -16,3 +16,11 @@ android/app/release/
 
 .DS_Store
 Thumbs.db
+
+# Vídeo de divulgação (gerados)
+promo/node_modules/
+promo/out/
+promo/public/captures/
+promo/public/fonts/
+promo/public/icons/
+promo/public/trilha.wav

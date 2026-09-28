@@ -1,0 +1,25 @@
+{
+  "name": "baseline-promo",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node --test \"tests/*.check.ts\"",
+    "capture": "node scripts/capture.ts",
+    "soundtrack": "node scripts/soundtrack.ts",
+    "studio": "remotion studio src/index.ts",
+    "render": "remotion render src/index.ts Baseline out/baseline-9x16.mp4 --codec=h264"
+  },
+  "dependencies": {
+    "@remotion/cli": "^4.0.528",
+    "@remotion/fonts": "^4.0.528",
+    "playwright": "^1.63.0",
+    "react": "^19.3.0",
+    "react-dom": "^19.3.0",
+    "remotion": "^4.0.528"
+  },
+  "devDependencies": {
+    "@types/node": "^24.13.6",
+    "@types/react": "^19.3.0",
+    "typescript": "^7.0.2"
+  }
+}
