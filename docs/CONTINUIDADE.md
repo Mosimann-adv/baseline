@@ -110,7 +110,7 @@ Leia nesta ordem:
 | Terceiro commit de 2026-09-24 | Aba Treinos em prateleiras por fundamento (cartão com nome, minutos, exercícios e selo de cesta; filtro Tudo · Sem cesta · Com cesta); meta da semana e últimos treinos na Evolução; pontinho coral na aba Evolução quando o teste está na hora; bola que quica ao toque ao lado do título. Depois: prateleira vira grade no computador. |
 | Commit da rodada de 2026-09-25 | Manutenção: fila offline com purge de perfil excluído, contador de tentativas com desistência e reset em "Tentar agora"; todas as telas lazy + `manualChunks` react/supabase (principal ~80 kB); hooks `useSessions`/`useTests` unificados em `createLog.ts`; mensagem de RLS como constante; CI com typecheck + testes; política de privacidade descreve dados no aparelho; telas grandes divididas e correções de acessibilidade (tabela no calendário, tabpanel, roving tabindex, contraste). O endurecimento do código do responsável (0007) entrou nesta rodada e foi revertido no commit seguinte, por decisão do dono. |
 
-**Rodada de UX (2026-09-29/30), commit e push autorizados pelo dono:** implementação da análise de UX, com exceção da escolha assistida por tempo/equipamento/acompanhamento. Resumo e verificações em `docs/IMPLEMENTACAO_UX_2026-09-29.md`; análise original em `docs/ANALISE_UX_2026-09-29.md`. A publicação depende da aplicação da migração 0007: a consulta pública de `baseline_execution_valid` em 30/09 retornou `PGRST202`, confirmando que a função ainda não está disponível no servidor.
+**Rodada de UX (2026-09-29/30), commit e push autorizados pelo dono:** implementação da análise de UX, com exceção da escolha assistida por tempo/equipamento/acompanhamento. Commit de implementação: `8aaa1d0`. Resumo e verificações em `docs/IMPLEMENTACAO_UX_2026-09-29.md`; análise original em `docs/ANALISE_UX_2026-09-29.md`. A migração 0007 foi aplicada pelo dono em 30/09 e confirmada pela API: `baseline_execution_valid` retornou HTTP 200 e `true`, liberando a publicação.
 
 - Abas **Treinar · Evolução · Aprender · Conta**; perfil ativo trocável no cabeçalho e Conta acessível sem perfis.
 - Biblioteca com **20 blocos** e **4 sessões compostas** (uma por faixa de conteúdo; Adulto reutiliza 15–17). Trilhas pausadas por falta de material. Conteúdo novo é rascunho, não validado/publicado.
@@ -120,7 +120,7 @@ Leia nesta ordem:
 - Testes individuais com guia, entrada rápida, cronômetro, rascunho e janela própria de 28 dias.
 - Exploração pública sem perfil nem dados de saúde; cadastro sem posição, com exemplos de nível; confirmação de e-mail com reenvio/correção; recuperação de senha permanece na troca até concluir ou cancelar.
 - Cópia local de perfis/aceites/histórico e service worker dos arquivos públicos. Sair/excluir remove as cópias; respostas atrasadas não as recriam. Vídeos continuam exigindo conexão.
-- **Nova migração pendente:** `supabase/migrations/0007_experiencia_pratica.sql` (execution, goal_history, earned_badges, validação e retirada do default de discomfort). Validada em PostgreSQL local e reaplicada 3x. Não aplicada no projeto real.
+- **Migração 0007 aplicada:** `supabase/migrations/0007_experiencia_pratica.sql` (execution, goal_history, earned_badges, validação e retirada do default de discomfort). Validada em PostgreSQL local e reaplicada 3x; aplicada pelo dono no projeto real e confirmada pela API em 30/09.
 - `npm run dev:demo` abre a prévia na rede. Para cache web offline, usar build/preview em localhost ou HTTPS, não o servidor de desenvolvimento. Reiniciar o preview após novo build.
 - **Verificação desta rodada:** 90 testes em 14 arquivos; typecheck, build normal e demo; 17 cenários de navegador com serviços simulados nos testes de autenticação/sincronização, sem credenciais reais. Ainda pendentes a validação pedagógica/jurídica, o banco real e aparelho Android/áudio/vídeo em ambiente real.
 - **Simplificação de 30/09 verificada:** os mesmos 90 testes passam (incluindo a retomada de rascunhos do antigo modo Aprender); builds normal/demo e 6 cenários de navegador passam: preferência antiga de Trilhas, início único, avanço automático, sessões maiores, aba Aprender e retomada sem perda de progresso.
@@ -136,7 +136,7 @@ Etapas do `README.md`:
 
 **No ar:** https://baseline-six-sigma.vercel.app/ — cada push na `main` dispara o deploy automático. A migração 0006 continua necessária no banco real para o fluxo de conta 16–17.
 
-**Banco:** migrações 0001–0005 aplicadas. **0006 ainda não:** o dono precisa colar `supabase/migrations/0006_conta_16.sql` no SQL Editor antes de adolescentes 16–17 criarem conta no site real.
+**Banco:** migrações 0001–0005 e **0007** aplicadas. A aplicação da **0006** continua sem confirmação; ela é necessária para adolescentes 16–17 criarem perfil próprio no site real.
 
 **Verificação mais recente (2026-09-25):** `npm test` passa com 58 testes em 7 arquivos; `npm run build` e `npm run build:demo` passam, incluindo `tsc --noEmit`. O chunk principal saiu de 538 kB para ~80 kB (`vendor-react` ~219 kB e `vendor-supabase` ~215 kB ficam em chunks próprios, estáveis entre deploys); o aviso de 500 kB não existe mais.
 
@@ -201,7 +201,7 @@ npx vite preview --outDir dist-demo   # servir a demo localmente
 | `0004_privacidade.sql` | Unicidade do aceite só entre ativos; revogação definitiva por trigger; insert de treino e teste exige aceite ativo |
 | `0005_adultos.sql` | `athletes.is_self` (um por conta, imutável); ano de nascimento a partir de 1900; idade por tipo no cadastro e na correção; `create_self_profile_with_consent` |
 | `0006_conta_16.sql` | Perfil próprio a partir de 16; tabela `parent_confirmations`; RPCs `parent_confirmation_status`, `register_parent_email`, `confirm_parent_code` |
-| `0007_experiencia_pratica.sql` | Composição de sessão, metas históricas, conquistas permanentes e resposta explícita de dor. Local, pendente no banco real. |
+| `0007_experiencia_pratica.sql` | Composição de sessão, metas históricas, conquistas permanentes e resposta explícita de dor. Aplicada no banco real em 30/09. |
 
 ### Como aplicar uma migração nova
 
@@ -348,7 +348,7 @@ Depois disso também foram concluídos o treino retomável, os sinais sonoros, o
 - [x] Projeto Supabase criado e migrações 0001–0005 aplicadas.
 - [x] Deploy web na Vercel funcionando com o Supabase.
 - [ ] Rodar a migração **0006** (`supabase/migrations/0006_conta_16.sql`) no SQL Editor.
-- [ ] Aplicar **0007** (`supabase/migrations/0007_experiencia_pratica.sql`) antes de publicar esta rodada; a demo funciona sem banco.
+- [x] Aplicar **0007** (`supabase/migrations/0007_experiencia_pratica.sql`) — confirmação da API em 30/09 (HTTP 200/`true`).
 - [ ] Confirmar a URL Configuration no Supabase (seção 10.1).
 - [ ] Testar de ponta a ponta no site real (seção 10.1).
 - [ ] SMTP próprio no Supabase antes de abrir para outras famílias.
