@@ -2,11 +2,11 @@
 
 Regra: **não inventar ID do YouTube.** Só entra o que foi conferido (título e canal via oEmbed) em `VIDEOS`, em `src/content/programs.ts`.
 
-Hoje: **46 de 69** exercícios têm vídeo (16 programas; a contagem antiga de 40 de 44 ficou para trás quando entraram os 5 programas de ball handling para casa, em 2026-09-13). Sem vídeo, o exercício mostra o texto e o timer — é esperado, não é defeito.
+Atualizado em 2026-09-29: **56 de 87** exercícios dos **20 blocos** têm referência de vídeo. **7 são somente para prévia** (`previewOnly`); 49 acompanham a execução. Sem vídeo, o app oferece a dica e o foco do movimento. As 4 sessões compostas reutilizam esses exercícios; não entram de novo nesta contagem.
 
 Fontes: Jr. NBA / Jr. WNBA, USA Basketball, e os cinco IDs já usados no app (Nathanael Morton, Coach DuWayne Campbell, Jason Curtis). A validação pedagógica dos treinos continua com o profissional de educação física.
 
-## Sem vídeo (23) — fila de trabalho para procurar equivalente conferido
+## Sem vídeo (31) — fila de trabalho para procurar equivalente conferido
 
 | Exercício | Programa |
 |---|---|
@@ -33,6 +33,14 @@ Fontes: Jr. NBA / Jr. WNBA, USA Basketball, e os cinco IDs já usados no app (Na
 | Para e ergue | Duas bolas |
 | Duplo andando | Duas bolas |
 | A cadeia inteira | Cadeia de dribles |
+| Soltar e receber | Primeiros arremessos |
+| Acerte o alvo | Primeiros arremessos |
+| Estátua do arremesso | Primeiros arremessos |
+| Rola-bola | Brincadeira de passe |
+| Batata quente | Brincadeira de passe |
+| Siga o dedo | Brincadeira de defesa |
+| Portão fechado | Brincadeira de defesa |
+| Com um parceiro: troca rápida | Passe em movimento |
 
 "Duas bolas" é o único programa inteiramente sem vídeo (5 de 5). Para os exercícios com adulto ("Contar dedos", "Chamou, trocou"), um vídeo de referência é menos essencial — a instrução está na legenda.
 
@@ -40,12 +48,13 @@ Fontes: Jr. NBA / Jr. WNBA, USA Basketball, e os cinco IDs já usados no app (Na
 
 | Faixa | Programas | Observação |
 |---|---|---|
-| 6–8 | 3 | Só drible e preparo físico — **falta arremesso, passe e defesa** com vídeo adequado à idade |
+| 6–8 | 6 | Os cinco fundamentos; três blocos novos em rascunho, com adulto |
 | 9–11 | 7 | Todas as categorias |
 | 12–14 | 9 | Todas as categorias |
-| 15–17 | 8 | Todas as categorias (Adulto usa esta faixa na v1) |
+| 15–17 | 9 | Os cinco fundamentos; 8 para iniciante, 9 para intermediário/avançado |
+| Adulto | 9 | Reutiliza 15–17, incluindo o novo Passe em movimento; 8 para iniciante |
 
-## IDs conferidos (28 vídeos)
+## IDs conferidos (27 vídeos; alguns usados em mais de um trecho)
 
 | Uso no app | ID | Título conferido |
 |---|---|---|

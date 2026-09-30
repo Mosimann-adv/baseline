@@ -53,6 +53,9 @@ export function friendlyError(err: unknown): string {
   if (isRlsError(err)) return RLS_BLOCKED_MESSAGE;
   if (isDuplicateKey(err)) return "Este perfil já tem aceite ativo.";
   if (/could not find the function|PGRST202/i.test(msg)) return "O servidor ainda não foi atualizado para esta versão do app. Tente de novo mais tarde.";
+  if (/execution|goal_history|earned_badges/i.test(msg) && /column|schema cache/i.test(msg)) return "O servidor precisa da atualização de sessões (migração 0007). Seu rascunho continua neste aparelho.";
+  if (/training_sessions_execution_check/i.test(msg)) return "Não conseguimos conferir a composição desta prática. Seu rascunho continua guardado. Tente novamente.";
+  if (/Não conseguimos guardar o registro neste aparelho/.test(msg)) return msg;
   if (isNetworkError(err)) return "Sem conexão. Confira a internet e tente de novo.";
   return "Algo não funcionou. Tente de novo em instantes.";
 }

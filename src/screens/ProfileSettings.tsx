@@ -3,7 +3,7 @@ import { Field, Group, Notice, PrimaryButton, Screen, Segmented, SwitchRow } fro
 import { ageThisYear, allowedBirthYears, bandFor, selfBirthYears } from "../lib/age";
 import { activeConsent, consentPointsFor, consentVersionFor, TEEN_CONSENT_VERSION } from "../lib/consent";
 import { friendlyError } from "../lib/errors";
-import { LEVELS, POSITIONS } from "../lib/profile";
+import { LEVELS, LEVEL_HINTS, POSITIONS } from "../lib/profile";
 import { countAthleteRows } from "../lib/counts";
 import { formatDate } from "./accountShared";
 import type { Athlete, AthletePatch, Consent, Level, Position } from "../lib/types";
@@ -135,7 +135,7 @@ export function ProfileSettings({
             </select>
           </label>
         </Group>
-        <Group header="Nível">
+        <Group header="Nível" footer={LEVEL_HINTS[level]}>
           <div className="row">
             <Segmented label="Nível" options={LEVELS} value={level} onChange={setLevel} />
           </div>

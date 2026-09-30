@@ -3,11 +3,14 @@ import { Field, Group, Notice, PrimaryButton, Screen, Segmented, SwitchRow } fro
 import { ageThisYear, allowedBirthYears, bandFor, selfBirthYears } from "../lib/age";
 import { CONSENT_POINTS, CONSENT_VERSION, SELF_CONSENT_VERSION, TEEN_CONSENT_VERSION, consentPointsFor } from "../lib/consent";
 import { friendlyError } from "../lib/errors";
-import { LEVELS, POSITIONS } from "../lib/profile";
-import type { Athlete, Level, NewAthleteInput, Position } from "../lib/types";
+import { LEVELS, LEVEL_HINTS } from "../lib/profile";
+import type { Athlete, Level, NewAthleteInput } from "../lib/types";
 
 /** "self": perfil do próprio dono da conta (16+). "minor": criança ou adolescente, com autorização do responsável. */
 export type ProfileKind = "self" | "minor";
+
+/** Exemplos concretos para o nível fazer sentido antes de treinar qualquer coisa. */
+export { LEVEL_HINTS } from "../lib/profile";
 
 export function NewAthlete({
   kind,
@@ -28,7 +31,6 @@ export function NewAthlete({
   const [nickname, setNickname] = useState("");
   const [birthYear, setBirthYear] = useState<number | null>(lockedBirthYear ?? null);
   const [level, setLevel] = useState<Level>("iniciante");
-  const [position, setPosition] = useState<Position | null>(null);
   const [isGuardian, setIsGuardian] = useState(false);
   const [consent, setConsent] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -53,7 +55,7 @@ export function NewAthlete({
     setBusy(true);
     setError(null);
     try {
-      await onCreate({ nickname: nickname.trim(), birthYear, level, position });
+      await onCreate({ nickname: nickname.trim(), birthYear, level, position: null });
     } catch (err) {
       setError(friendlyError(err));
       setBusy(false);
@@ -96,17 +98,12 @@ export function NewAthlete({
           )}
         </Group>
 
-        <Group header="Nível">
+        <Group header="Nível" footer={LEVEL_HINTS[level]}>
           <div className="row">
             <Segmented label="Nível" options={LEVELS} value={level} onChange={setLevel} />
           </div>
         </Group>
-
-        <Group header="Posição" footer="Opcional. Toque de novo para desmarcar.">
-          <div className="row">
-            <Segmented label="Posição" options={POSITIONS} value={position} onChange={(value) => setPosition(position === value ? null : value)} />
-          </div>
-        </Group>
+        <p className="row-footnote">Posição de jogo é opcional: escolha depois, na tela Conta.</p>
 
         {self ? (
           <Group

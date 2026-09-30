@@ -2,6 +2,7 @@ import { requireSupabase } from "./supabase";
 import { localIsoDate } from "./dates";
 import { isDuplicateKey, isNetworkError, isRlsError, RLS_BLOCKED_MESSAGE } from "./errors";
 import type { NewSessionInput, NewTestInput, SkillTestRecord, TrainingSession } from "./types";
+import { accountCacheBlocked, readCached } from "./cache";
 
 const keyFor = (guardianId: string) => `baseline.queue.${guardianId}`;
 
@@ -47,12 +48,13 @@ function read(guardianId: string): QueueItem[] {
   }
 }
 
-function write(guardianId: string, items: QueueItem[]): void {
+function write(guardianId: string, items: QueueItem[]): boolean {
   try {
     if (items.length === 0) localStorage.removeItem(keyFor(guardianId));
     else localStorage.setItem(keyFor(guardianId), JSON.stringify(items));
+    return true;
   } catch {
-    // Sem armazenamento: a fila desta visita fica só na memória do hook.
+    return false;
   }
 }
 
@@ -61,9 +63,12 @@ export function loadQueue(guardianId: string): QueueItem[] {
 }
 
 export function enqueue(item: QueueItem): void {
+  if (accountCacheBlocked(item.guardianId)) throw new Error("A conta foi fechada. Este registro não será guardado depois da saída.");
+  const family = readCached<{ athletes: { id: string }[] }>(item.guardianId, "family");
+  if (family && !family.athletes.some((athlete) => athlete.id === item.athleteId)) throw new Error("Este perfil foi excluído. O registro não será reenviado.");
   const items = read(item.guardianId).filter((current) => current.id !== item.id);
   items.push(item);
-  write(item.guardianId, items);
+  if (!write(item.guardianId, items)) throw new Error("Não conseguimos guardar o registro neste aparelho. Mantenha esta tela aberta e tente salvar com internet.");
 }
 
 export function dropFromQueue(guardianId: string, id: string): void {
@@ -71,6 +76,12 @@ export function dropFromQueue(guardianId: string, id: string): void {
     guardianId,
     read(guardianId).filter((item) => item.id !== id),
   );
+}
+
+export function dropManyFromQueue(guardianId: string, ids: Iterable<string>): void {
+  const sent = new Set(ids);
+  const current = read(guardianId);
+  if (current.some((item) => sent.has(item.id))) write(guardianId, current.filter((item) => !sent.has(item.id)));
 }
 
 /** Perfil excluído não tem mais para onde enviar: os itens dele saem da fila, ou voltariam a falhar para sempre. */
@@ -109,6 +120,7 @@ export function sessionRow(item: QueuedSession) {
     drills_total: item.drillsTotal,
     feeling: item.feeling,
     discomfort: item.discomfort,
+    ...(item.execution ? { execution: item.execution } : {}),
   };
 }
 
@@ -138,6 +150,7 @@ export function queuedSessions(guardianId: string, athleteId?: string): Training
       feeling: item.feeling,
       discomfort: item.discomfort,
       created_at: item.createdAt,
+      execution: item.execution,
       pending: true,
       pendingError: item.lastError ?? null,
     }));
@@ -193,24 +206,28 @@ export type FlushResult = { sent: number; blocked: number; remaining: number };
  * online, "Tentar agora"); um flush em andamento atende a todos — dois em paralelo fariam
  * leitura-modificação-escrita por cima um do outro no localStorage.
  */
-let inflight: Promise<FlushResult> | null = null;
-let inflightReset = false;
+const flights = new Map<string, { promise: Promise<FlushResult>; resetRequested: boolean }>();
 
 export function flushQueue(guardianId: string, { resetRetries = false }: { resetRetries?: boolean } = {}): Promise<FlushResult> {
-  if (inflight) {
-    if (!resetRetries || inflightReset) return inflight;
-    // O flush em curso não vai reviver os desistidos; este pedido pediu. Encadeia logo depois.
-    return inflight.then(() => startFlush(guardianId, true));
+  const flight = flights.get(guardianId);
+  if (flight) {
+    if (resetRetries) flight.resetRequested = true;
+    return flight.promise;
   }
   return startFlush(guardianId, resetRetries);
 }
 
 function startFlush(guardianId: string, resetRetries: boolean): Promise<FlushResult> {
-  inflightReset = resetRetries;
-  inflight = runFlush(guardianId, resetRetries).finally(() => {
-    inflight = null;
+  const flight = { promise: null as unknown as Promise<FlushResult>, resetRequested: resetRetries };
+  flight.promise = (async () => {
+    const first = await runFlush(guardianId, resetRetries);
+    // Dois hooks podem pedir retry durante o envio inicial: haverá uma única segunda passagem.
+    return !resetRetries && flight.resetRequested ? await runFlush(guardianId, true) : first;
+  })().finally(() => {
+    if (flights.get(guardianId) === flight) flights.delete(guardianId);
   });
-  return inflight;
+  flights.set(guardianId, flight);
+  return flight.promise;
 }
 
 async function runFlush(guardianId: string, resetRetries: boolean): Promise<FlushResult> {
@@ -258,21 +275,21 @@ async function runFlush(guardianId: string, resetRetries: boolean): Promise<Flus
 
 export function newQueuedSession(guardianId: string, input: NewSessionInput): QueuedSession {
   return {
-    kind: "session",
-    id: crypto.randomUUID(),
-    guardianId,
     ...input,
-    performedOn: localIsoDate(),
+    kind: "session",
+    id: input.id ?? crypto.randomUUID(),
+    guardianId,
+    performedOn: input.performedOn ?? localIsoDate(),
     createdAt: new Date().toISOString(),
   };
 }
 
 export function newQueuedTest(guardianId: string, input: NewTestInput): QueuedTest {
   return {
-    kind: "test",
-    id: crypto.randomUUID(),
-    guardianId,
     ...input,
+    kind: "test",
+    id: input.id ?? crypto.randomUUID(),
+    guardianId,
     testedOn: localIsoDate(),
     createdAt: new Date().toISOString(),
   };

@@ -1,7 +1,9 @@
 import { Group, Notice, Screen } from "../components/ui";
+import { ageThisYear } from "../lib/age";
 import { formatDayMonth } from "../lib/dates";
-import { isTestDue, testProgress } from "../lib/progress";
-import { formatTestValue } from "../content/tests";
+import { nextTestFor, testIsDue } from "../lib/testStatus";
+import { testProgress } from "../lib/progress";
+import { formatTestValue, protocolFor } from "../content/tests";
 import type { Athlete, SkillTestDef, SkillTestRecord } from "../lib/types";
 
 // Detalhe de um teste da Evolução: o que mede, todas as marcas no gráfico e na lista.
@@ -17,11 +19,14 @@ export function TestDetail({
   def: SkillTestDef;
   tests: SkillTestRecord[];
   onBack: () => void;
-  onStartTests: () => void;
+  /** Abre a sessão guiada já neste teste. */
+  onStartTests: (testId?: string, quickEntry?: boolean) => void;
 }) {
   const progress = testProgress(def, tests);
   const marks = [...progress.points].reverse();
-  const due = isTestDue(tests);
+  const age = ageThisYear(athlete.birth_year);
+  const due = testIsDue(def.id, tests);
+  const next = nextTestFor(def.id, tests);
 
   return (
     <Screen eyebrow={athlete.nickname} title={def.name} onBack={onBack}>
@@ -29,7 +34,13 @@ export function TestDetail({
         header="Como funciona"
         footer={def.better === "min" ? "Neste teste, quanto menor o tempo, melhor." : "Neste teste, quanto maior a marca, melhor."}
       >
-        <p className="row-note">{def.protocol}</p>
+        <p className="row-note">{protocolFor(def, age)}</p>
+        <div className="row">
+          <span className="row-label">
+            {due ? "Pode medir agora" : "Quando medir de novo"}
+            <small>{due ? "A comparação é só com você." : next ? `Próxima comparação: ${formatDayMonth(next)}. Você pode medir antes se quiser.` : ""}</small>
+          </span>
+        </div>
       </Group>
 
       {progress.last !== null && progress.best !== null ? (
@@ -72,9 +83,8 @@ export function TestDetail({
         </Group>
       )}
 
-      <button type="button" className="row row-action" onClick={onStartTests}>
-        {due ? "Fazer testes agora" : "Registrar nova marca"}
-      </button>
+      <div className="stack bottom-cta"><button type="button" className="primary-button" onClick={() => onStartTests(def.id)}>Fazer medição guiada</button>
+        <button type="button" className="plain-button" onClick={() => onStartTests(def.id, true)}>Já sei medir, registrar marca</button></div>
     </Screen>
   );
 }

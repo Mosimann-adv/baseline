@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, type ButtonHTMLAttributes, type HTMLInputTypeAttribute, type ReactNode } from "react";
+import { useScreenBack } from "../lib/native";
 
 export function Screen({
   title,
@@ -14,6 +15,7 @@ export function Screen({
   onBack?: () => void;
   children: ReactNode;
 }) {
+  useScreenBack(() => { onBack?.(); return true; }, Boolean(onBack));
   return (
     <main className="screen">
       <div className="top-bar">

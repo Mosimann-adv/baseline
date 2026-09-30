@@ -1,9 +1,11 @@
 import { useEffect, useState } from "react";
-import { BouncingBall, Group, Screen } from "../components/ui";
+import { BouncingBall, Group, Screen, Segmented } from "../components/ui";
 import { ageThisYear, bandFor } from "../lib/age";
 import { clearResume, readResume, type ResumeState } from "../lib/resumeSession";
-import { CATEGORY_LABELS, needsHoop, programById, programMinutes, programShelves, programsFor } from "../content/programs";
+import { CATEGORY_LABELS, needsHoop, programMinutes, programShelves, programsFor } from "../content/programs";
 import type { Athlete } from "../lib/types";
+import { practiceById, sessionsFor } from "../content/practices";
+import { useRef } from "react";
 
 type Place = "all" | "free" | "hoop";
 const PLACE_LABELS: Record<Place, string> = { all: "Tudo", free: "Sem cesta", hoop: "Com cesta" };
@@ -28,24 +30,41 @@ export function AthleteHome({
   const programs = band ? programsFor(band.id, athlete.level) : [];
 
   // Treino pela metade: lido ao abrir a tela, porque voltar de um treino remonta a Home.
-  const [resume, setResume] = useState<ResumeState | null>(() => readResume(athlete.id));
+  const [resume, setResume] = useState<ResumeState | null>(() => readResume(athlete.id, athlete.guardian_id));
   const [confirmDiscard, setConfirmDiscard] = useState(false);
   useEffect(() => {
     if (!confirmDiscard) return;
     const id = window.setTimeout(() => setConfirmDiscard(false), 4000);
     return () => window.clearTimeout(id);
   }, [confirmDiscard]);
-  const resumeProgram = resume ? programById(resume.programId) : undefined;
+  const resumeProgram = resume ? practiceById(resume.programId) : undefined;
   const resumeTotal = resumeProgram?.drills.length ?? 0;
   const resumeLeft = resume ? Math.max(0, Math.min(resumeTotal - resume.done, resumeTotal)) : 0;
   const discardResume = () => {
-    clearResume();
+    clearResume(athlete.guardian_id, athlete.id);
     setResume(null);
     setConfirmDiscard(false);
   };
 
   // Filtro por lugar; some quando todos os treinos da faixa são do mesmo tipo.
-  const [place, setPlace] = useState<Place>("all");
+  const catalogKey = `baseline.catalog.${athlete.guardian_id}.${athlete.id}`;
+  const [savedCatalog] = useState(() => { try { return JSON.parse(localStorage.getItem(catalogKey) ?? "{}"); } catch { return {}; } });
+  const [place, setPlace] = useState<Place>(() => ["all", "free", "hoop"].includes(savedCatalog.place) ? savedCatalog.place : "all");
+  const [kind, setKind] = useState<"blocks" | "sessions">(() => savedCatalog.kind === "sessions" ? "sessions" : "blocks");
+  const root = useRef<HTMLDivElement>(null);
+  const remember = () => {
+    const shelves = Object.fromEntries(Array.from(root.current?.querySelectorAll<HTMLElement>(".shelf-row") ?? []).map((row) => [row.dataset.category, row.scrollLeft]));
+    try { localStorage.setItem(catalogKey, JSON.stringify({ place, kind, scrollY: window.scrollY, shelves })); } catch { /* preferências opcionais */ }
+  };
+  useEffect(() => {
+    const id = requestAnimationFrame(() => {
+      for (const row of root.current?.querySelectorAll<HTMLElement>(".shelf-row") ?? []) row.scrollLeft = savedCatalog.shelves?.[row.dataset.category ?? ""] ?? 0;
+      window.scrollTo(0, savedCatalog.kind === "trails" ? 0 : savedCatalog.scrollY ?? 0);
+    });
+    return () => cancelAnimationFrame(id);
+  }, []);
+  useEffect(() => { try { localStorage.setItem(catalogKey, JSON.stringify({ ...savedCatalog, place, kind })); } catch { /* opcional */ } }, [place, kind]);
+  const openProgram = (id: string) => { remember(); onOpenProgram(id); };
   const hasBothPlaces = programs.some(needsHoop) && programs.some((program) => !needsHoop(program));
   const visible = programs.filter((program) => place === "all" || (place === "hoop") === needsHoop(program));
   const shelves = programShelves(visible);
@@ -67,7 +86,8 @@ export function AthleteHome({
   }
 
   return (
-    <Screen eyebrow={band ? `${band.label} · ${age} anos` : `${age} anos`} title={`Oi, ${athlete.nickname}`} titleAside={<BouncingBall />}>
+    <Screen eyebrow={band ? `${band.label} · ${age} anos` : `${age} anos`} title="Treinar" titleAside={<BouncingBall />}>
+      <div ref={root}>
       {hasBlocked && (
         <section className="due-card blocked">
           <div>
@@ -83,9 +103,9 @@ export function AthleteHome({
       {showResume && resume && resumeProgram && (
         <section className="due-card pending">
           <div>
-            <p className="subtitle">Treino pela metade</p>
+            <p className="subtitle">{resume.phase === "done" ? "Falta salvar sua prática" : "Prática em andamento"}</p>
             <p>
-              Faltam {resumeLeft === 1 ? "1 exercício" : `${resumeLeft} exercícios`} de “{resumeProgram.title}”.
+              {resume.phase === "done" ? `O resultado de “${resumeProgram.title}” está neste aparelho.` : `Faltam ${resumeLeft === 1 ? "1 exercício" : `${resumeLeft} exercícios`} de “${resumeProgram.title}”.`}
             </p>
           </div>
           <div className="resume-actions">
@@ -119,7 +139,9 @@ export function AthleteHome({
 
       {band ? (
         <>
-          {hasBothPlaces && (
+          <div className="library-tabs"><Segmented label="Biblioteca de práticas" value={kind} onChange={setKind} options={[{ value: "blocks", label: "Blocos" }, { value: "sessions", label: "Sessões" }]} /></div>
+          <p className="library-description">{kind === "blocks" ? "Práticas curtas de um fundamento." : "Preparação, blocos de prática e fechamento."}</p>
+          {kind === "blocks" && hasBothPlaces && (
             <div className="chips" role="group" aria-label="Filtrar treinos por lugar">
               {(Object.keys(PLACE_LABELS) as Place[]).map((id) => (
                 <button
@@ -134,19 +156,19 @@ export function AthleteHome({
               ))}
             </div>
           )}
-          {shelves.map((shelf) => (
+          {kind === "blocks" && shelves.map((shelf) => (
             <section key={shelf.category} className="shelf" aria-labelledby={`shelf-${shelf.category}`}>
               <h2 className="shelf-head" id={`shelf-${shelf.category}`}>
                 <span>{CATEGORY_LABELS[shelf.category]}</span>
                 <small>{shelf.programs.length === 1 ? "1 treino" : `${shelf.programs.length} treinos`}</small>
               </h2>
-              <div className={`shelf-row${shelf.programs.length === 1 ? " single" : ""}`}>
+              <div data-category={shelf.category} className={`shelf-row${shelf.programs.length === 1 ? " single" : ""}`}>
                 {shelf.programs.map((program) => (
                   <button
                     key={program.id}
                     type="button"
                     className={`program-card cat-${program.category}`}
-                    onClick={() => onOpenProgram(program.id)}
+                    onClick={() => openProgram(program.id)}
                   >
                     <strong>{program.title}</strong>
                     <span className="program-card-meta">
@@ -158,12 +180,15 @@ export function AthleteHome({
               </div>
             </section>
           ))}
+          {kind === "sessions" && <div className="practice-grid">{sessionsFor(band.id).map((program) => <button key={program.id} className="program-card" onClick={() => openProgram(program.id)}><strong>{program.title}</strong><span className="program-card-meta">{programMinutes(program)} min · {program.drills.length} exercícios</span><span className="place-pill">Sessão com preparação</span></button>)}</div>}
+          {kind !== "blocks" && <p className="disclosure-note">Rascunho pedagógico para a prévia, pendente de validação profissional.</p>}
         </>
       ) : (
         <Group header="Treinos">
           <p className="row-note">Confira o ano de nascimento do perfil na tela Conta.</p>
         </Group>
       )}
+      </div>
     </Screen>
   );
 }

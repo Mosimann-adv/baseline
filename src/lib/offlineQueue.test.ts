@@ -55,6 +55,18 @@ describe("fila offline", () => {
     expect(loadQueue(GUARDIAN)).toHaveLength(1);
   });
 
+  it("id explicitamente undefined em um rascunho antigo não apaga o UUID gerado", () => {
+    const item = newQueuedSession(GUARDIAN, { ...input, id: undefined });
+    expect(item.id).toMatch(/^[0-9a-f-]{36}$/);
+    enqueue(item);
+    expect(loadQueue(GUARDIAN)[0].id).toBe(item.id);
+  });
+
+  it("não confirma armazenamento offline se o aparelho recusou a escrita", () => {
+    vi.stubGlobal("localStorage", { getItem: () => null, setItem: () => { throw new Error("Quota"); }, removeItem: () => undefined });
+    expect(() => enqueue(newQueuedSession(GUARDIAN, input))).toThrow("Não conseguimos guardar o registro");
+  });
+
   it("recolocar o mesmo item não duplica", () => {
     const item = newQueuedSession(GUARDIAN, input);
     enqueue(item);
@@ -121,6 +133,18 @@ describe("envio da fila", () => {
   const networkError = { code: "", message: "Failed to fetch" };
   const genericError = { code: "XX000", message: "falha do servidor" };
   const rlsError = { code: "42501", message: "new row violates row-level security policy" };
+
+  it("cada conta sincroniza sua própria fila, mesmo com outro envio em andamento", async () => {
+    enqueue(newQueuedSession(GUARDIAN, input));
+    enqueue(newQueuedSession("g2", { ...input, athleteId: "a2" }));
+    const first = flushQueue(GUARDIAN);
+    const second = flushQueue("g2");
+    expect(second).not.toBe(first);
+    await Promise.all([first, second]);
+    expect(loadQueue(GUARDIAN)).toHaveLength(0);
+    expect(loadQueue("g2")).toHaveLength(0);
+    expect(supabaseStub.inserts).toBe(2);
+  });
 
   it("envia o item e limpa a fila quando o banco aceita", async () => {
     enqueue(newQueuedSession(GUARDIAN, input));

@@ -4,15 +4,18 @@ import { friendlyError } from "../lib/errors";
 import { isDemo } from "../lib/supabase";
 import { LEGAL_DOCS, type LegalId } from "../content/legal";
 import { LegalScreen } from "./LegalScreen";
+import { Explore } from "./Explore";
 import { Field, Group, Notice, PlainButton, PrimaryButton, Screen, SwitchRow } from "../components/ui";
 
-// Reenvio do código de recuperação: cooldown persistente para não esbarrar no limite de e-mails.
+// Reenvio de e-mails (código de recuperação e confirmação de cadastro): cooldown persistente
+// para não esbarrar no limite de envio do Supabase. Uma chave por tipo de e-mail.
 const OTP_SENT_KEY = "baseline.otp.sentAt";
-const OTP_COOLDOWN_S = 60;
+const SIGNUP_SENT_KEY = "baseline.signup.sentAt";
+export const SEND_COOLDOWN_S = 60;
 
-function readOtpSentAt(): number | null {
+function readSentAt(key: string): number | null {
   try {
-    const raw = localStorage.getItem(OTP_SENT_KEY);
+    const raw = localStorage.getItem(key);
     const value = raw ? Number(raw) : NaN;
     return Number.isFinite(value) && value > 0 ? value : null;
   } catch {
@@ -20,20 +23,37 @@ function readOtpSentAt(): number | null {
   }
 }
 
-function markOtpSentAt(now: number): void {
+function markSentAt(key: string, now: number): void {
   try {
-    localStorage.setItem(OTP_SENT_KEY, String(now));
+    localStorage.setItem(key, String(now));
   } catch {
     // Sem armazenamento: o cooldown vale só nesta tela.
   }
 }
 
-type Mode = "welcome" | "signin" | "signup" | "forgot" | "code" | "newpass";
+/** Segundos que ainda faltam de cooldown; 0 quando pode enviar de novo. */
+export function cooldownRemaining(sentAt: number | null, now: number, cooldownS = SEND_COOLDOWN_S): number {
+  if (sentAt === null) return 0;
+  return Math.max(0, cooldownS - Math.floor((now - sentAt) / 1000));
+}
+
+type Mode = "welcome" | "explore" | "signin" | "signup" | "forgot" | "code" | "newpass";
 
 export function AuthFlow() {
-  const [mode, setMode] = useState<Mode>("welcome");
+  const { needsPasswordChange, session } = useAuth();
+  // Recuperação de senha pendente (UX-01): o AuthFlow abre já na tela "Nova senha",
+  // porque a sessão existe mas a área autenticada continua fechada até a senha nova.
+  const [mode, setMode] = useState<Mode>(() => (needsPasswordChange && session ? "newpass" : "welcome"));
   const [doc, setDoc] = useState<LegalId | null>(null);
   const [recoverEmail, setRecoverEmail] = useState("");
+  // Rede de segurança: se o gate subir com o AuthFlow já montado em outra tela, ele vira "Nova senha".
+  useEffect(() => {
+    if (needsPasswordChange && session) setMode((current) => (current === "newpass" ? current : "newpass"));
+    else if (!needsPasswordChange && !session && mode === "newpass") setMode("welcome");
+  }, [needsPasswordChange, session, mode]);
+  if (mode === "explore") {
+    return <Explore onExit={() => setMode("welcome")} onSignUp={() => setMode("signup")} />;
+  }
   if (mode === "signin") {
     return (
       <SignIn
@@ -49,7 +69,7 @@ export function AuthFlow() {
       <ForgotPassword
         onBack={() => setMode("signin")}
         onSent={(email) => {
-          markOtpSentAt(Date.now());
+          markSentAt(OTP_SENT_KEY, Date.now());
           setRecoverEmail(email);
           setMode("code");
         }}
@@ -67,10 +87,17 @@ export function AuthFlow() {
   }
   if (mode === "newpass") return <NewPassword onBack={() => setMode("signin")} />;
   if (doc) return <LegalScreen doc={LEGAL_DOCS[doc]} onBack={() => setDoc(null)} />;
-  return <Welcome onSignIn={() => setMode("signin")} onSignUp={() => setMode("signup")} onDoc={setDoc} />;
+  return (
+    <Welcome
+      onSignIn={() => setMode("signin")}
+      onSignUp={() => setMode("signup")}
+      onExplore={() => setMode("explore")}
+      onDoc={setDoc}
+    />
+  );
 }
 
-function Welcome({ onSignIn, onSignUp, onDoc }: { onSignIn: () => void; onSignUp: () => void; onDoc: (doc: LegalId) => void }) {
+function Welcome({ onSignIn, onSignUp, onExplore, onDoc }: { onSignIn: () => void; onSignUp: () => void; onExplore: () => void; onDoc: (doc: LegalId) => void }) {
   const { enterDemo } = useAuth();
   return (
     <main className="welcome">
@@ -80,6 +107,9 @@ function Welcome({ onSignIn, onSignUp, onDoc }: { onSignIn: () => void; onSignUp
       <img className="welcome-hero" src="hero.webp" alt="Atletas do Arvoredo Basquetebol em quadra" loading="lazy" />
       <div className="welcome-actions">
         {isDemo && <PrimaryButton onClick={() => enterDemo("adult")}>Explorar</PrimaryButton>}
+        <button type="button" className="secondary-button" onClick={onExplore}>
+          Conhecer os treinos
+        </button>
         {isDemo ? <PlainButton onClick={onSignUp}>Criar conta vazia</PlainButton> : <PrimaryButton onClick={onSignUp}>Criar conta</PrimaryButton>}
         <PlainButton onClick={onSignIn}>Já tenho conta</PlainButton>
       </div>
@@ -173,15 +203,15 @@ function EnterCode({ email, onBack, onVerified }: { email: string; onBack: () =>
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [resending, setResending] = useState(false);
-  const [sentAt, setSentAt] = useState<number | null>(() => readOtpSentAt());
+  const [sentAt, setSentAt] = useState<number | null>(() => readSentAt(OTP_SENT_KEY));
   const [now, setNow] = useState(() => Date.now());
-  const remaining = sentAt === null ? 0 : Math.max(0, OTP_COOLDOWN_S - Math.floor((now - sentAt) / 1000));
+  const remaining = cooldownRemaining(sentAt, now);
 
   // Chegou aqui pelo envio da tela anterior: garante o cooldown mesmo recarregando a página.
   useEffect(() => {
-    if (readOtpSentAt() === null) {
+    if (readSentAt(OTP_SENT_KEY) === null) {
       const at = Date.now();
-      markOtpSentAt(at);
+      markSentAt(OTP_SENT_KEY, at);
       setSentAt(at);
     }
   }, []);
@@ -213,7 +243,7 @@ function EnterCode({ email, onBack, onVerified }: { email: string; onBack: () =>
     try {
       await requestPasswordCode(email.trim());
       const at = Date.now();
-      markOtpSentAt(at);
+      markSentAt(OTP_SENT_KEY, at);
       setSentAt(at);
       setNow(at);
     } catch (err) {
@@ -244,7 +274,10 @@ function EnterCode({ email, onBack, onVerified }: { email: string; onBack: () =>
 }
 
 function NewPassword({ onBack }: { onBack: () => void }) {
-  const { updatePassword } = useAuth();
+  const { updatePassword, finishPasswordRecovery, cancelPasswordRecovery, needsPasswordChange } = useAuth();
+  // Durante a recuperação (UX-01), há sessão aberta mas a senha ainda é a antiga:
+  // o back vira "cancelar e sair" e a gravação usa finishPasswordRecovery, que libera o gate.
+  const inRecovery = needsPasswordChange;
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [done, setDone] = useState(false);
@@ -255,17 +288,26 @@ function NewPassword({ onBack }: { onBack: () => void }) {
     setBusy(true);
     setError(null);
     try {
-      await updatePassword(password);
+      if (inRecovery) await finishPasswordRecovery(password);
+      else await updatePassword(password);
       setDone(true);
     } catch (err) {
+      // Falhou (rede, senha igual, regra do servidor): o gate continua de pé e a tela permanece.
       setError(friendlyError(err));
       setBusy(false);
     }
   }
 
+  async function cancel() {
+    if (busy) return;
+    setBusy(true); setError(null);
+    try { await cancelPasswordRecovery(); onBack(); }
+    catch (err) { setError(friendlyError(err)); setBusy(false); }
+  }
+
   if (done) {
     return (
-      <Screen title="Senha nova" onBack={onBack}>
+      <Screen title="Senha nova" onBack={inRecovery ? cancel : onBack}>
         <div className="stack">
           <Notice tone="success">Senha atualizada. Você já está na conta.</Notice>
         </div>
@@ -274,8 +316,11 @@ function NewPassword({ onBack }: { onBack: () => void }) {
   }
 
   return (
-    <Screen title="Nova senha" onBack={onBack}>
+    <Screen title="Nova senha" onBack={inRecovery ? cancel : onBack}>
       <form onSubmit={submit} className="stack">
+        {inRecovery && (
+          <Notice>Para proteger a conta, defina uma senha nova antes de continuar. Em vez disso, cancele e saia pelo botão Voltar.</Notice>
+        )}
         <Group footer="A senha precisa ter pelo menos 8 caracteres.">
           <Field id="new-password" label="Nova senha" type="password" autoComplete="new-password" value={password} onChange={setPassword} />
         </Group>
@@ -283,13 +328,14 @@ function NewPassword({ onBack }: { onBack: () => void }) {
         <PrimaryButton type="submit" disabled={busy || password.length < 8}>
           {busy ? "Salvando…" : "Salvar senha"}
         </PrimaryButton>
+        {inRecovery && <PlainButton onClick={() => void cancel()} disabled={busy}>Cancelar e sair da conta</PlainButton>}
       </form>
     </Screen>
   );
 }
 
 function SignUp({ onBack, onSwitch }: { onBack: () => void; onSwitch: () => void }) {
-  const { signUp } = useAuth();
+  const { signUp, resendSignUp } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isOldEnough, setIsOldEnough] = useState(false);
@@ -297,7 +343,18 @@ function SignUp({ onBack, onSwitch }: { onBack: () => void; onSwitch: () => void
   const [error, setError] = useState<string | null>(null);
   const [sentTo, setSentTo] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [resending, setResending] = useState(false);
+  const [sentAt, setSentAt] = useState<number | null>(() => readSentAt(SIGNUP_SENT_KEY));
+  const [now, setNow] = useState(() => Date.now());
   const [reading, setReading] = useState<LegalId | null>(null);
+  const remaining = cooldownRemaining(sentAt, now);
+
+  // Conta regressiva do cooldown do reenvio.
+  useEffect(() => {
+    if (remaining <= 0) return;
+    const id = window.setTimeout(() => setNow(Date.now()), 1000);
+    return () => window.clearTimeout(id);
+  }, [remaining, sentAt]);
 
   const ready = email.includes("@") && password.length >= 8 && isOldEnough && acceptsTerms;
 
@@ -308,11 +365,34 @@ function SignUp({ onBack, onSwitch }: { onBack: () => void; onSwitch: () => void
     setError(null);
     try {
       const { needsConfirmation } = await signUp({ email: email.trim(), password });
-      if (needsConfirmation) setSentTo(email.trim());
+      if (needsConfirmation) {
+        const at = Date.now();
+        markSentAt(SIGNUP_SENT_KEY, at);
+        setSentAt(at);
+        setNow(at);
+        setSentTo(email.trim());
+      }
     } catch (err) {
       setError(friendlyError(err));
     } finally {
       setBusy(false);
+    }
+  }
+
+  async function resend() {
+    if (!sentTo || resending || remaining > 0) return;
+    setResending(true);
+    setError(null);
+    try {
+      await resendSignUp(sentTo);
+      const at = Date.now();
+      markSentAt(SIGNUP_SENT_KEY, at);
+      setSentAt(at);
+      setNow(at);
+    } catch (err) {
+      setError(friendlyError(err));
+    } finally {
+      setResending(false);
     }
   }
 
@@ -323,6 +403,20 @@ function SignUp({ onBack, onSwitch }: { onBack: () => void; onSwitch: () => void
       <Screen title="Confirme o e-mail" onBack={onBack}>
         <div className="stack">
           <Notice tone="success">Enviamos um link para {sentTo}. Toque nele para confirmar a conta e depois entre com seu e-mail e senha.</Notice>
+          {error && <Notice tone="error">{error}</Notice>}
+          <Group footer="Não chegou nada? Veja o spam ou corrija o e-mail digitado abaixo.">
+            <button
+              type="button"
+              className="row row-action"
+              onClick={() => void resend()}
+              disabled={resending || remaining > 0}
+            >
+              {resending ? "Enviando…" : remaining > 0 ? `Reenviar em ${remaining}s` : "Reenviar confirmação"}
+            </button>
+            <button type="button" className="row row-action" onClick={() => setSentTo(null)}>
+              Corrigir e-mail
+            </button>
+          </Group>
           <PrimaryButton onClick={onSwitch}>Já confirmei, entrar</PrimaryButton>
         </div>
       </Screen>

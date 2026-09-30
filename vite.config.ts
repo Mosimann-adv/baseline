@@ -1,4 +1,5 @@
 import { readFileSync } from "node:fs";
+import { createHash } from "node:crypto";
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 
@@ -16,7 +17,18 @@ for (const key of ["VITE_SUPABASE_URL", "VITE_SUPABASE_ANON_KEY"]) {
 // base "./": o Capacitor carrega os arquivos de dentro do app, então os caminhos precisam ser relativos.
 // Vendor em chunks próprios: react e supabase raramente mudam entre deploys, então ficam no cache do navegador.
 export default defineConfig({
-  plugins: [react()],
+  plugins: [react(), {
+    name: "baseline-offline",
+    apply: "build",
+    generateBundle(_options, bundle) {
+      const assets = [...Object.keys(bundle), "index.html", "hero.webp", "pix-qr.png", "icons/icon-192.png", "icons/icon-512.png", "icons/favicon-64.png"];
+      const unique = [...new Set(assets)].filter((path) => !path.endsWith(".map"));
+      const version = createHash("sha256").update(unique.sort().join("|")).digest("hex").slice(0, 12);
+      const worker = readFileSync(new URL("./src/offline-worker.js", import.meta.url), "utf8");
+      this.emitFile({ type: "asset", fileName: "offline-assets.json", source: JSON.stringify(unique) });
+      this.emitFile({ type: "asset", fileName: "sw.js", source: worker.replace("__CACHE_VERSION__", version) });
+    },
+  }],
   base: "./",
   define: { __APP_VERSION__: JSON.stringify(pkg.version) },
   build: {

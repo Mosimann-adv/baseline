@@ -4,6 +4,8 @@ import { CONSENT_VERSION, SELF_CONSENT_VERSION, TEEN_CONSENT_VERSION, consentVer
 import { MAX_AGE, MIN_AGE, SELF_MIN_AGE, ageThisYear } from "./age";
 import { localIsoDate } from "./dates";
 import type { AccountKind } from "./account";
+import { changedGoalHistory } from "./goals";
+import { programById } from "../content/programs";
 
 // Modo demonstração: sessão, atletas, treinos e testes ficam só neste navegador, sem servidor.
 const SESSION_KEY = "baseline.demo.session";
@@ -174,7 +176,9 @@ export function demoCreateSelf(guardianId: string, input: NewAthleteInput): Athl
 
 export function demoUpdateAthlete(athleteId: string, patch: AthletePatch): void {
   const data = demoLoad();
-  data.athletes = data.athletes.map((athlete) => (athlete.id === athleteId ? { ...athlete, ...patch } : athlete));
+  data.athletes = data.athletes.map((athlete) => athlete.id === athleteId ? { ...athlete, ...patch,
+    goal_history: patch.weekly_goal !== undefined ? changedGoalHistory(athlete.goal_history, athlete.weekly_goal, patch.weekly_goal) : athlete.goal_history,
+    earned_badges: [...new Set([...(athlete.earned_badges ?? []), ...(patch.earned_badges ?? [])])] } : athlete);
   write(DATA_KEY, data);
 }
 
@@ -205,17 +209,20 @@ export function demoDeleteAthlete(athleteId: string): void {
 
 export function demoCreateSession(guardianId: string, input: NewSessionInput): TrainingSession {
   const data = demoLoad();
+  const existing = data.sessions.find((session) => session.id === input.id);
+  if (existing) return existing;
   const session: TrainingSession = {
-    id: crypto.randomUUID(),
+    id: input.id ?? crypto.randomUUID(),
     guardian_id: guardianId,
     athlete_id: input.athleteId,
     program_id: input.programId,
-    performed_on: localIsoDate(),
+    performed_on: input.performedOn ?? localIsoDate(),
     minutes: input.minutes,
     drills_done: input.drillsDone,
     drills_total: input.drillsTotal,
     feeling: input.feeling,
     discomfort: input.discomfort,
+    execution: input.execution,
     created_at: new Date().toISOString(),
   };
   data.sessions.unshift(session);
@@ -225,8 +232,10 @@ export function demoCreateSession(guardianId: string, input: NewSessionInput): T
 
 export function demoCreateTest(guardianId: string, input: NewTestInput): SkillTestRecord {
   const data = demoLoad();
+  const existing = data.tests.find((record) => record.id === input.id);
+  if (existing) return existing;
   const record: SkillTestRecord = {
-    id: crypto.randomUUID(),
+    id: input.id ?? crypto.randomUUID(),
     guardian_id: guardianId,
     athlete_id: input.athleteId,
     tested_on: localIsoDate(),
@@ -305,8 +314,8 @@ export function demoStart(kind: AccountKind): Session {
     program_id: programId,
     performed_on: daysAgo(days),
     minutes,
-    drills_done: 4,
-    drills_total: 4,
+    drills_done: programById(programId)?.drills.length ?? 4,
+    drills_total: programById(programId)?.drills.length ?? 4,
     feeling,
     discomfort: false,
     created_at: now,

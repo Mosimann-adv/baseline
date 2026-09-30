@@ -305,6 +305,72 @@ export const PROGRAMS: Program[] = [
       { id: "cadeia", name: "A cadeia inteira", cue: "Junte tudo: crossover, entre as pernas e puxado — quatro dribles em cada. Já está fácil? Inclua por trás das costas.", seconds: 60, restSeconds: 0 },
     ],
   },
+  // Rascunho de 2026-09-29: lacunas de fundamento — arremesso, passe e defesa para 6–8
+  // e passe para 15–17 (a faixa Adulto usa o conteúdo de 15–17). Brincadeiras simples,
+  // com adulto acompanhando. Só vídeos cujo movimento é o mesmo do exercício; o resto
+  // usa dica de foco. Tudo pendente de validação pelo profissional de educação física.
+  {
+    id: "primeiros-arremessos",
+    title: "Primeiros arremessos",
+    summary: "Brincadeiras para o braço aprender o caminho da bola: forma, alvo e pose de estátua, com um adulto por perto.",
+    category: "arremesso",
+    bands: ["6-8"],
+    levels: ALL_LEVELS,
+    equipment: "Bola tamanho 5 e um alvo: caixa, balde ou um desenho no chão.",
+    drills: [
+      { id: "forma", name: "Forma de arremesso", cue: "Segure a bola com as duas mãos, suba até a altura do nariz e empurre com uma mão só, terminando com o pulso virado para baixo, como quem alcança uma prateleira alta.", seconds: 40, restSeconds: 15, video: VIDEOS.forma },
+      { id: "solta-pega", name: "Soltar e receber", cue: "Com o adulto à sua frente, empurre a bola suavemente na direção das mãos dele. Termine com o pulso solto e espere ele devolver.", seconds: 40, restSeconds: 15, focus: "Movimento suave, sem pressa" },
+      { id: "alvo", name: "Acerte o alvo", cue: "Deixe a caixa ou o balde a três passos e jogue a bola dentro. Cada acerto, uma comemoração! Tem cesta baixa de 2,60 m por perto? Arremesse de bem perto dela.", seconds: 60, restSeconds: 20, focus: "Olhe o alvo antes de soltar" },
+      { id: "estatua-do-arremesso", name: "Estátua do arremesso", cue: "Com um adulto: arremesse e, antes de a bola cair, vire estátua. Ele copia a sua pose e devolve a bola para o próximo arremesso.", seconds: 60, restSeconds: 0, focus: "Termine com o braço esticado" },
+    ],
+  },
+  {
+    id: "brincadeira-de-passe",
+    title: "Brincadeira de passe",
+    summary: "Passe de peito, passe picado e brincadeiras de roda para a bola viajar de mão em mão, com o adulto de parceiro.",
+    category: "passe",
+    bands: ["6-8"],
+    levels: ALL_LEVELS,
+    equipment: "Bola tamanho 5 e um adulto ou uma parede lisa.",
+    drills: [
+      { id: "peito", name: "Passe de peito", cue: "A dois passos do adulto (ou da parede), empurre a bola com as duas mãos e termine com os polegares para baixo.", seconds: 40, restSeconds: 20, video: VIDEOS.passePeito },
+      { id: "picado", name: "Passe picado", cue: "Faça a bola quicar no chão no meio do caminho até o adulto. Receba com as mãos baixas.", seconds: 40, restSeconds: 20, video: VIDEOS.passePicado },
+      { id: "rola-bola", name: "Rola-bola", cue: "Sentados de frente, um de cada lado, role a bola forte para o outro, sem deixar que ela levante do chão.", seconds: 40, restSeconds: 15, focus: "Role forte e reto" },
+      { id: "batata-quente", name: "Batata quente", cue: "Com o adulto ou em roda com a família, passem a bola de mão em mão contando em voz alta. Se cair, peguem e continuem juntos.", seconds: 60, restSeconds: 0, focus: "Mão pronta para receber" },
+    ],
+  },
+  {
+    id: "brincadeira-de-defesa",
+    title: "Brincadeira de defesa",
+    summary: "Ficar firme, andar de lado como caranguejo e espelhar o adulto: defesa como brincadeira, sem contato.",
+    category: "defesa",
+    bands: ["6-8"],
+    levels: ALL_LEVELS,
+    equipment: "Espaço livre de 3 metros e um adulto para as brincadeiras.",
+    drills: [
+      { id: "base", name: "Postura de defesa", cue: "Fique firme: pés afastados, joelhos dobrados, costas retas e mãos grandes abertas. Conte até 20 segurando a pose.", seconds: 30, restSeconds: 15, video: VIDEOS.base },
+      { id: "caranguejo", name: "Caranguejo de lado", cue: "Ande de lado como um caranguejo, sem cruzar os pés, de uma ponta à outra do espaço.", seconds: 30, restSeconds: 15, video: VIDEOS.lateral },
+      { id: "espelho", name: "Espelho", cue: "Frente a frente com o adulto: copie os passos laterais dele, começando devagar. Depois troquem de papel.", seconds: 40, restSeconds: 20, video: VIDEOS.espelho },
+      { id: "siga-o-dedo", name: "Siga o dedo", cue: "O adulto aponta para um lado e só então você desliza para lá, com os braços abertos. Comece devagar.", seconds: 40, restSeconds: 20, focus: "Olhe no adulto, não nos pés" },
+      { id: "portao-fechado", name: "Portão fechado", cue: "O adulto tenta passar por você andando; deslize de lado e atrapalhe com os braços, sem encostar no corpo dele.", seconds: 45, restSeconds: 0, focus: "De lado, sem cruzar os pés" },
+    ],
+  },
+  {
+    id: "passe-em-movimento",
+    title: "Passe em movimento",
+    summary: "Passe firme na parede, passe picado, passa e corta e pivô para a bola chegar limpa no colega.",
+    category: "passe",
+    bands: ["15-17"],
+    levels: ALL_LEVELS,
+    equipment: "Bola tamanho 6 ou 7, uma parede lisa e um parceiro para os dois últimos exercícios.",
+    drills: [
+      { id: "peito-parede", name: "Passe de peito na parede", cue: "A três passos da parede, passe forte com as duas mãos e receba já pronto para o próximo passe.", seconds: 45, restSeconds: 20, video: VIDEOS.passePeito },
+      { id: "picado-parede", name: "Passe picado na parede", cue: "A bola quica no chão a dois terços do caminho até a parede. Alterne: dez passes de peito, dez picados.", seconds: 45, restSeconds: 20, video: VIDEOS.passePicado },
+      { id: "passa-corta", name: "Passa e corta", cue: "Com um parceiro: passe a bola para ele, corte dois passos para o lado e receba o passe de volta em movimento. Troquem de papel.", seconds: 45, restSeconds: 20, video: VIDEOS.passaCorta },
+      { id: "pivo", name: "Parada, pivô e passe", cue: "Receba parado nos dois pés, gire no pivô para proteger a bola e passe forte.", seconds: 45, restSeconds: 20, video: VIDEOS.passePivo },
+      { id: "parceiro", name: "Com um parceiro: troca rápida", cue: "Frente a frente, cinco passes de peito seguidos, depois cinco picados. A bola não pode parar mais de um segundo.", seconds: 45, restSeconds: 0, focus: "Mãos-alvo antes de receber" },
+    ],
+  },
 ];
 
 export function programById(id: string): Program | undefined {
@@ -321,7 +387,7 @@ export function programsFor(band: AgeBandId, level: Level): Program[] {
 }
 
 export function programMinutes(program: Program): number {
-  const seconds = program.drills.reduce((total, drill) => total + drill.seconds + drill.restSeconds, 0);
+  const seconds = program.drills.reduce((total, drill, index) => total + drill.seconds + (index < program.drills.length - 1 ? drill.restSeconds : 0), 0);
   return Math.max(1, Math.round(seconds / 60));
 }
 

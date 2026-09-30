@@ -197,11 +197,29 @@ describe("achievements", () => {
     expect(byId["5-treinos"]).toBe(false);
   });
 
-  it("conquista de minutos usa o mês corrente", () => {
+  it("conquista de um mês não desaparece quando outro mês começa", () => {
     const thisMonth = achievements([session("2026-09-02", 60)], [], 1, defs, TODAY);
     const lastMonth = achievements([session("2026-08-02", 60)], [], 1, defs, TODAY);
     expect(thisMonth.find((b) => b.id === "60-minutos")?.earned).toBe(true);
-    expect(lastMonth.find((b) => b.id === "60-minutos")?.earned).toBe(false);
+    expect(lastMonth.find((b) => b.id === "60-minutos")?.earned).toBe(true);
+  });
+
+  it("mudar a meta atual não reinterpreta semanas anteriores", () => {
+    const sessions = [session("2026-08-31"), session("2026-09-07")];
+    const history = { "0001-01-01": 3, "2026-09-07": 1 };
+    expect(bestGoalStreak(sessions, 1, history)).toBe(1);
+    expect(goalStreak(sessions, 1, TODAY, history)).toBe(1);
+  });
+
+  it("um registro sem exercício realizado não conta na meta ou nas conquistas", () => {
+    const empty = { ...session(MONDAY), drills_done: 0 };
+    expect(goalStreak([empty], 1, TODAY)).toBe(0);
+    expect(achievements([empty], [], 1, [], TODAY).find((badge) => badge.id === "primeiro-treino")?.earned).toBe(false);
+  });
+
+  it("uma conquista obtida não desaparece ao aumentar a meta atual", () => {
+    const badges = achievements([session(MONDAY)], [], 7, [], TODAY, undefined, ["semana-cheia"]);
+    expect(badges.find((badge) => badge.id === "semana-cheia")?.earned).toBe(true);
   });
 });
 

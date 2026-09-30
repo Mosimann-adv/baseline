@@ -196,7 +196,7 @@ button.row:active { background: var(--fill); }
 .switch:checked::after { transform: translateX(20px); }
 .primary-button {
   min-height: 52px; padding: 0 24px; border: 0; border-radius: 999px;
-  background: var(--coral); color: var(--cream); font-size: 17px; font-weight: 600;
+  background: var(--coral-soft); color: var(--navy-deep); font-size: 17px; font-weight: 600;
   box-shadow: var(--shadow-navy);
   transition: transform 0.25s var(--spring), background-color 0.25s ease, color 0.25s ease, box-shadow 0.25s ease;
 }
@@ -354,7 +354,7 @@ button.row:active { background: var(--fill); }
 /* Mini-abas internas (Evolução): evitam o scroll infinito de gráficos. */
 .tabs-mini { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; gap: 2px; padding: 2px; margin: 4px 0 12px; background: var(--fill); border-radius: 999px; }
 .tabs-mini button {
-  min-height: 40px; border: 0; border-radius: 999px; background: transparent;
+  min-height: 44px; border: 0; border-radius: 999px; background: transparent;
   color: var(--text-2); font-size: 14px; font-weight: 600;
 }
 .tabs-mini button[aria-selected="true"] { background: var(--yellow); color: var(--navy-deep); }
@@ -531,7 +531,7 @@ button.row:active { background: var(--fill); }
 .goal-foot p { margin: 0; }
 .goal-stepper { display: flex; align-items: center; gap: 4px; }
 .goal-stepper button {
-  min-width: 40px; min-height: 40px; border: 0; border-radius: 12px; background: var(--fill);
+  min-width: 44px; min-height: 44px; border: 0; border-radius: 12px; background: var(--fill);
   color: var(--text); font-size: 20px; font-weight: 600; line-height: 1;
 }
 .goal-stepper button:active:not(:disabled) { background: var(--fill-2); transform: scale(0.94); }
@@ -636,7 +636,7 @@ a.row { color: inherit; text-decoration: none; }
 .pix-box .disclosure .pix-box { padding: 12px 8px 8px; }
 .copy-btn {
   flex: 0 0 auto; min-height: 36px; padding: 0 14px; border: 0; border-radius: 999px;
-  background: var(--coral); color: var(--cream); font-size: 14px; font-weight: 600;
+  background: var(--coral-soft); color: var(--navy-deep); font-size: 14px; font-weight: 600;
   transition: background-color 0.25s ease, color 0.25s ease;
 }
 .copy-btn:active { background: var(--yellow); color: var(--navy-deep); }
@@ -733,3 +733,44 @@ a.row { color: inherit; text-decoration: none; }
   /* Menos movimento: o toque não faz a bola quicar. */
   .bouncing-ball-ball, .bouncing-ball-shadow, .bouncing-ball-spin { animation: none !important; }
 }
+
+/* Jornada 2026-09-29: biblioteca limpa, perfil acessível e treino com ações à mão. */
+.profile-switch-bar { max-width: 640px; margin: 0 auto; padding: calc(12px + var(--safe-top)) 20px 0; }
+.profile-switch { display: flex; align-items: center; gap: 10px; min-height: 48px; padding: 4px 12px 4px 4px; border: 0; border-radius: 999px; background: var(--fill); text-align: left; font-weight: 600; }
+.profile-switch { max-width: 100%; }
+.profile-switch > span:nth-child(2) { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.large-title { overflow-wrap: anywhere; }
+.profile-switch-avatar { display: grid; place-items: center; width: 36px; height: 36px; border-radius: 50%; }
+.profile-switch small { display: block; font-size: 11px; font-weight: 400; color: var(--text-2); }
+.has-profile-switch .screen { padding-top: 4px; }
+.has-profile-switch .top-bar:empty { display: none; }
+.athlete-card[aria-current="true"] { box-shadow: inset 0 0 0 2px var(--yellow); }
+.library-tabs { margin: 4px 4px 10px; }
+.library-description { margin: 0 4px 12px; font-size: 13px; color: var(--text-2); }
+.practice-grid { display: grid; gap: 12px; margin: 20px 4px; }
+.segmented .segment { min-width: 0; padding: 6px 3px; overflow-wrap: anywhere; }
+.segmented[aria-label="Fundamento"] { grid-auto-flow: row; grid-template-columns: repeat(3, 1fr); margin-top: 16px; }
+.progress-tabs button { min-width: 0; font-size: 12px; padding: 4px 2px; }
+.goal-explanation { margin-top: 10px !important; line-height: 1.5; }
+.next-practice-action { margin: 12px 0 16px; }
+.empty-practice { padding: 24px 18px; margin: 18px 0; border-radius: 20px; background: var(--navy-deep); }
+.empty-practice h2 { margin: 0; font-size: 23px; }
+.empty-practice p { line-height: 1.5; color: var(--text-2); }
+.empty-practice .primary-button { width: 100%; }
+.training .training-actions { position: sticky; bottom: 0; background: var(--bg); padding: 8px 0 calc(4px + var(--safe-bottom)); z-index: 3; }
+.training.focus .training-actions { background: var(--navy-deep); }
+.training .training-body { padding-top: 16px; padding-bottom: 16px; }
+.training .exercise-video { width: 100%; }
+.training .preparing .video-block { display: none; }
+.training-body.with-video .drill-cue { font-size: 16px; line-height: 1.4; }
+.training-body .video-hint { margin-bottom: 0; }
+body:has(.demo-banner) .training { min-height: calc(100dvh - 48px); }
+.finish-screen .goal-card strong { display: block; margin: 8px 0; }
+.finish-screen .metrics .metric span { line-height: 1.4; }
+.dialog-backdrop { position: fixed; inset: 0; z-index: 40; display: grid; place-items: center; padding: 20px; background: rgba(5, 17, 32, 0.75); }
+.practice-dialog { display: grid; gap: 12px; width: min(100%, 440px); padding: 24px; border-radius: 24px; background: var(--bg-elevated); box-shadow: var(--shadow-navy); }
+.practice-dialog h2 { margin: 0; font-size: 23px; }
+.practice-dialog p { margin: 0 0 8px; color: var(--text-2); }
+.bottom-cta > .primary-button:only-child { width: 100%; }
+.stale-banner { position: sticky; background: var(--coral-soft); color: var(--navy-deep); }
+@media (max-width: 360px) { .segment { font-size: 12px; } .progress-tabs button { font-size: 11px; } }

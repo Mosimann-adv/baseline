@@ -14,7 +14,8 @@ export interface AgeBand {
   focus: string;
 }
 
-const BANDS: readonly AgeBand[] = [
+/** Faixas com rótulo e foco; usada pelo app e pela exploração pública (antes do cadastro). */
+export const BANDS: readonly AgeBand[] = [
   { id: "6-8", label: "Iniciação", focus: "Coordenação, domínio de bola e jogos com bola" },
   { id: "9-11", label: "Minibasquete", focus: "Drible com as duas mãos, bandeja, passe e jogos reduzidos" },
   { id: "12-14", label: "Fundamentos", focus: "Arremesso, mão fraca, leitura de jogo e físico com o peso do corpo" },

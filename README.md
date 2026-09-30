@@ -13,15 +13,36 @@ Stack: Vite + TypeScript + React, empacotado para Android com Capacitor. Dados n
 npm install
 npm run dev                  # usa o projeto Supabase de .env.production
 npm run dev -- --mode demo   # demonstração sem servidor (dados no navegador)
+npm run dev:demo            # a mesma demonstração, acessível na rede local
 npm test                     # suíte Vitest
 npm run build                # typecheck + build de produção
 ```
+
+### Experiência local de 29/09/2026
+
+Navegação: **Treinar · Evolução · Aprender · Conta**, com troca de perfil no cabeçalho.
+A biblioteca distingue blocos curtos e sessões maiores. Há exploração antes do cadastro,
+início direto com preparação, conclusão retomável por perfil,
+testes individuais com cronômetro e recência própria, metas históricas e conquistas
+permanentes. As demonstrações ficam na aba Aprender; as trilhas estão pausadas por
+decisão do dono, até haver material suficiente. A escolha assistida por tempo/equipamento/acompanhamento foi excluída
+por decisão do dono.
+
+Para testar sem servidor: `npm run dev:demo` → **Explorar** (Rafa/Léo) ou
+**Conhecer os treinos** (sem conta). Para testar abertura offline da versão web,
+use o build (`npm run build:demo` e `npx vite preview --outDir dist-demo`) em
+localhost ou HTTPS; o servidor de desenvolvimento não instala o cache de arquivos.
+
+Antes de usar as novas sessões no banco real, aplique
+`supabase/migrations/0007_experiencia_pratica.sql`, depois da 0006. A demo dispensa
+essa operação. Conteúdo novo e sessões são **rascunho pedagógico**.
+Detalhes e verificações: `docs/IMPLEMENTACAO_UX_2026-09-29.md`.
 
 ## Banco (Supabase)
 
 1. Criar um projeto novo, região São Paulo (não usar o projeto do app pessoal).
 2. Em **Authentication**, deixar ativo o login por e-mail e senha, com confirmação de e-mail.
-3. Rodar no SQL Editor, em ordem, os arquivos de `supabase/migrations/` (`0001_fundacao.sql` … `0006_conta_16.sql`).
+3. Rodar no SQL Editor, em ordem, os arquivos de `supabase/migrations/` (`0001_fundacao.sql` … `0007_experiencia_pratica.sql`).
 4. Copiar a Project URL e a chave pública para `.env.production`, ou para `.env.local` se for um projeto só de desenvolvimento.
 5. Em **Authentication → URL Configuration**, usar o endereço do site como Site URL e `<site>/**` como Redirect URL.
 
@@ -50,4 +71,5 @@ Requer JDK 21 (o Android Studio já traz um em `jbr`). O projeto `android/` já 
 - Endereços públicos: https://baseline-six-sigma.vercel.app/#/privacidade e https://baseline-six-sigma.vercel.app/#/excluir-conta.
 - Validação dos treinos por profissional de educação física.
 - Rodar a migração `0006_conta_16.sql` no SQL Editor do Supabase.
+- Aplicar `0007_experiencia_pratica.sql` antes de publicar esta rodada de experiência.
 - Número D-U-N-S do Instituto Arvoredo para a conta de organização no Google Play.

@@ -1,4 +1,4 @@
-import { contentBand, type AgeBandId } from "../lib/age";
+import { ADULT_MIN_AGE, contentBand, type AgeBandId } from "../lib/age";
 import type { SkillTestDef } from "../lib/types";
 
 // RASCUNHO — protocolos pendentes de validação por profissional de educação física.
@@ -93,4 +93,31 @@ export function testsFor(band: AgeBandId): SkillTestDef[] {
 export function formatTestValue(test: SkillTestDef, value: number): string {
   const number = test.step === "decimal" ? String(value).replace(".", ",") : String(value);
   return `${number} ${test.unit}`;
+}
+
+// Ajuda opcional de medição: contagem regressiva (30 s / 1 min) ou cronômetro
+// simples (sprint, zigue-zague). O resultado nunca é derivado do timer — quem
+// mede digita a marca.
+export type TestTimerSpec = { direction: "down"; total: number } | { direction: "up" };
+
+export const TEST_TIMERS: Record<string, TestTimerSpec> = {
+  "mao-fraca-30s": { direction: "down", total: 30 },
+  "arremessos-1min": { direction: "down", total: 60 },
+  "zigue-zague": { direction: "up" },
+  "sprint-10m": { direction: "up" },
+};
+
+// O protocolo fala com quem treina: menor mantém o adulto por perto; adulto
+// (18+, pela idade do perfil) pede para alguém cronometrar quando o teste pede.
+const ADULT_PROTOCOL: [RegExp, string][] = [
+  [/Um adulto marca o tempo e conta as cestas\./, "Peça para alguém marcar o tempo e contar as cestas — o timer da tela ajuda."],
+  [/Um adulto marca 30 segundos\./, "Peça para alguém marcar 30 segundos — o timer da tela ajuda."],
+  [/; um adulto cronometra\./, "; peça para alguém cronometrar — o cronômetro da tela ajuda."],
+];
+
+export function protocolFor(def: SkillTestDef, age: number): string {
+  if (age < ADULT_MIN_AGE) return def.protocol;
+  let text = def.protocol;
+  for (const [pattern, replacement] of ADULT_PROTOCOL) text = text.replace(pattern, replacement);
+  return text.replace(/Um adulto/g, "Peça para alguém").replace(/um adulto/g, "alguém");
 }

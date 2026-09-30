@@ -1,17 +1,9 @@
 import { useRef, useState } from "react";
-import { Group, PlainButton, PrimaryButton, Screen } from "../components/ui";
+import { Group, PrimaryButton, Screen } from "../components/ui";
 import { CATEGORY_LABELS, programMinutes } from "../content/programs";
 import { formatDayMonth } from "../lib/dates";
-import type { Drill, Program } from "../lib/types";
-
-const YOUTUBE_NOCOOKIE = "https://www.youtube-nocookie.com";
-
-function previewSrc(video: NonNullable<Drill["video"]>): string {
-  const params = new URLSearchParams({ rel: "0", playsinline: "1" });
-  if (video.start) params.set("start", String(video.start));
-  if (video.end) params.set("end", String(video.end));
-  return `${YOUTUBE_NOCOOKIE}/embed/${video.id}?${params.toString()}`;
-}
+import type { Program } from "../lib/types";
+import { ExerciseVideo } from "../components/ExerciseVideo";
 
 export function ProgramDetail({
   program,
@@ -51,14 +43,15 @@ export function ProgramDetail({
   };
 
   return (
-    <Screen eyebrow={`${CATEGORY_LABELS[program.category]} · ${programMinutes(program)} min`} title={program.title} onBack={onBack}>
+    <Screen eyebrow={`${program.kind === "session" ? "Sessão" : "Bloco"} · ${programMinutes(program)} min`} title={program.title} onBack={onBack}>
       <p className="lead">{program.summary}</p>
       <p className="program-facts">
         {program.drills.length} {program.drills.length === 1 ? "exercício" : "exercícios"} · ~{programMinutes(program)} min · {program.equipment}
       </p>
+      {program.blocks && <Group header="Como a sessão se organiza">{program.blocks.map((block) => <div className="row" key={block.id}><span className="row-label">{block.title}<small>{CATEGORY_LABELS[block.category]}</small></span></div>)}</Group>}
       {doneCount !== null && doneCount !== undefined && doneCount > 0 && (
         <p className="program-history">
-          Você treinou este treino {doneCount === 1 ? "1 vez" : `${doneCount} vezes`}
+            Você registrou esta prática {doneCount === 1 ? "1 vez" : `${doneCount} vezes`}
           {lastDone ? ` · última em ${formatDayMonth(lastDone)}` : ""}
         </p>
       )}
@@ -84,26 +77,7 @@ export function ProgramDetail({
                   <div className="drill-preview">
                     <p className="drill-cue">{drill.cue}</p>
                     {drill.video ? (
-                      <div className="video-block">
-                        <div className="video-frame">
-                          <iframe
-                            src={previewSrc(drill.video)}
-                            title={drill.video.title}
-                            loading="lazy"
-                            allow="encrypted-media; picture-in-picture"
-                            allowFullScreen
-                            referrerPolicy="strict-origin-when-cross-origin"
-                          />
-                        </div>
-                        <a
-                          className="plain-link"
-                          href={`https://www.youtube.com/watch?v=${drill.video.id}${drill.video.start ? `&t=${drill.video.start}s` : ""}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                        >
-                          Abrir no YouTube
-                        </a>
-                      </div>
+                      <ExerciseVideo video={drill.video} />
                     ) : (
                       <p className="focus-hint">
                         <svg viewBox="0 0 24 24" aria-hidden="true">
@@ -122,7 +96,7 @@ export function ProgramDetail({
       </div>
       <div className="bottom-cta stack">
         <PrimaryButton onClick={onStart}>Começar treino</PrimaryButton>
-        <PlainButton onClick={showAll}>Ver exercícios antes</PlainButton>
+        <button type="button" className="inline-link" onClick={showAll}>Ver todos os exercícios antes</button>
       </div>
     </Screen>
   );

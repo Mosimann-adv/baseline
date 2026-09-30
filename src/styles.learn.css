@@ -1,0 +1,6 @@
+/* Área Aprender (src/screens/Channel.tsx) — só o que falta aos estilos globais. */
+
+/* Vídeos institucionais dentro de um Group: respiro próprio e separadores coerentes com as linhas. */
+.learn-featured { padding: 12px 16px 14px; }
+.learn-featured + .learn-featured { border-top: 1px solid var(--separator); }
+.learn-featured + .row::before, .learn-featured + a.row::before { left: 16px; }

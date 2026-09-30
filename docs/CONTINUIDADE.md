@@ -1,6 +1,6 @@
 # Continuidade do desenvolvimento — Baseline by Arvoredo
 
-Atualizado em 2026-09-24.
+Atualizado em 2026-09-30.
 
 Leia nesta ordem:
 1. `AGENTS.md` — regras que não mudam sem pedido explícito.
@@ -86,6 +86,7 @@ Leia nesta ordem:
 | **`useSessions` e `useTests` unificados** (2026-09-25) | Os dois hooks eram gêmeos (~100 linhas duplicadas); agora são configurações de `createLogHook` (`src/state/createLog.ts`). Mensagem de RLS virou constante (`RLS_BLOCKED_MESSAGE` em `lib/errors.ts`), mapeamento snake_case virou `sessionRow`/`testRow` na fila. |
 | **Divisão das telas grandes e acessibilidade** (2026-09-25) | `GuardianArea`, `TrainingSession` e `Progress` divididos em arquivos menores; calendário da Evolução saiu de `role="grid"` inválido para tabela nativa; abas com `tablist`/`tabpanel` e navegação por setas; `Segmented` com roving tabindex; contraste de texto secundário e botão desabilitado subiu. Feito em par com agente no Maestri. |
 | **Rodada de robustez nº 2** (2026-09-25) | Segunda auditoria: **ErrorBoundary** em `main.tsx` (exceção no render não fica mais em tela branca) e `lazyScreen` em `App.tsx` recarrega uma vez quando o chunk sumiu do servidor após deploy; contagem do descanso silenciosa para leitor de tela; `flushQueue` single-flight (os dois hooks disputavam o localStorage); versão do package.json aparece na tela Conta (`__APP_VERSION__`); `friendlyError` fala a regra real do banco (18+) enquanto a 0006 não roda; key de gráfico de testes única por dia+bateria; aba Vídeos avisa quando está sem internet; `docs/VIDEOS.md` corrigido para a contagem real (46 de 69; a antiga dizia 40 de 44) com a fila dos 23 sem vídeo e o desequilíbrio da faixa 6–8. **Ficou de fora por escolha do dono:** `android/res/values/colors.xml` faltando (build do AAB quebra hoje — resolver antes de gerar o AAB). |
+| **Trilhas pausadas e início direto** (2026-09-30) | Pedido do dono: não há material suficiente para trilhas. Permanecem blocos e sessões maiores. Sai o modo “Aprender e começar” e a confirmação por movimento; um único “Começar treino” inicia a preparação de 5 s e a execução automática. Demonstrações continuam na aba Aprender. Rascunhos e registros antigos são preservados. |
 
 ## 4. Estado atual
 
@@ -109,7 +110,20 @@ Leia nesta ordem:
 | Terceiro commit de 2026-09-24 | Aba Treinos em prateleiras por fundamento (cartão com nome, minutos, exercícios e selo de cesta; filtro Tudo · Sem cesta · Com cesta); meta da semana e últimos treinos na Evolução; pontinho coral na aba Evolução quando o teste está na hora; bola que quica ao toque ao lado do título. Depois: prateleira vira grade no computador. |
 | Commit da rodada de 2026-09-25 | Manutenção: fila offline com purge de perfil excluído, contador de tentativas com desistência e reset em "Tentar agora"; todas as telas lazy + `manualChunks` react/supabase (principal ~80 kB); hooks `useSessions`/`useTests` unificados em `createLog.ts`; mensagem de RLS como constante; CI com typecheck + testes; política de privacidade descreve dados no aparelho; telas grandes divididas e correções de acessibilidade (tabela no calendário, tabpanel, roving tabindex, contraste). O endurecimento do código do responsável (0007) entrou nesta rodada e foi revertido no commit seguinte, por decisão do dono. |
 
-**Mudança local ainda sem commit (2026-09-25):** nenhuma depois do commit da rodada deste dia.
+**Rodada de UX (2026-09-29/30), commit e push autorizados pelo dono:** implementação da análise de UX, com exceção da escolha assistida por tempo/equipamento/acompanhamento. Resumo e verificações em `docs/IMPLEMENTACAO_UX_2026-09-29.md`; análise original em `docs/ANALISE_UX_2026-09-29.md`. A publicação depende da aplicação da migração 0007: a consulta pública de `baseline_execution_valid` em 30/09 retornou `PGRST202`, confirmando que a função ainda não está disponível no servidor.
+
+- Abas **Treinar · Evolução · Aprender · Conta**; perfil ativo trocável no cabeçalho e Conta acessível sem perfis.
+- Biblioteca com **20 blocos** e **4 sessões compostas** (uma por faixa de conteúdo; Adulto reutiliza 15–17). Trilhas pausadas por falta de material. Conteúdo novo é rascunho, não validado/publicado.
+- Um único **Começar treino** inicia a preparação de 5 s e a execução automática. Quem quiser ver as demonstrações usa a aba Aprender ou a prévia dos exercícios. Rascunhos do antigo modo Aprender retomam o mesmo exercício em execução direta. Tempo efetivo exclui preparo e pausas. Descanso ampliado restaura corretamente.
+- Rascunho por conta/perfil, incluindo a conclusão e respostas ainda não enviadas. UUID estável impede duplicação. Sem exercício concluído não há registro nem meta. Dor exige resposta explícita; 16–17 recebem orientação de avisar adulto.
+- Evolução abre em Resumo com ação para continuar; mapa, testes e conquistas ficam em painéis próprios. Histórico completo paginado, metas por semana, conquistas permanentes e divisão de sessões por fundamento.
+- Testes individuais com guia, entrada rápida, cronômetro, rascunho e janela própria de 28 dias.
+- Exploração pública sem perfil nem dados de saúde; cadastro sem posição, com exemplos de nível; confirmação de e-mail com reenvio/correção; recuperação de senha permanece na troca até concluir ou cancelar.
+- Cópia local de perfis/aceites/histórico e service worker dos arquivos públicos. Sair/excluir remove as cópias; respostas atrasadas não as recriam. Vídeos continuam exigindo conexão.
+- **Nova migração pendente:** `supabase/migrations/0007_experiencia_pratica.sql` (execution, goal_history, earned_badges, validação e retirada do default de discomfort). Validada em PostgreSQL local e reaplicada 3x. Não aplicada no projeto real.
+- `npm run dev:demo` abre a prévia na rede. Para cache web offline, usar build/preview em localhost ou HTTPS, não o servidor de desenvolvimento. Reiniciar o preview após novo build.
+- **Verificação desta rodada:** 90 testes em 14 arquivos; typecheck, build normal e demo; 17 cenários de navegador com serviços simulados nos testes de autenticação/sincronização, sem credenciais reais. Ainda pendentes a validação pedagógica/jurídica, o banco real e aparelho Android/áudio/vídeo em ambiente real.
+- **Simplificação de 30/09 verificada:** os mesmos 90 testes passam (incluindo a retomada de rascunhos do antigo modo Aprender); builds normal/demo e 6 cenários de navegador passam: preferência antiga de Trilhas, início único, avanço automático, sessões maiores, aba Aprender e retomada sem perda de progresso.
 
 Etapa extra fora do `README.md`: **CI** — GitHub Actions roda `typecheck` + `vitest` a cada push/PR (`.github/workflows/ci.yml`). Demo publicada com a versão anterior à rodada de 2026-09-25; republicar depois do próximo deploy se quiser prévia atualizada.
 
@@ -187,6 +201,7 @@ npx vite preview --outDir dist-demo   # servir a demo localmente
 | `0004_privacidade.sql` | Unicidade do aceite só entre ativos; revogação definitiva por trigger; insert de treino e teste exige aceite ativo |
 | `0005_adultos.sql` | `athletes.is_self` (um por conta, imutável); ano de nascimento a partir de 1900; idade por tipo no cadastro e na correção; `create_self_profile_with_consent` |
 | `0006_conta_16.sql` | Perfil próprio a partir de 16; tabela `parent_confirmations`; RPCs `parent_confirmation_status`, `register_parent_email`, `confirm_parent_code` |
+| `0007_experiencia_pratica.sql` | Composição de sessão, metas históricas, conquistas permanentes e resposta explícita de dor. Local, pendente no banco real. |
 
 ### Como aplicar uma migração nova
 
@@ -227,12 +242,12 @@ src/
   main.tsx              faixa "demonstração" quando VITE_DEMO=1; AuthProvider + App
   App.tsx               navegação por estado (union View, sem router) e rotas públicas por hash
   components/ui.tsx     Screen, Group, Field, SwitchRow, Segmented, PrimaryButton, PlainButton, Notice, CountUp
-  components/TabBar.tsx rodapé de abas do atleta: Treinos · Evolução · Vídeos · Perfil ("Quem vai treinar?")
+  components/TabBar.tsx rodapé: Treinar · Evolução · Aprender · Conta; perfil no cabeçalho
   state/
     auth.tsx            sessão do adulto dono da conta: signUp, signIn, signOut, deleteAccount
     athletes.ts         perfis + aceites: create (menor, RPC), createSelf (adulto, RPC), update, revoke, authorize, remove (limpa fila offline)
     createLog.ts        fábrica dos hooks de registros: carga, fila offline e cadeia de erros (rede enfileira, RLS bloqueia com motivo)
-    sessions.ts         treinos registrados (máx. 300 carregados) — configuração do createLog
+    sessions.ts         histórico integral paginado — configuração do createLog
     tests.ts            baterias de testes — configuração do createLog
   lib/
     supabase.ts         isDemo, isSupabaseConfigured, cliente
@@ -250,10 +265,11 @@ src/
     counts.ts           contagem exata de treinos e testes por perfil (além do recorte de 300)
     account.ts          adult vs teen; meta da sessão; idade manda sobre o tipo gravado
     native.ts           botão voltar, tela ligada, compartilhar arquivo e texto no Android
-    resumeSession.ts    ponto do treino em andamento salvo no aparelho
+    resumeSession.ts    andamento e conclusão por conta/perfil, com UUID e tempo efetivo
     sounds.ts           bipes e aviso por voz durante o treino
   content/
-    programs.ts         16 programas por faixa e nível (11 + 5 de ball handling para casa, rascunho); VIDEOS com IDs verificados; start pula introdução
+    programs.ts         20 blocos por faixa/nível (rascunho), só vídeos conferidos
+    practices.ts        4 sessões compostas por faixa de conteúdo; trilhas pausadas
     tests.ts            7 testes de habilidade; sprint e salto só a partir de 12 anos
     legal.ts            política, termos e página de exclusão (LEGAL_VERSION)
     support.ts          CNPJ, Pix, WhatsApp, Instagram, URLs do site (Apoie o Arvoredo)
@@ -332,6 +348,7 @@ Depois disso também foram concluídos o treino retomável, os sinais sonoros, o
 - [x] Projeto Supabase criado e migrações 0001–0005 aplicadas.
 - [x] Deploy web na Vercel funcionando com o Supabase.
 - [ ] Rodar a migração **0006** (`supabase/migrations/0006_conta_16.sql`) no SQL Editor.
+- [ ] Aplicar **0007** (`supabase/migrations/0007_experiencia_pratica.sql`) antes de publicar esta rodada; a demo funciona sem banco.
 - [ ] Confirmar a URL Configuration no Supabase (seção 10.1).
 - [ ] Testar de ponta a ponta no site real (seção 10.1).
 - [ ] SMTP próprio no Supabase antes de abrir para outras famílias.
@@ -356,6 +373,6 @@ Depois disso também foram concluídos o treino retomável, os sinais sonoros, o
 - **Revogação guarda os registros** até novo aceite ou exclusão do perfil. A revisão jurídica pode preferir exclusão automática após um prazo.
 - **Menor que completa 16 ou 18 anos:** o perfil continua no responsável. O app avisa que a pessoa pode criar conta própria; o histórico **não migra**. Aos 18, conta de adolescente passa a ser adulta pela idade e o termo de adulto precisa ser aceito de novo.
 - **Faixa Adulto:** reaproveita o conteúdo de 15–17. Treinos específicos para adultos dependem do profissional de educação física.
-- **Contagens com limite:** a lista da Evolução carrega no máximo 300 treinos; a tela Conta usa a contagem exata no banco.
+- **Histórico integral:** a rodada local de UX removeu o teto de 300 e usa paginação de 1000; a Conta continua usando contagem exata no banco.
 - **Idade por ano:** calculada como `ano atual − ano de nascimento`, no app e no banco.
 - **Comparação só consigo mesmo:** conquistas e testes nunca comparam pessoas. Mantenha assim.

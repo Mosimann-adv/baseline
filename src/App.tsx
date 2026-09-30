@@ -1,18 +1,24 @@
-import { lazy, Suspense, useEffect, useState, type ComponentType, type LazyExoticComponent, type ReactNode } from "react";
-import { useAuth } from "./state/auth";
+import { lazy, Suspense, useEffect, useRef, useState, type ComponentType, type LazyExoticComponent, type ReactNode } from "react";
+import { authenticatedAreaBlocked, useAuth } from "./state/auth";
 import { useAthletes } from "./state/athletes";
 import { useSessions } from "./state/sessions";
 import { useTests } from "./state/tests";
 import { isSupabaseConfigured } from "./lib/supabase";
 import { activeConsent } from "./lib/consent";
 import { canCreateMinorProfiles, metaFromSession } from "./lib/account";
-import { listenBackButton } from "./lib/native";
+import { listenBackButton, useScreenBack } from "./lib/native";
 import { pendingSummary } from "./lib/offlineQueue";
 import type { ResumeState } from "./lib/resumeSession";
 import { loadParentStatus, registerParentEmail, type ParentStatus } from "./lib/parentConfirm";
 import { ageThisYear, bandFor } from "./lib/age";
-import { isTestDue } from "./lib/progress";
-import { programById } from "./content/programs";
+import { achievements, isCountedPractice } from "./lib/progress";
+import { startOfWeekIso } from "./lib/dates";
+import { testsDue } from "./lib/testStatus";
+import { testsFor } from "./content/tests";
+import { practiceById } from "./content/practices";
+import { readResume, clearResume } from "./lib/resumeSession";
+import { avatarFor } from "./lib/avatar";
+import { openAccountDeviceCache, readCached, writeCached } from "./lib/cache";
 import { LEGAL_DOCS, legalIdFromHash, type LegalId } from "./content/legal";
 import { LegalScreen } from "./screens/LegalScreen";
 import { ConfirmParent } from "./screens/ConfirmParent";
@@ -75,7 +81,7 @@ type View =
   | { name: "training"; athleteId: string; programId: string; resume?: ResumeState }
   | { name: "progress"; athleteId: string }
   | { name: "videos"; athleteId: string }
-  | { name: "tests"; athleteId: string };
+  | { name: "tests"; athleteId: string; testId?: string; quickEntry?: boolean };
 
 const lastAthleteKey = (guardianId: string) => `baseline.athlete.${guardianId}`;
 
@@ -86,8 +92,9 @@ function publicRouteFromHash(hash: string): LegalId | "confirmar-responsavel" | 
 }
 
 export default function App() {
-  const { session, loading, authError } = useAuth();
+  const { session, loading, authError, needsPasswordChange } = useAuth();
   const [publicDoc, closePublicDoc] = usePublicDoc();
+  useEffect(() => listenBackButton(() => false), []);
 
   // Endereços públicos (#/privacidade, #/termos, #/excluir-conta, #/confirmar-responsavel) abrem sem login.
   if (publicDoc === "confirmar-responsavel") {
@@ -108,6 +115,7 @@ export default function App() {
   if (!isSupabaseConfigured) return <SetupNotice />;
   if (loading) return <Splash />;
   if (authError) return <AuthBroken />;
+  if (authenticatedAreaBlocked(Boolean(session), needsPasswordChange)) return <AuthFlow />;
   if (!session) return <AuthFlow />;
   return <Family key={session.user.id} guardianId={session.user.id} email={session.user.email ?? ""} />;
 }
@@ -129,18 +137,35 @@ function usePublicDoc(): [LegalId | "confirmar-responsavel" | null, () => void] 
 }
 
 function Family({ guardianId, email }: { guardianId: string; email: string }) {
+  useEffect(() => { openAccountDeviceCache(guardianId); }, [guardianId]);
   const { session, signOut } = useAuth();
   const meta = metaFromSession(session);
   const family = useAthletes(guardianId);
   const training = useSessions(guardianId);
   const skill = useTests(guardianId);
-  const [parent, setParent] = useState<ParentStatus>({ parentEmail: meta.parentEmail, confirmed: meta.kind !== "teen", code: null });
+  const [parent, setParent] = useState<ParentStatus>(() => readCached<ParentStatus>(guardianId, "parent") ?? { parentEmail: meta.parentEmail, confirmed: meta.kind !== "teen", code: null });
   const [view, setView] = useState<View>(() => {
     const saved = localStorage.getItem(lastAthleteKey(guardianId));
     return saved ? { name: "athlete", athleteId: saved } : { name: "picker" };
   });
   // Memória do último atleta aberto: mantém as abas funcionando na tela "Quem vai treinar?".
   const [lastAthleteId, setLastAthleteId] = useState<string | null>(() => localStorage.getItem(lastAthleteKey(guardianId)));
+  const [pendingStart, setPendingStart] = useState<Extract<View, { name: "training" }> | null>(null);
+  const [confirmReplace, setConfirmReplace] = useState(false);
+  useScreenBack(() => { setPendingStart(null); return true; }, Boolean(pendingStart), 30);
+  const awarding = useRef(new Set<string>());
+  useEffect(() => {
+    if (family.loading || training.loading || skill.loading || family.error || training.error || skill.error) return;
+    for (const athlete of family.athletes) {
+      const band = bandFor(ageThisYear(athlete.birth_year));
+      if (!band || !activeConsent(family.consents, athlete) || awarding.current.has(athlete.id)) continue;
+      const earned = achievements(training.sessions.filter((record) => record.athlete_id === athlete.id), skill.tests.filter((record) => record.athlete_id === athlete.id),
+        athlete.weekly_goal, testsFor(band.id), new Date(), athlete.goal_history, athlete.earned_badges).filter((badge) => badge.earned).map((badge) => badge.id);
+      if (!earned.some((id) => !athlete.earned_badges?.includes(id))) continue;
+      awarding.current.add(athlete.id);
+      void family.update(athlete.id, { earned_badges: earned }).catch(() => { /* A próxima carga bem-sucedida retenta a conquista. */ }).finally(() => awarding.current.delete(athlete.id));
+    }
+  }, [family.athletes, family.consents, family.loading, family.error, family.update, training.sessions, training.loading, training.error, skill.tests, skill.loading, skill.error]);
 
   useEffect(() => {
     if ("athleteId" in view) {
@@ -154,7 +179,7 @@ function Family({ guardianId, email }: { guardianId: string; email: string }) {
   }, [view.name]);
 
   // Depois da primeira carga bem-sucedida, falha de reload vira aviso — não derruba a tela aberta.
-  const [loadedOnce, setLoadedOnce] = useState(false);
+  const [loadedOnce, setLoadedOnce] = useState(() => family.hasCache && training.hasCache && skill.hasCache);
   useEffect(() => {
     if (!family.loading && !training.loading && !skill.loading && !(family.error ?? training.error ?? skill.error)) {
       setLoadedOnce(true);
@@ -162,7 +187,7 @@ function Family({ guardianId, email }: { guardianId: string; email: string }) {
   }, [family.loading, training.loading, skill.loading, family.error, training.error, skill.error]);
 
   useEffect(() => {
-    if (meta.kind !== "teen") return;
+    if (meta.kind !== "teen" || !navigator.onLine) return;
     void loadParentStatus(guardianId, meta.kind).then(async (status) => {
       if (!status.confirmed && !status.code && meta.parentEmail) {
         try {
@@ -174,11 +199,11 @@ function Family({ guardianId, email }: { guardianId: string; email: string }) {
         }
       }
       setParent(status);
+      writeCached(guardianId, "parent", status);
     });
   }, [guardianId, meta.kind, meta.parentEmail]);
 
-  useEffect(() => {
-    return listenBackButton(() => {
+  useScreenBack(() => {
       if (view.name === "picker") return false;
       if (view.name === "account" || view.name === "athlete") {
         setView({ name: "picker" });
@@ -193,8 +218,7 @@ function Family({ guardianId, email }: { guardianId: string; email: string }) {
         return true;
       }
       return false;
-    });
-  }, [view]);
+  }, true, 0);
 
   if (family.loading || training.loading || skill.loading) return <Splash />;
   const loadError = family.error ?? training.error ?? skill.error;
@@ -226,10 +250,9 @@ function Family({ guardianId, email }: { guardianId: string; email: string }) {
     return Boolean(activeConsent(family.consents, athlete));
   };
   const backTo = (from: Origin): View => (from === "first" ? { name: "picker" } : { name: "account" });
-  const allowMinors = canCreateMinorProfiles(meta.kind);
+  const allowMinors = canCreateMinorProfiles(meta.kind) && !family.athletes.some((athlete) => athlete.is_self && ageThisYear(athlete.birth_year) < 18);
 
   const toPicker = () => {
-    localStorage.removeItem(lastAthleteKey(guardianId));
     setView({ name: "picker" });
   };
 
@@ -239,11 +262,11 @@ function Family({ guardianId, email }: { guardianId: string; email: string }) {
   const tabTestDue =
     !!tabAthlete &&
     bandFor(ageThisYear(tabAthlete.birth_year)) !== null &&
-    isTestDue(skill.tests.filter((t) => t.athlete_id === tabAthlete.id));
+    testsDue(testsFor(bandFor(ageThisYear(tabAthlete.birth_year))!.id), skill.tests.filter((t) => t.athlete_id === tabAthlete.id)).length > 0;
   const onTab = (tab: TabId) => {
     if (!tabAthlete) return;
-    if (tab === "profile") {
-      toPicker();
+    if (tab === "account") {
+      setView({ name: "account" });
       return;
     }
     if (tab === "progress") {
@@ -259,7 +282,7 @@ function Family({ guardianId, email }: { guardianId: string; email: string }) {
   const withTabs = (node: ReactNode, current: TabId): ReactNode =>
     tabAthlete ? (
       <>
-        <div className="has-tabbar">{node}</div>
+        <div className="has-tabbar has-profile-switch"><div className="profile-switch-bar"><button type="button" className="profile-switch" onClick={toPicker} aria-label={`Perfil ativo: ${tabAthlete.nickname}. Trocar perfil`}><span className="profile-switch-avatar" aria-hidden="true" style={{ background: avatarFor(tabAthlete.id).background }}>{avatarFor(tabAthlete.id).glyph}</span><span>{tabAthlete.nickname}<small>Trocar perfil</small></span><span aria-hidden="true">⌄</span></button></div>{node}</div>
         <TabBar current={current} onSelect={onTab} badges={{ progress: tabTestDue }} />
       </>
     ) : (
@@ -303,7 +326,7 @@ function Family({ guardianId, email }: { guardianId: string; email: string }) {
 
     // A Conta fica acessível mesmo sem perfis: apagar o último perfil não pode prender a pessoa fora dela.
     if (view.name === "account") {
-      return (
+      return withTabs(
         <GuardianArea
           guardianId={guardianId}
           email={email}
@@ -314,7 +337,8 @@ function Family({ guardianId, email }: { guardianId: string; email: string }) {
           accountKind={meta.kind}
           parent={parent}
           onRefreshParent={() => void loadParentStatus(guardianId, meta.kind).then(setParent)}
-          onBack={() => setView({ name: "picker" })}
+          onBack={() => tabAthlete ? setView({ name: "athlete", athleteId: tabAthlete.id }) : toPicker()}
+          canAddMinors={allowMinors}
           onAddAthlete={() => setView({ name: "newAthlete", from: "account" })}
           onAddSelf={() => setView({ name: "newSelf", from: "account" })}
           onUpdate={family.update}
@@ -324,7 +348,7 @@ function Family({ guardianId, email }: { guardianId: string; email: string }) {
             await family.remove(athleteId);
             await Promise.all([training.reload(), skill.reload()]);
           }}
-        />
+        />, "account",
       );
     }
 
@@ -334,6 +358,8 @@ function Family({ guardianId, email }: { guardianId: string; email: string }) {
           kind={meta.kind}
           onSelf={() => setView({ name: "newSelf", from: "first" })}
           onMinor={() => setView({ name: "newAthlete", from: "first" })}
+          onAccount={() => setView({ name: "account" })}
+          onSignOut={signOut}
         />
       );
     }
@@ -350,19 +376,26 @@ function Family({ guardianId, email }: { guardianId: string; email: string }) {
         const retry = () => void Promise.all([training.sync(), skill.sync()]);
 
         if (view.name === "program" || view.name === "training") {
-          const program = programById(view.programId);
+          const program = practiceById(view.programId);
           if (program && view.name === "training") {
-            return <TrainingSession athlete={athlete} program={program} resume={view.resume} onExit={home} onSave={training.create} />;
+            return <TrainingSession athlete={athlete} program={program} resume={view.resume}
+              weekCount={sessions.filter((session) => isCountedPractice(session) && session.performed_on >= startOfWeekIso()).length}
+              onExit={home} onSave={training.create} onOpenProgress={() => setView({ name: "progress", athleteId })} />;
           }
           if (program) {
-            const programSessions = training.sessions.filter((s) => s.program_id === program.id);
+            const programSessions = sessions.filter((s) => s.program_id === program.id);
             return (
               <ProgramDetail
                 program={program}
                 doneCount={programSessions.length}
                 lastDone={programSessions[0]?.performed_on ?? null}
                 onBack={home}
-                onStart={() => setView({ name: "training", athleteId, programId: program.id })}
+                onStart={() => {
+                  const existing = readResume(athleteId, guardianId);
+                  const next: Extract<View, { name: "training" }> = { name: "training", athleteId, programId: program.id };
+                  if (existing) { setPendingStart(next); setConfirmReplace(false); }
+                  else setView(next);
+                }}
               />
             );
           }
@@ -373,16 +406,16 @@ function Family({ guardianId, email }: { guardianId: string; email: string }) {
               sessions={sessions}
               tests={tests}
               onBack={home}
-              onStartTests={() => setView({ name: "tests", athleteId })}
+              onStartTests={(testId, quickEntry) => setView({ name: "tests", athleteId, testId, quickEntry })}
               onOpenProgram={(programId) => setView({ name: "program", athleteId, programId })}
               onUpdateGoal={(goal) => family.update(athleteId, { weekly_goal: goal })}
             />,
             "progress",
           );
         } else if (view.name === "videos") {
-          return withTabs(<Channel />, "videos");
+          return withTabs(<Channel athlete={athlete} onOpenProgram={(programId) => setView({ name: "program", athleteId, programId })} />, "videos");
         } else if (view.name === "tests") {
-          return <TestSession athlete={athlete} tests={tests} onBack={() => setView({ name: "progress", athleteId })} onSave={skill.create} />;
+          return <TestSession athlete={athlete} tests={tests} initialTestId={view.testId} quickEntry={view.quickEntry} onBack={() => setView({ name: "progress", athleteId })} onSave={skill.create} />;
         } else {
           return withTabs(
             <AthleteHome
@@ -399,9 +432,11 @@ function Family({ guardianId, email }: { guardianId: string; email: string }) {
       }
     }
 
-    return withTabs(
+    return (
       <WhoTrains
         athletes={family.athletes}
+        activeAthleteId={lastAthleteId}
+        onBack={tabAthlete ? () => setView({ name: "athlete", athleteId: tabAthlete.id }) : undefined}
         isLocked={(athlete) => !canTrain(athlete)}
         lockLabel={(athlete) =>
           meta.kind === "teen" && athlete.is_self && !parent.confirmed
@@ -413,8 +448,7 @@ function Family({ guardianId, email }: { guardianId: string; email: string }) {
         onPick={(athleteId) => setView({ name: "athlete", athleteId })}
         onAccount={() => setView({ name: "account" })}
         onSignOut={signOut}
-      />,
-      "profile",
+      />
     );
   };
 
@@ -422,6 +456,18 @@ function Family({ guardianId, email }: { guardianId: string; email: string }) {
     <>
       {staleBanner}
       <Suspense fallback={<LazyFallback />}>{body()}</Suspense>
+      {pendingStart && <div className="dialog-backdrop"><section role="dialog" aria-modal="true" aria-labelledby="replace-practice-title" className="practice-dialog" onKeyDown={(event) => {
+        if (event.key === "Escape") { setPendingStart(null); return; }
+        if (event.key !== "Tab") return;
+        const buttons = Array.from(event.currentTarget.querySelectorAll<HTMLButtonElement>("button:not(:disabled)"));
+        if (event.shiftKey && document.activeElement === buttons[0]) { event.preventDefault(); buttons.at(-1)?.focus(); }
+        else if (!event.shiftKey && document.activeElement === buttons.at(-1)) { event.preventDefault(); buttons[0]?.focus(); }
+      }}>
+        <h2 id="replace-practice-title">Uma prática está guardada</h2><p>Você pode retomá-la ou descartá-la antes de começar outra neste perfil.</p>
+        <PrimaryButton autoFocus onClick={() => { const saved = readResume(pendingStart.athleteId, guardianId); if (saved) setView({ name: "training", athleteId: pendingStart.athleteId, programId: saved.programId, resume: saved }); setPendingStart(null); }}>Retomar prática guardada</PrimaryButton>
+        <button type="button" className="plain-button" onClick={() => { if (!confirmReplace) setConfirmReplace(true); else { clearResume(guardianId, pendingStart.athleteId); setView(pendingStart); setPendingStart(null); } }}>{confirmReplace ? "Descartar e começar mesmo?" : "Descartar e começar outra"}</button>
+        <button type="button" className="plain-button" onClick={() => setPendingStart(null)}>Cancelar</button>
+      </section></div>}
     </>
   );
 }

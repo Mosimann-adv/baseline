@@ -7,18 +7,23 @@ import type { Athlete } from "../lib/types";
 
 export function WhoTrains({
   athletes,
+  activeAthleteId,
   isLocked,
   lockLabel,
   onPick,
   onAccount,
   onSignOut,
+  onBack,
 }: {
   athletes: Athlete[];
+  /** Perfil em treino agora: vira indicação no cartão (seletor do cabeçalho). */
+  activeAthleteId?: string | null;
   isLocked: (athlete: Athlete) => boolean;
   lockLabel?: (athlete: Athlete) => string;
   onPick: (id: string) => void;
   onAccount: () => void;
   onSignOut: () => Promise<void>;
+  onBack?: () => void;
 }) {
   // O perfil do próprio dono da conta vem primeiro. Criar e gerenciar perfis fica na tela Conta.
   const ordered = [...athletes].sort((a, b) => Number(b.is_self) - Number(a.is_self));
@@ -37,19 +42,21 @@ export function WhoTrains({
   }
 
   return (
-    <Screen title="Quem vai treinar?">
+    <Screen title="Quem vai treinar?" onBack={onBack}>
       <div className="athlete-grid">
         {ordered.map((athlete) => {
           const age = ageThisYear(athlete.birth_year);
           const band = bandFor(age);
           const locked = isLocked(athlete);
-          const detail = locked
+          const active = athlete.id === activeAthleteId;
+          const baseDetail = locked
             ? (lockLabel?.(athlete) ?? (athlete.is_self ? "Precisa de consentimento" : "Precisa de autorização"))
             : athlete.is_self
               ? "Você"
               : band
                 ? `${band.label} · ${age} anos`
                 : `${age} anos`;
+          const detail = active && !locked ? `${baseDetail} · treinando agora` : baseDetail;
           // Perfil sem aceite não treina: o toque leva à tela Conta.
           const avatar = avatarFor(athlete.id);
           return (
@@ -57,6 +64,7 @@ export function WhoTrains({
               key={athlete.id}
               type="button"
               className={`athlete-card${locked ? " locked" : ""}${athlete.is_self && !locked ? " self" : ""}`}
+              aria-current={active && !locked ? "true" : undefined}
               onClick={() => (locked ? onAccount() : onPick(athlete.id))}
             >
               <span className="avatar" aria-hidden="true" style={{ background: avatar.background }}>

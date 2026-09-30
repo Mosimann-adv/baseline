@@ -1,348 +1,122 @@
-import { useEffect, useReducer, useRef, useState } from "react";
-import { PlainButton, PrimaryButton } from "../components/ui";
-import { clearResume, writeResume, type ResumeState } from "../lib/resumeSession";
+import { useEffect, useLayoutEffect, useReducer, useState } from "react";
+import { Notice, PlainButton, PrimaryButton } from "../components/ui";
+import { ExerciseVideo } from "../components/ExerciseVideo";
+import { writeResume, type ResumeState } from "../lib/resumeSession";
+import { localIsoDate } from "../lib/dates";
+import { useScreenBack } from "../lib/native";
 import { cue, say, unlockAudio } from "../lib/sounds";
-import type { Athlete, Drill, NewSessionInput, Program } from "../lib/types";
+import type { Athlete, NewSessionInput, Program } from "../lib/types";
 import { Finish } from "./TrainingFinish";
-import { initialFromResume, run, useWakeLock, type TrainingAction } from "./trainingRunner";
-
-const YOUTUBE_ORIGIN = "https://www.youtube-nocookie.com";
-
-// O vídeo acompanha o exercício: começa junto com a contagem e repete até o fim.
-// Navegadores de celular só tocam sozinhos com som desligado; o som liga no próprio player.
-function youtubeSrc(video: NonNullable<Drill["video"]>, autoplay: boolean): string {
-  const params = new URLSearchParams({
-    rel: "0",
-    playsinline: "1",
-    enablejsapi: "1",
-    mute: "1",
-    loop: "1",
-    playlist: video.id,
-    autoplay: autoplay ? "1" : "0",
-  });
-  if (video.start) params.set("start", String(video.start));
-  if (video.end) params.set("end", String(video.end));
-  if (location.origin.startsWith("http")) params.set("origin", location.origin);
-  return `${YOUTUBE_ORIGIN}/embed/${video.id}?${params.toString()}`;
-}
+import { initialFromResume, measuredState, run, useWakeLock, type TrainingAction } from "./trainingRunner";
 
 const clock = (ms: number) => {
-  const total = Math.ceil(ms / 1000);
+  const total = Math.max(0, Math.ceil(ms / 1000));
   return `${Math.floor(total / 60)}:${String(total % 60).padStart(2, "0")}`;
 };
 
-export function TrainingSession({
-  athlete,
-  program,
-  resume,
-  onExit,
-  onSave,
-}: {
-  athlete: Athlete;
-  program: Program;
-  resume?: ResumeState | null;
-  onExit: () => void;
-  onSave: (input: NewSessionInput) => Promise<void>;
+export function TrainingSession({ athlete, program, resume, weekCount = 0, onExit, onSave, onOpenProgress }: {
+  athlete: Athlete; program: Program; resume?: ResumeState | null; weekCount?: number;
+  onExit: () => void; onSave: (input: NewSessionInput) => Promise<void>; onOpenProgress?: () => void;
 }) {
   const drills = program.drills;
-  const [state, dispatch] = useReducer(run, drills, (d) => initialFromResume(resume, d));
-  const [now, setNow] = useState(() => Date.now());
+  const [state, dispatch] = useReducer(run, drills, (items) => initialFromResume(resume, items));
+  const [sessionId] = useState(() => resume?.sessionId ?? crypto.randomUUID());
+  const [performedOn] = useState(() => resume?.performedOn ?? localIsoDate());
+  const [now, setNow] = useState(Date.now);
   const [confirmExit, setConfirmExit] = useState(false);
-  // Sair no meio do treino pede confirmação em dois passos, como as outras ações sem volta.
-  // A confirmação caduca em segundos e a cada troca de fase, para um toque sem querer não encerrar depois.
-  useEffect(() => {
-    if (!confirmExit) return;
-    const id = window.setTimeout(() => setConfirmExit(false), 4000);
-    return () => window.clearTimeout(id);
-  }, [confirmExit]);
-  useEffect(() => {
-    setConfirmExit(false);
-  }, [state.phase, state.index]);
-  const playerRef = useRef<HTMLIFrameElement>(null);
-  // Todo toque destrava o áudio (requisito dos navegadores); os bipes só tocam depois disso.
+  const [storageFailed, setStorageFailed] = useState(false);
   const act = (type: TrainingAction["type"]) => {
     unlockAudio();
-    dispatch({ type, now: Date.now(), drills });
+    const at = Date.now();
+    setNow(at);
+    dispatch({ type, now: at, drills });
   };
-
-  // Vídeo do exercício corrente, lido pelos efeitos do player antes do render.
-  // previewOnly não entra no treino: serve só para ver antes (ProgramDetail).
-  const currentDrill = drills[Math.min(state.index, drills.length - 1)];
-  const video = state.phase !== "rest" && !currentDrill.video?.previewOnly ? currentDrill.video : undefined;
-
-  const running = (state.phase === "work" || state.phase === "rest" || state.phase === "getready") && state.pausedLeft === null;
-
+  useEffect(() => { if (!resume || initialFromResume(resume, drills).phase === "ready") dispatch({ type: "start", now: Date.now(), drills }); }, []);
+  const running = ["work", "rest", "getready"].includes(state.phase) && state.pausedLeft === null;
   useEffect(() => {
     if (!running) return;
-    const id = window.setInterval(() => setNow(Date.now()), 250);
+    const id = window.setInterval(() => setNow(Date.now()), 200);
     return () => window.clearInterval(id);
   }, [running]);
-
-  useEffect(() => {
-    if (running && state.endsAt <= now) dispatch({ type: "advance", now: Date.now(), drills });
-  }, [running, state.endsAt, now, drills]);
-
-  // Guarda o treino pela metade a cada segundo de fase ativa: se o app fechar sem querer,
-  // dá para retomar do mesmo ponto. Antes de começar ou depois de terminar, nada a retomar.
-  const savedSecond =
-    state.phase === "work" || state.phase === "rest" || state.phase === "getready"
-      ? Math.ceil((state.pausedLeft ?? Math.max(0, state.endsAt - now)) / 1000)
-      : 0;
-  useEffect(() => {
-    if (state.phase === "work" || state.phase === "rest" || state.phase === "getready") {
-      writeResume({
-        athleteId: athlete.id,
-        programId: program.id,
-        phase: state.phase,
-        index: state.index,
-        done: state.done,
-        secondsLeft: savedSecond,
-        startedAt: state.startedAt,
-        savedAt: Date.now(),
-      });
-    } else if (state.phase === "done") {
-      clearResume();
-    }
-  }, [athlete.id, program.id, state.phase, state.index, state.done, state.pausedLeft, state.startedAt, savedSecond]);
-
-  // App em segundo plano ou tela travada: pausa na hora, para os exercícios não passarem sem a pessoa ver.
-  // Ao voltar, o treino fica em "Pausado" com o tempo que restava, e quem treina decide continuar.
+  useEffect(() => { if (running && state.endsAt <= now) dispatch({ type: "advance", now: Date.now(), drills }); }, [running, now, state.endsAt, drills]);
   useEffect(() => {
     if (!running) return;
-    const onHide = () => {
-      if (document.hidden) dispatch({ type: "pause", now: Date.now(), drills });
-    };
-    document.addEventListener("visibilitychange", onHide);
-    return () => document.removeEventListener("visibilitychange", onHide);
-  }, [running, drills]);
-
+    const hide = () => { if (document.hidden) act("pause"); };
+    document.addEventListener("visibilitychange", hide);
+    return () => document.removeEventListener("visibilitychange", hide);
+  }, [running, state.phase, state.index]);
   useEffect(() => {
-    if (state.phase === "work") {
-      navigator.vibrate?.(60);
-      cue("up");
-    }
-    if (state.phase === "rest") {
-      navigator.vibrate?.(60);
-      cue("down");
-      const nextName = drills[state.index + 1]?.name;
-      if (nextName) say(`Próximo: ${nextName}`);
-    }
-    if (state.phase === "done") {
-      navigator.vibrate?.([120, 80, 120]);
-      cue("done");
-    }
-  }, [state.phase, state.index, drills]);
-
-  // Últimos 3 s de descanso: bipe por segundo para se preparar sem olhar para a tela.
-  const restSeconds = state.phase === "rest" ? Math.ceil((state.pausedLeft ?? Math.max(0, state.endsAt - now)) / 1000) : 0;
-  useEffect(() => {
-    if (state.phase !== "rest" || state.pausedLeft !== null) return;
-    if (restSeconds > 0 && restSeconds <= 3) cue("tick");
-  }, [state.phase, state.pausedLeft, restSeconds]);
-
-  // Pausar o treino pausa o vídeo em exibição (exercício ou prévia do próximo), e continuar volta a tocar (API de iframe do YouTube via postMessage).
-  const ytCommand = (func: string, args: unknown[] = []) => {
-    playerRef.current?.contentWindow?.postMessage(JSON.stringify({ event: "command", func, args }), YOUTUBE_ORIGIN);
+    if (!confirmExit) return;
+    const id = window.setTimeout(() => setConfirmExit(false), 5000);
+    return () => window.clearTimeout(id);
+  }, [confirmExit]);
+  useEffect(() => { setConfirmExit(false); }, [state.phase, state.index]);
+  const requestExit = () => {
+    if (state.phase === "ready") return onExit();
+    if (confirmExit) act("finish");
+    else { act("pause"); setConfirmExit(true); }
   };
-
-  useEffect(() => {
-    if (state.phase !== "work" && state.phase !== "rest") return;
-    const func = state.pausedLeft === null ? "playVideo" : "pauseVideo";
-    ytCommand(func);
-  }, [state.phase, state.pausedLeft]);
-
-  // Repetição do trecho: ao terminar (ou cair antes do começo do exercício), volta ao `start`
-  // em vez de mostrar a introdução de novo. O `loop=1` do embed fica como plano B se os eventos não chegarem.
-  const lastSeekRef = useRef(0);
-  useEffect(() => {
-    const frame = playerRef.current;
-    if (!video || !frame) return;
-    frame.contentWindow?.postMessage(JSON.stringify({ event: "listening" }), YOUTUBE_ORIGIN);
-
-    const onMessage = (ev: MessageEvent) => {
-      if (ev.origin !== YOUTUBE_ORIGIN || ev.source !== frame.contentWindow) return;
-      let data: { event?: string; info?: unknown };
-      try {
-        data = JSON.parse(String(ev.data)) as { event?: string; info?: unknown };
-      } catch {
-        return;
-      }
-      const start = video.start ?? 0;
-      const time = typeof data.info === "object" && data.info !== null && "currentTime" in data.info ? Number((data.info as { currentTime: unknown }).currentTime) : NaN;
-
-      if (data.event === "onStateChange" && data.info === 0) {
-        ytCommand("seekTo", [start, true]);
-        ytCommand("playVideo");
-        return;
-      }
-      if (data.event === "infoDelivery" && !Number.isNaN(time)) {
-        const now = Date.now();
-        if (now - lastSeekRef.current < 1500) return;
-        if (time + 1.5 < start || (video.end !== undefined && time >= video.end)) {
-          lastSeekRef.current = now;
-          ytCommand("seekTo", [start, true]);
-          ytCommand("playVideo");
-        }
-      }
-    };
-    window.addEventListener("message", onMessage);
-    return () => window.removeEventListener("message", onMessage);
-  }, [video]);
-
+  useScreenBack(() => { requestExit(); return true; }, state.phase !== "done");
   useWakeLock(state.phase !== "done");
 
-  if (state.phase === "done") {
-    return <Finish athlete={athlete} program={program} done={state.done} startedAt={state.startedAt} onExit={onExit} onSave={onSave} />;
-  }
-
-  const drill = drills[state.index];
-  const next = drills[state.index + 1];
   const left = state.pausedLeft ?? Math.max(0, state.endsAt - now);
-  // A contagem avisa de longe: nos últimos 3 s ela pulsa em coral, junto com os bipes.
-  const ending = (state.phase === "work" || state.phase === "rest") && state.pausedLeft === null && left > 0 && left <= 3000;
-  const countdownClass = `countdown${ending ? " ending" : ""}`;
-  const progress = ((state.index + (state.phase === "rest" ? 1 : 0)) / drills.length) * 100;
+  const snapshot = measuredState(state, now, drills);
+  const draft: ResumeState = {
+    guardianId: athlete.guardian_id, athleteId: athlete.id, programId: program.id, sessionId, performedOn,
+    mode: resume?.phase === "done" ? resume.mode ?? "train" : "train", phase: state.phase === "ready" ? "getready" : state.phase, index: state.index, done: state.done,
+    secondsLeft: Math.ceil(left / 1000), startedAt: state.startedAt, savedAt: Date.now(), elapsedMs: snapshot.elapsedMs,
+    // Metadados antigos continuam junto do rascunho, sem reabrir o fluxo de trilhas.
+    completed: state.completed, workMs: snapshot.workMs, trailId: resume?.trailId, trailStepId: resume?.trailStepId,
+    responses: resume?.responses,
+  };
+  const savedSecond = Math.ceil(left / 1000);
+  useLayoutEffect(() => {
+    if (state.phase === "ready") return;
+    setStorageFailed(!writeResume(draft));
+  }, [state.phase, state.index, state.done, state.pausedLeft, savedSecond]);
+  useEffect(() => {
+    if (state.phase === "work") { navigator.vibrate?.(60); cue("up"); say(`${drills[state.index].name}. ${drills[state.index].cue}`); }
+    if (state.phase === "rest") { cue("down"); const next = drills[state.index + 1]; if (next) say(`Próximo: ${next.name}`); }
+    if (state.phase === "done" && state.done > 0) cue("done");
+  }, [state.phase, state.index]);
+  const restSeconds = state.phase === "rest" ? savedSecond : 0;
+  useEffect(() => { if (running && restSeconds > 0 && restSeconds <= 3) cue("tick"); }, [restSeconds, running]);
 
+  if (state.phase === "done") return <Finish athlete={athlete} program={program} draft={draft} weekCount={weekCount}
+    onExit={onExit} onSave={onSave} onOpenProgress={onOpenProgress} />;
+
+  const resting = state.phase === "rest";
+  const drill = drills[Math.min(state.index + (resting ? 1 : 0), drills.length - 1)];
+  const video = state.phase === "work" && drill.video?.previewOnly ? undefined : drill.video;
+  const phase = state.phase === "getready" ? "Prepare-se" : resting ? "Descanso" : state.pausedLeft !== null ? "Pausado" : "Agora";
+  const ending = running && ["rest", "work"].includes(state.phase) && left > 0 && left <= 3000;
   return (
-    <main className={`training${state.phase === "work" && state.pausedLeft === null ? " focus" : ""}`}>
+    <main className={`training ${state.phase === "work" && running ? "focus" : ""}`}>
       <div className="training-top">
-        <button
-          type="button"
-          className="back-button"
-          onClick={() => {
-            if (state.phase === "ready") return onExit();
-            if (confirmExit) act("finish");
-            else setConfirmExit(true);
-          }}
-        >
-          {state.phase === "ready" ? "Voltar" : confirmExit ? "Encerrar mesmo?" : "Encerrar"}
-        </button>
-        <span className="training-count">
-          Exercício {Math.min(state.index + 1, drills.length)} de {drills.length}
-        </span>
+        <button type="button" className="back-button" onClick={requestExit}>{confirmExit ? "Encerrar mesmo?" : "Encerrar"}</button>
+        <span className="training-count">Exercício {state.index + 1} de {drills.length}</span>
       </div>
-      <div className="progress-line" aria-hidden="true">
-        <span style={{ width: `${progress}%` }} />
-      </div>
-
-      {state.phase === "getready" ? (
-        <section className="training-body" aria-live="polite">
-          <p className="phase-label">Prepare-se</p>
-          <h1 className="drill-name">{drills[0].name}</h1>
-          <p className="drill-cue">{drills[0].cue}</p>
-          <p className="countdown tick" key={left} aria-live="off">
-            {clock(left)}
-          </p>
-        </section>
-      ) : state.phase === "rest" ? (
-        <section className={`training-body${next?.video ? " with-video" : ""}`} aria-live="polite">
-          <p className="phase-label">Descanso</p>
-          <p className={countdownClass} key={left} aria-live="off">{clock(left)}</p>
-          {next && (
-            <>
-              <p className="training-next">
-                Próximo: <strong>{next.name}</strong>
-              </p>
-              <p className="drill-cue">{next.cue}</p>
-              {next.video && (
-                <div className="video-block">
-                  <div className="video-frame">
-                    <iframe
-                      key={`next-${next.id}`}
-                      ref={playerRef}
-                      src={youtubeSrc(next.video, true)}
-                      title={next.video.title}
-                      allow="autoplay; encrypted-media; picture-in-picture"
-                      allowFullScreen
-                      referrerPolicy="strict-origin-when-cross-origin"
-                    />
-                  </div>
-                </div>
-              )}
-            </>
-          )}
-        </section>
-      ) : (
-        <section className={`training-body${video ? " with-video" : ""}`}>
-          {video && (
-            <div className="video-block">
-              <div className="video-frame">
-                <iframe
-                  key={`${drill.id}-${state.phase}`}
-                  ref={playerRef}
-                  src={youtubeSrc(video, state.phase === "work")}
-                  title={video.title}
-                  allow="autoplay; encrypted-media; picture-in-picture"
-                  allowFullScreen
-                  referrerPolicy="strict-origin-when-cross-origin"
-                  onLoad={() => playerRef.current?.contentWindow?.postMessage(JSON.stringify({ event: "listening" }), YOUTUBE_ORIGIN)}
-                />
-              </div>
-              <a
-                className="plain-link"
-                href={`https://www.youtube.com/watch?v=${video.id}${video.start ? `&t=${video.start}s` : ""}`}
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                O vídeo não aparece? Abrir no YouTube
-              </a>
-            </div>
-          )}
-          <p className="phase-label">{state.phase === "ready" ? program.title : state.pausedLeft === null ? "Agora" : "Pausado"}</p>
-          <h1 className="drill-name">{drill.name}</h1>
-          <p className="drill-cue">{drill.cue}</p>
-          {drill.focus && !video && (
-            <p className="focus-hint" aria-label="Foco do exercício">
-              <svg viewBox="0 0 24 24" aria-hidden="true">
-                <circle cx="12" cy="12" r="9" />
-                <circle cx="12" cy="12" r="3.5" />
-              </svg>
-              {drill.focus}
-            </p>
-          )}
-          {state.phase === "work" && (
-            <p className={countdownClass} aria-live="off">
-              {clock(left)}
-            </p>
-          )}
-          {state.phase === "ready" && (
-            <ol className="ready-list" aria-label="Você vai fazer">
-              {drills.map((item, i) => (
-                <li key={item.id}>
-                  <span>
-                    {i + 1}. {item.name}
-                  </span>
-                  <span className="ready-meta">
-                    {item.seconds} s{item.video && !item.video.previewOnly ? " · vídeo" : ""}
-                  </span>
-                </li>
-              ))}
-            </ol>
-          )}
-        </section>
-      )}
-
+      <div className="progress-line" aria-hidden="true"><span style={{ width: `${(state.done / drills.length) * 100}%` }} /></div>
+      {storageFailed && <Notice>Este aparelho não permitiu guardar a retomada. Mantenha o app aberto até salvar.</Notice>}
+      {confirmExit && <Notice>Encerrar leva ao registro do que você fez. Toque de novo para confirmar.</Notice>}
+      <section className={`training-body ${video ? "with-video" : ""} ${state.phase === "getready" ? "preparing" : ""}`}>
+        {video && <ExerciseVideo key={`${drill.id}-${video.id}`} video={video} playing={running && (state.phase === "work" || resting)} />}
+        <p className="phase-label" role="status">{phase}</p>
+        <h1 className="drill-name">{resting ? `Próximo: ${drill.name}` : drill.name}</h1>
+        <p className="drill-cue">{drill.cue}</p>
+        {drill.focus && !video && <p className="focus-hint">Foco: {drill.focus}</p>}
+        {["getready", "rest", "work"].includes(state.phase) && <p className={`countdown ${ending ? "ending" : ""}`} aria-live="off">{clock(left)}</p>}
+      </section>
       <div className="training-actions">
-        {state.phase === "ready" && <PrimaryButton onClick={() => act("start")}>Começar</PrimaryButton>}
-        {state.phase === "work" && (
-          <>
-            <PrimaryButton onClick={() => act(state.pausedLeft === null ? "pause" : "resume")}>
-              {state.pausedLeft === null ? "Pausar" : "Continuar"}
-            </PrimaryButton>
-            <PlainButton onClick={() => act("skip")}>Pular exercício</PlainButton>
-          </>
-        )}
-        {state.phase === "rest" && (
-          <>
-            <PrimaryButton onClick={() => act("skip")}>Pular descanso</PrimaryButton>
-            <div className="rest-row">
-              <PlainButton onClick={() => act("extend")}>+15 s de descanso</PlainButton>
-              <PlainButton onClick={() => act(state.pausedLeft === null ? "pause" : "resume")}>
-                {state.pausedLeft === null ? "Pausar" : "Continuar"}
-              </PlainButton>
-            </div>
-          </>
-        )}
+        {state.phase === "getready" && <PrimaryButton onClick={() => act(state.pausedLeft === null ? "pause" : "resume")}>{state.pausedLeft === null ? "Pausar preparação" : "Continuar preparação"}</PrimaryButton>}
+        {state.phase === "work" && <>
+          <PrimaryButton onClick={() => act(state.pausedLeft === null ? "pause" : "resume")}>{state.pausedLeft === null ? "Pausar" : "Continuar"}</PrimaryButton>
+          <div className="rest-row"><PlainButton onClick={() => act("complete")}>Concluir exercício</PlainButton><PlainButton onClick={() => act("skip")}>Pular exercício</PlainButton></div>
+        </>}
+        {resting && <>
+          <PrimaryButton onClick={() => act("skip")}>Pular descanso</PrimaryButton>
+          <div className="rest-row"><PlainButton onClick={() => act("extend")}>+15 s de descanso</PlainButton><PlainButton onClick={() => act(state.pausedLeft === null ? "pause" : "resume")}>{state.pausedLeft === null ? "Pausar" : "Continuar"}</PlainButton></div>
+        </>}
       </div>
     </main>
   );

@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 
-export type TabId = "trainings" | "progress" | "videos" | "profile";
+export type TabId = "trainings" | "progress" | "videos" | "account";
 
 const ICONS: Record<TabId, ReactNode> = {
   trainings: (
@@ -21,7 +21,7 @@ const ICONS: Record<TabId, ReactNode> = {
       <path d="M10 9.5v5l4.5-2.5z" />
     </svg>
   ),
-  profile: (
+  account: (
     <svg viewBox="0 0 24 24" aria-hidden="true">
       <circle cx="12" cy="8" r="3.5" />
       <path d="M5 20c1.5-3.5 4-5 7-5s5.5 1.5 7 5" />
@@ -30,17 +30,17 @@ const ICONS: Record<TabId, ReactNode> = {
 };
 
 const LABELS: Record<TabId, string> = {
-  trainings: "Treinos",
+  trainings: "Treinar",
   progress: "Evolução",
-  videos: "Vídeos",
-  profile: "Perfil",
+  videos: "Aprender",
+  account: "Conta",
 };
 
 const ARIA_LABELS: Record<TabId, string> = {
-  trainings: "Treinos",
+  trainings: "Treinar",
   progress: "Evolução",
-  videos: "Vídeos",
-  profile: "Perfil — trocar de perfil e Conta",
+  videos: "Aprender",
+  account: "Conta",
 };
 
 /** Rodapé de navegação do contexto do atleta: Treinos, Evolução, Vídeos e Perfil (troca de perfil e Conta). */

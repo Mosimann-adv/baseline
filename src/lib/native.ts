@@ -1,6 +1,29 @@
 import { Capacitor } from "@capacitor/core";
+import { useEffect, useRef } from "react";
 
 export const isNative = Capacitor.isNativePlatform();
+
+const screenBack: { token: symbol; priority: number; handler: () => boolean }[] = [];
+
+/** A tela mais interna decide como voltar, inclusive na conclusão ainda não salva. */
+export function useScreenBack(handler: () => boolean, enabled = true, priority = 10): void {
+  const current = useRef(handler);
+  current.current = handler;
+  useEffect(() => {
+    if (!enabled) return;
+    const token = Symbol("screenBack");
+    screenBack.push({ token, priority, handler: () => current.current() });
+    return () => {
+      const index = screenBack.findIndex((entry) => entry.token === token);
+      if (index >= 0) screenBack.splice(index, 1);
+    };
+  }, [enabled, priority]);
+}
+
+export function handleScreenBack(): boolean {
+  const top = [...screenBack].sort((a, b) => a.priority - b.priority).at(-1);
+  return top?.handler() ?? false;
+}
 
 /** Botão voltar do Android chama o `onBack` da tela aberta. No começo do fluxo, sai do app. */
 export function listenBackButton(handler: () => boolean): () => void {
@@ -9,7 +32,7 @@ export function listenBackButton(handler: () => boolean): () => void {
   void import("@capacitor/app")
     .then(({ App }) => {
       const sub = App.addListener("backButton", ({ canGoBack }) => {
-        const handled = handler();
+        const handled = handleScreenBack() || handler();
         if (handled) return;
         if (!canGoBack) void App.exitApp();
       });

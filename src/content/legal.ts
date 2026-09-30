@@ -2,7 +2,7 @@ import { INSTITUTE_CNPJ, INSTITUTE_NAME } from "./support";
 
 // RASCUNHO — pendente de revisão jurídica. Encarregado, e-mail de privacidade e CREF ainda faltam.
 // Mudou o texto de forma relevante? Troque LEGAL_VERSION.
-export const LEGAL_VERSION = "2026-09-rascunho-8";
+export const LEGAL_VERSION = "2026-09-rascunho-9";
 
 const ORG = INSTITUTE_NAME;
 const CNPJ = INSTITUTE_CNPJ;
@@ -51,7 +51,7 @@ export const LEGAL_DOCS: Record<LegalId, LegalDoc> = {
               "Da conta: e-mail, senha e a declaração de ter 16 anos ou mais. A senha fica protegida pelo serviço de login e ninguém da equipe consegue lê-la.",
               "De cada perfil de treino: apelido, ano de nascimento, nível, posição (opcional), meta de treinos por semana e se é o perfil do próprio dono da conta.",
               "Da conta de adolescente (16–17) criada no modelo anterior: e-mail do responsável e a confirmação dele, se existirem.",
-              "Treinos: data, duração, quantos exercícios foram feitos, como foi (de 1 a 5) e se algo doeu, só como sim ou não, sem detalhes de saúde.",
+              "Práticas: data, duração efetiva, blocos e exercícios realizados, modo de aprendizado ou treino, etapa da trilha quando escolhida, como você se sentiu (de 1 a 5, opcional) e se algo doeu, só como sim ou não, sem detalhes de saúde. Guardamos a meta em vigor por semana e as conquistas obtidas para não reinterpretar a constância passada.",
               "Testes de habilidade: data e resultados.",
               "Consentimentos e autorizações: versão do termo aceito e datas de aceite e de revogação.",
             ],
@@ -62,7 +62,7 @@ export const LEGAL_DOCS: Record<LegalId, LegalDoc> = {
         title: "O que não coletamos",
         blocks: [
           "Nome completo, data de nascimento completa, foto, voz, escola, endereço, localização, contatos e identificador de publicidade.",
-          "No aparelho, o app guarda apenas o necessário para funcionar: a sessão de login, qual foi o último perfil aberto, preferências de som e voz, o ponto de um treino em andamento e, quando não há internet no momento do treino, os registros ainda não enviados, que saem do aparelho assim que a conexão volta e o envio é concluído. Nada disso é enviado para fora do aparelho por conta própria; limpar os dados do app apaga tudo. No servidor, a cópia oficial é a que se baixa na tela Conta ou que se apaga com a exclusão da conta.",
+          "No aparelho, o app guarda o necessário para funcionar: sessão de login, último perfil, preferências, filtros da biblioteca, rascunhos de práticas e marcas e uma cópia dos perfis, aceites e histórico para abrir com internet instável. Registros ainda não enviados ficam na fila até o envio. Sair da conta remove as cópias e rascunhos; a fila fica vinculada à conta para envio ao entrar novamente. Excluir a conta remove também sua fila. Limpar os dados do app apaga tudo que está somente no aparelho. Os arquivos da interface podem ser guardados para abrir offline; vídeos externos precisam de internet. A exploração antes do cadastro não cria perfil nem registra prática ou dado de saúde.",
         ],
       },
       {

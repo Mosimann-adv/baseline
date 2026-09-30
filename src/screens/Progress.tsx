@@ -1,471 +1,107 @@
-import { useMemo, useRef, useState } from "react";
-import { CountUp, Group, PrimaryButton, Screen } from "../components/ui";
+import { useRef, useState } from "react";
+import { CountUp, Group, Notice, PrimaryButton, Screen } from "../components/ui";
 import { MonthCalendar, Sparkline, WeeksChart } from "../components/charts";
 import { ageThisYear, bandFor } from "../lib/age";
 import { formatDayMonth, startOfWeekIso } from "../lib/dates";
-import {
-  achievements,
-  bestGoalStreak,
-  fundamentalsProgress,
-  goalStreak,
-  isTestDue,
-  lastWeeks,
-  nextTestDate,
-  testProgress,
-  type FundamentalProgress,
-} from "../lib/progress";
+import { friendlyError } from "../lib/errors";
+import { achievements, bestGoalStreak, fundamentalsProgress, goalStreak, isCountedPractice, lastWeeks, testProgress } from "../lib/progress";
+import { nextTestFor, testIsDue, testsDue } from "../lib/testStatus";
 import { formatTestValue, testsFor } from "../content/tests";
-import { CATEGORY_LABELS, programById, programsFor } from "../content/programs";
+import { CATEGORY_LABELS, programMinutes, programsFor } from "../content/programs";
+import { practiceById } from "../content/practices";
 import { TestDetail } from "./TestDetail";
-import type { Athlete, Category, Program, SkillTestDef, SkillTestRecord, TrainingSession } from "../lib/types";
+import type { Athlete, Category, SkillTestRecord, TrainingSession } from "../lib/types";
 
-// Mini-abas da Evolução: ids estáveis ligam cada tab ao seu painel (tabpanel).
-const TABS = ["mapa", "testes", "mais"] as const;
-type TabId = (typeof TABS)[number];
-const TAB_LABEL: Record<TabId, string> = { mapa: "Mapa", testes: "Testes", mais: "Conquistas" };
+const TABS = ["summary", "map", "tests", "achievements"] as const;
+const LABELS = { summary: "Resumo", map: "Mapa", tests: "Testes", achievements: "Conquistas" };
 
-export function Progress({
-  athlete,
-  sessions,
-  tests,
-  onBack,
-  onStartTests,
-  onOpenProgram,
-  onUpdateGoal,
-}: {
-  athlete: Athlete;
-  sessions: TrainingSession[];
-  tests: SkillTestRecord[];
-  onBack: () => void;
-  onStartTests: () => void;
-  onOpenProgram: (programId: string) => void;
+export function Progress({ athlete, sessions, tests, onBack, onStartTests, onOpenProgram, onUpdateGoal }: {
+  athlete: Athlete; sessions: TrainingSession[]; tests: SkillTestRecord[]; onBack: () => void;
+  onStartTests: (testId?: string, quickEntry?: boolean) => void; onOpenProgram: (programId: string) => void;
   onUpdateGoal: (goal: number) => Promise<void> | void;
 }) {
   const band = bandFor(ageThisYear(athlete.birth_year));
-  const goal = athlete.weekly_goal;
-  const streak = goalStreak(sessions, goal);
-  const record = bestGoalStreak(sessions, goal);
-  const weeks = lastWeeks(sessions, 8);
+  const counted = sessions.filter(isCountedPractice);
   const defs = band ? testsFor(band.id) : [];
-  const nextDate = nextTestDate(tests);
-  const due = isTestDue(tests);
-  const badges = achievements(sessions, tests, goal, defs);
-  const earned = badges.filter((badge) => badge.earned).length;
-  // Tocar num teste abre o detalhe dele, com todas as marcas e o que o teste mede.
-  const [openTestId, setOpenTestId] = useState<string | null>(null);
-  // Abas internas: uma história por vez em vez do scroll infinito.
-  const [tab, setTab] = useState<TabId>("mapa");
-  const tabRefs = useRef<(HTMLButtonElement | null)[]>([]);
-  // Setas movem foco e seleção juntas, com volta pelo fim (padrão de tablist).
-  function moveTab(from: number, delta: number) {
-    const next = (from + delta + TABS.length) % TABS.length;
-    setTab(TABS[next]);
-    tabRefs.current[next]?.focus();
-  }
-  const openDef = band ? defs.find((def) => def.id === openTestId) : undefined;
+  const due = testsDue(defs, tests);
+  const streak = goalStreak(counted, athlete.weekly_goal, new Date(), athlete.goal_history);
+  const record = bestGoalStreak(counted, athlete.weekly_goal, athlete.goal_history);
+  const badges = achievements(counted, tests, athlete.weekly_goal, defs, new Date(), athlete.goal_history, athlete.earned_badges);
+  const fundamentals = fundamentalsProgress(counted, tests, defs);
+  const available = band ? programsFor(band.id, athlete.level) : [];
+  const week = counted.filter((session) => session.performed_on >= startOfWeekIso());
+  const recentCategories = fundamentals.filter((item) => item.recentSessions > 0);
+  const [tab, setTab] = useState<(typeof TABS)[number]>("summary");
+  const [category, setCategory] = useState<Category>("drible");
+  const [openTest, setOpenTest] = useState<string | null>(null);
+  const [historyLimit, setHistoryLimit] = useState(6);
+  const refs = useRef<(HTMLButtonElement | null)[]>([]);
+  const selectedTest = defs.find((test) => test.id === openTest);
+  if (selectedTest) return <TestDetail athlete={athlete} def={selectedTest} tests={tests} onBack={() => setOpenTest(null)} onStartTests={onStartTests} />;
 
-  if (openDef) {
-    return (
-      <TestDetail
-        athlete={athlete}
-        def={openDef}
-        tests={tests}
-        onBack={() => setOpenTestId(null)}
-        onStartTests={onStartTests}
-      />
-    );
-  }
-
-  return (
-    <Screen eyebrow={athlete.nickname} title="Evolução" onBack={onBack}>
-      <div className="tabs-mini" role="tablist" aria-label="Seções da evolução">
-        {TABS.map((id, index) => (
-          <button
-            key={id}
-            ref={(el) => {
-              tabRefs.current[index] = el;
-            }}
-            type="button"
-            role="tab"
-            id={`aba-evolucao-${id}`}
-            aria-selected={tab === id}
-            aria-controls={`painel-evolucao-${id}`}
-            tabIndex={tab === id ? 0 : -1}
-            onClick={() => setTab(id)}
-            onKeyDown={(e) => {
-              if (e.key === "ArrowRight") {
-                e.preventDefault();
-                moveTab(index, 1);
-              } else if (e.key === "ArrowLeft") {
-                e.preventDefault();
-                moveTab(index, -1);
-              }
-            }}
-          >
-            {TAB_LABEL[id]}
-          </button>
-        ))}
-      </div>
-
-      <div role="tabpanel" id="painel-evolucao-mapa" aria-labelledby="aba-evolucao-mapa" className="tabpanel" hidden={tab !== "mapa"}>
-        {tab === "mapa" && (
-          <>
-            <GoalCard sessions={sessions} goal={goal} streak={streak} onUpdateGoal={onUpdateGoal} />
-
-            <FundamentalsMap
-              athlete={athlete}
-              sessions={sessions}
-              tests={tests}
-              defs={defs}
-              onOpenProgram={onOpenProgram}
-            />
-
-            <div className="metrics two">
-              <div className="metric">
-                <strong>
-                  <CountUp value={streak} />
-                </strong>
-                <span>{streak === 1 ? "semana seguida na meta" : "semanas seguidas na meta"}</span>
-                {record > 0 && (
-                  <span className="metric-record">recorde: {record === 1 ? "1 semana" : `${record} semanas`}</span>
-                )}
-              </div>
-              <div className="metric">
-                <strong>
-                  <CountUp value={sessions.length} />
-                </strong>
-                <span>{sessions.length === 1 ? "treino no total" : "treinos no total"}</span>
-              </div>
-            </div>
-
-            <Group header="Últimas 8 semanas" footer={`Meta: ${goal} por semana.`}>
-              <div className="chart-box">
-                <WeeksChart weeks={weeks} goal={goal} />
-              </div>
-            </Group>
-
-            <Group header="Últimos treinos">
-              {sessions.length === 0 ? (
-                <p className="row-note">Termine um treino e ele aparece aqui.</p>
-              ) : (
-                sessions.slice(0, 3).map((s) => (
-                  <div key={s.id} className="row">
-                    <span className="row-label">
-                      {programById(s.program_id)?.title ?? "Treino"}
-                      <small>
-                        {formatDayMonth(s.performed_on)} · {s.drills_done}/{s.drills_total} · {s.minutes} min
-                        {s.feeling ? ` · como foi: ${s.feeling}/5` : ""}
-                        {s.pending ? " · neste aparelho" : ""}
-                      </small>
-                    </span>
-                  </div>
-                ))
-              )}
-            </Group>
-
-            {due ? (
-              <section className="due-card pending">
-                <div>
-                  <p className="subtitle">Hora dos testes</p>
-                  <p>Meça de novo e veja o quanto evoluiu.</p>
-                </div>
-                <button type="button" className="secondary-button" onClick={onStartTests}>
-                  Fazer testes
-                </button>
-              </section>
-            ) : nextDate ? (
-              <p className="disclosure-note">Próxima bateria: {formatDayMonth(nextDate)}.</p>
-            ) : null}
-
-            <details className="disclosure">
-              <summary>Ver calendário do mês</summary>
-              <div className="disclosure-body">
-                {sessions.length === 0 ? (
-                  <p className="row-note">Termine um treino e ele aparece aqui.</p>
-                ) : (
-                  <MonthCalendar sessions={sessions} />
-                )}
-              </div>
-            </details>
-          </>
-        )}
-      </div>
-
-      <div role="tabpanel" id="painel-evolucao-testes" aria-labelledby="aba-evolucao-testes" className="tabpanel" hidden={tab !== "testes"}>
-        {tab === "testes" &&
-          (band ? (
-            <Group
-              header="Testes"
-              footer={nextDate ? `Próxima bateria: ${formatDayMonth(nextDate)}. Compare só com você.` : "Os testes se repetem a cada 4 semanas."}
-            >
-              {defs.map((def) => {
-                const progress = testProgress(def, tests);
-                return (
-                  <button key={def.id} type="button" className="row row-nav" onClick={() => setOpenTestId(def.id)}>
-                    <span className="row-label">
-                      {def.name}
-                      <small>
-                        {progress.last !== null && progress.best !== null
-                          ? `Última: ${formatTestValue(def, progress.last)} · melhor: ${formatTestValue(def, progress.best)}`
-                          : "Sem marca ainda"}
-                      </small>
-                    </span>
-                    {progress.improved && <span className="chip-up">evoluiu</span>}
-                    {progress.points.length > 1 && <Sparkline values={progress.points.map((p) => p.value)} />}
-                  </button>
-                );
-              })}
-              <button type="button" className="row row-action" onClick={onStartTests}>
-                {due ? "Fazer testes agora" : "Registrar novas marcas"}
-              </button>
-            </Group>
-          ) : (
-            <Group header="Testes">
-              <p className="row-note">Confira o ano de nascimento do perfil na tela Conta.</p>
-            </Group>
-          ))}
-      </div>
-
-      <div role="tabpanel" id="painel-evolucao-mais" aria-labelledby="aba-evolucao-mais" className="tabpanel" hidden={tab !== "mais"}>
-        {tab === "mais" && (
-          <Group header={`Conquistas · ${earned} de ${badges.length}`}>
-            <div className="badges">
-              {badges.map((badge) => (
-                <div key={badge.id} className={`badge${badge.earned ? " earned" : ""}`}>
-                  <span className="badge-mark" aria-hidden="true">
-                    {badge.earned ? "★" : "☆"}
-                  </span>
-                  <strong>{badge.title}</strong>
-                  <span>{badge.description}</span>
-                  <span className="visually-hidden">{badge.earned ? "Conquistada" : "Ainda não conquistada"}</span>
-                </div>
-              ))}
-            </div>
-          </Group>
-        )}
-      </div>
-    </Screen>
-  );
-}
-
-/** Meta da semana com ajuste − / + (1 a 7), sem sair da Evolução. */
-function GoalCard({
-  sessions,
-  goal,
-  streak,
-  onUpdateGoal,
-}: {
-  sessions: TrainingSession[];
-  goal: number;
-  streak: number;
-  onUpdateGoal: (goal: number) => Promise<void> | void;
-}) {
-  const weekStart = startOfWeekIso();
-  const thisWeek = sessions.filter((s) => s.performed_on >= weekStart);
-  const weekMinutes = thisWeek.reduce((total, s) => total + s.minutes, 0);
-  const met = thisWeek.length >= goal;
-  const goalPct = Math.min(100, Math.round((thisWeek.length / goal) * 100));
-  const [updating, setUpdating] = useState(false);
-  async function changeGoal(delta: number) {
-    const next = goal + delta;
-    if (updating || next < 1 || next > 7) return;
-    setUpdating(true);
-    try {
-      await onUpdateGoal(next);
-    } finally {
-      setUpdating(false);
-    }
-  }
-
-  return (
-    <section className={`goal-card${met ? " met" : ""}`} aria-label="Meta da semana">
-      <div className="goal-head">
-        <span>Meta da semana</span>
-        {met && (
-          <span className="met-badge" role="status">
-            Meta batida!
-          </span>
-        )}
-        <strong>
-          {thisWeek.length} de {goal} {goal === 1 ? "treino" : "treinos"}
-        </strong>
-      </div>
-      <div className="goal-bar" role="progressbar" aria-valuemin={0} aria-valuemax={goal} aria-valuenow={thisWeek.length}>
-        <span className={met ? "met" : ""} style={{ width: `${goalPct}%` }} />
-      </div>
-      <div className="goal-foot">
-        <p>
-          {weekMinutes} min nesta semana
-          {streak > 0 ? ` · ${streak} ${streak === 1 ? "semana seguida" : "semanas seguidas"} na meta` : ""}
-        </p>
-        <div className="goal-stepper" role="group" aria-label="Ajustar meta da semana">
-          <button type="button" aria-label="Diminuir meta" disabled={updating || goal <= 1} onClick={() => void changeGoal(-1)}>
-            −
-          </button>
-          <span aria-hidden="true">{goal}</span>
-          <button type="button" aria-label="Aumentar meta" disabled={updating || goal >= 7} onClick={() => void changeGoal(1)}>
-            +
-          </button>
+  return <Screen eyebrow={athlete.nickname} title="Evolução">
+    <div className="tabs-mini progress-tabs" role="tablist" aria-label="Seções da evolução">{TABS.map((id, index) => <button key={id} ref={(el) => { refs.current[index] = el; }}
+      type="button" role="tab" id={`evolution-tab-${id}`} aria-selected={tab === id} aria-controls={`evolution-panel-${id}`} tabIndex={tab === id ? 0 : -1}
+      onClick={() => setTab(id)} onKeyDown={(event) => {
+        const delta = event.key === "ArrowRight" ? 1 : event.key === "ArrowLeft" ? -1 : 0;
+        if (!delta) return;
+        event.preventDefault();
+        const next = (index + delta + TABS.length) % TABS.length;
+        setTab(TABS[next]); refs.current[next]?.focus();
+      }}>{LABELS[id]}</button>)}</div>
+    {TABS.map((id) => <div key={id} role="tabpanel" id={`evolution-panel-${id}`} aria-labelledby={`evolution-tab-${id}`} hidden={tab !== id} className="tabpanel">
+      {tab === id && id === "summary" && <>
+        <GoalCard athlete={athlete} count={week.length} minutes={week.reduce((sum, session) => sum + session.minutes, 0)} onUpdateGoal={onUpdateGoal} />
+        {counted.length > 0 && <div className="stack next-practice-action"><PrimaryButton onClick={onBack}>Escolher minha próxima prática</PrimaryButton></div>}
+        {counted.length === 0 ? <section className="empty-practice"><h2>Sua primeira prática começa aqui</h2><p>Escolha um bloco, faça no seu ritmo e salve. Depois você acompanha a sua constância e suas marcas.</p><PrimaryButton onClick={onBack}>Escolher uma prática</PrimaryButton></section> : <>
+          <div className="metrics two"><div className="metric"><strong><CountUp value={counted.length} /></strong><span>práticas registradas no total</span></div><div className="metric"><strong><CountUp value={streak} /></strong><span>semanas seguidas na meta</span><span className="metric-record">recorde: {record}</span></div></div>
+          <Group header="O que você vem praticando" footer="Prática registrada nos últimos 28 dias. Frequência não é uma nota de habilidade.">{recentCategories.length ? recentCategories.map((item) => <button type="button" className="row row-nav" key={item.category} onClick={() => { setCategory(item.category); setTab("map"); }}><span className="row-label">{CATEGORY_LABELS[item.category]}<small>{item.recentSessions} {item.recentSessions === 1 ? "prática" : "práticas"} nos últimos 28 dias</small></span></button>) : <p className="row-note">Você pode voltar a praticar quando fizer sentido para sua rotina.</p>}</Group>
+        </>}
+        <Group header="Suas marcas" footer="Medições são comparadas só com as suas anteriores. Cada teste tem sua própria data.">{defs.slice(0, 2).map((def) => {
+          const progress = testProgress(def, tests);
+          return <button type="button" className="row row-nav" key={def.id} onClick={() => setOpenTest(def.id)}><span className="row-label">{def.name}<small>{progress.last === null ? "Ainda sem medição" : `Última: ${formatTestValue(def, progress.last)}`}</small></span>{progress.improved && <span className="chip-up">marca melhor</span>}</button>;
+        })}<button type="button" className="row row-action" onClick={() => setTab("tests")}>Ver todos os testes</button></Group>
+        {due.length > 0 && <p className="disclosure-note">{due.length} {due.length === 1 ? "teste pode" : "testes podem"} ser medidos. Faça só o que fizer sentido hoje.</p>}
+        {sessions.length > 0 && <details className="disclosure"><summary>Histórico e calendário</summary><div className="disclosure-body">
+          <Group header="Últimas práticas">{sessions.slice(0, historyLimit).map((session) => <div className="row" key={session.id}><span className="row-label">{practiceById(session.program_id)?.title ?? "Prática"}<small>{formatDayMonth(session.performed_on)} · {session.drills_done}/{session.drills_total} exercícios · {session.minutes} min{session.feeling ? ` · ${session.execution ? "como se sentiu" : "como foi"}: ${session.feeling}/5` : ""}{session.pending ? " · aguardando envio" : ""}{session.drills_done === 0 ? " · não conta na meta" : ""}</small></span></div>)}{sessions.length > historyLimit && <button type="button" className="row row-action" onClick={() => setHistoryLimit((value) => value + 12)}>Ver mais práticas</button>}</Group>
+          <MonthCalendar sessions={sessions} />
+        </div></details>}
+        {counted.length > 0 && <details className="disclosure"><summary>Constância nas últimas 8 semanas</summary><div className="chart-box"><WeeksChart weeks={lastWeeks(counted, 8)} goal={athlete.weekly_goal} /></div><p className="disclosure-note">A linha mostra a meta atual. Novas alterações preservam as metas passadas. Antes desta atualização, usamos a meta disponível, pois as anteriores não eram registradas.</p></details>}
+      </>}
+      {tab === id && id === "map" && <section className="fundamentals-map"><div className="fundamentals-head"><div><p className="subtitle">Sua prática</p><h2>Mapa de fundamentos</h2></div><span className="map-window">últimos 28 dias</span></div>
+        <p className="fundamentals-intro">Toque em um fundamento para ver seu histórico e os blocos disponíveis.</p>
+        <div className="skill-court" aria-label="Fundamentos do basquete"><span className="court-line court-half" aria-hidden="true" /><span className="court-line court-key" aria-hidden="true" /><span className="court-line court-arc" aria-hidden="true" />
+          {fundamentals.map((item) => <button type="button" key={item.category} className={`skill-node skill-node-${item.category}${category === item.category ? " selected" : ""}${item.recentSessions ? " practiced" : ""}`} aria-pressed={category === item.category}
+            aria-label={`${CATEGORY_LABELS[item.category]}: ${item.recentSessions} práticas nos últimos 28 dias`} onClick={() => setCategory(item.category)}><span className="skill-node-count">{item.recentSessions}</span><span className="skill-node-label">{CATEGORY_LABELS[item.category]}</span></button>)}
+        </div><p className="map-legend">Números de práticas, não notas de habilidade. Em sessões, só os blocos com exercícios concluídos contam para cada fundamento.</p>
+        <div className="fundamental-detail" aria-live="polite"><h3>{CATEGORY_LABELS[category]}</h3><p className="fundamental-note">Histórico completo deste fundamento</p><div className="fundamental-stats"><div><strong>{fundamentals.find((item) => item.category === category)?.sessions ?? 0}</strong><span>práticas</span></div><div><strong>{fundamentals.find((item) => item.category === category)?.minutes ?? 0}</strong><span>min de exercícios*</span></div><div><strong>{fundamentals.find((item) => item.category === category)?.lastTrained ? formatDayMonth(fundamentals.find((item) => item.category === category)!.lastTrained!) : "—"}</strong><span>última prática</span></div></div>
+          <p className="fundamental-note">* Registros antigos usam a duração do bloco. Sessões novas dividem o tempo de exercícios por fundamento, sem descanso.</p>
+          <Group header="Blocos para praticar">{available.filter((program) => program.category === category).map((program) => <button type="button" className="row row-nav" key={program.id} onClick={() => onOpenProgram(program.id)}><span className="row-label">{program.title}<small>{programMinutes(program)} min · {program.drills.length} exercícios</small></span></button>)}{!available.some((program) => program.category === category) && <p className="row-note">Ainda não há bloco para esta faixa. Os registros anteriores continuam no histórico.</p>}</Group>
         </div>
-      </div>
-    </section>
-  );
+        <details className="disclosure"><summary>Ver fundamentos em lista</summary>{fundamentals.map((item) => <button type="button" className="row row-action" key={item.category} onClick={() => setCategory(item.category)}>{CATEGORY_LABELS[item.category]} · {item.recentSessions} práticas em 28 dias</button>)}</details>
+      </section>}
+      {tab === id && id === "tests" && <Group header="Medir um fundamento" footer="Aqueça antes, use o mesmo protocolo e compare somente suas próprias marcas.">{defs.map((def) => {
+        const progress = testProgress(def, tests);
+        const next = nextTestFor(def.id, tests);
+        return <button type="button" className="row row-nav" key={def.id} onClick={() => setOpenTest(def.id)}><span className="row-label">{def.name}<small>{progress.last === null ? "Primeira medição" : `Última: ${formatTestValue(def, progress.last)} · melhor: ${formatTestValue(def, progress.best!)}`}</small><small>{next ? testIsDue(def.id, tests) ? "Pode medir novamente" : `Próxima medição: ${formatDayMonth(next)}` : "Ainda sem marca"}</small></span>{progress.points.length > 1 && <Sparkline values={progress.points.map((point) => point.value)} />}</button>;
+      })}<button type="button" className="row row-action" onClick={() => onStartTests(due[0]?.id ?? defs[0]?.id)}>Medir um teste</button></Group>}
+      {tab === id && id === "achievements" && <Group header={`Conquistas · ${badges.filter((badge) => badge.earned).length} de ${badges.length}`} footer="Conquistas permanentes. A constância considera as metas registradas em cada semana."><div className="badges">{badges.map((badge) => <div className={`badge${badge.earned ? " earned" : ""}`} key={badge.id}><span className="badge-mark" aria-hidden="true">{badge.earned ? "★" : "☆"}</span><strong>{badge.title}</strong><span>{badge.description}</span><span className="visually-hidden">{badge.earned ? "Conquistada" : "Ainda não conquistada"}</span></div>)}</div></Group>}
+    </div>)}
+  </Screen>;
 }
 
-const FUNDAMENTAL_COPY: Record<Category, string> = {
-  drible: "Controle de bola, ritmo e confiança com as duas mãos.",
-  arremesso: "Mecânica, equilíbrio e repetição perto ou longe da cesta.",
-  passe: "Precisão, leitura e conexão com quem joga junto.",
-  defesa: "Postura, deslocamento e reação sem cruzar os pés.",
-  fisico: "Coordenação, velocidade, salto e aterrissagem segura.",
-};
-
-function FundamentalsMap({
-  athlete,
-  sessions,
-  tests,
-  defs,
-  onOpenProgram,
-}: {
-  athlete: Athlete;
-  sessions: TrainingSession[];
-  tests: SkillTestRecord[];
-  defs: SkillTestDef[];
-  onOpenProgram: (programId: string) => void;
-}) {
-  const band = bandFor(ageThisYear(athlete.birth_year));
-  const fundamentals = useMemo(() => fundamentalsProgress(sessions, tests, defs), [sessions, tests, defs]);
-  const availablePrograms = useMemo(
-    () => (band ? programsFor(band.id, athlete.level) : []),
-    [band, athlete.level],
-  );
-  const focus = useMemo(
-    () =>
-      [...fundamentals]
-        .filter((item) => availablePrograms.some((program) => program.category === item.category))
-        .sort(
-          (a, b) =>
-            a.recentSessions - b.recentSessions ||
-            a.sessions - b.sessions ||
-            (a.lastTrained ?? "").localeCompare(b.lastTrained ?? ""),
-        )[0]?.category ??
-      "drible",
-    [fundamentals, availablePrograms],
-  );
-  const [selectedCategory, setSelectedCategory] = useState<Category>(focus);
-  const selected = fundamentals.find((item) => item.category === selectedCategory) ?? fundamentals[0];
-  const suggestion = suggestedProgram(selected.category, availablePrograms, sessions);
-
-  return (
-    <section className="fundamentals-map" aria-labelledby="fundamentals-title">
-      <div className="fundamentals-head">
-        <div>
-          <p className="subtitle">Seu jogo</p>
-          <h2 id="fundamentals-title">Mapa de fundamentos</h2>
-        </div>
-        <span className="map-window">últimos 28 dias</span>
-      </div>
-      <p className="fundamentals-intro">
-        Veja o que você vem praticando e toque em uma área para escolher o próximo treino.
-      </p>
-
-      <div className="skill-court" aria-label="Fundamentos do basquete">
-        <span className="court-line court-half" aria-hidden="true" />
-        <span className="court-line court-key" aria-hidden="true" />
-        <span className="court-line court-arc" aria-hidden="true" />
-        {fundamentals.map((item) => (
-          <FundamentalNode
-            key={item.category}
-            item={item}
-            selected={item.category === selected.category}
-            recommended={item.category === focus}
-            onSelect={() => setSelectedCategory(item.category)}
-          />
-        ))}
-      </div>
-
-      <p className="map-legend">Os números mostram treinos registrados nos últimos 28 dias, não uma nota de habilidade.</p>
-
-      <article className="fundamental-detail" aria-live="polite">
-        <div className="fundamental-detail-head">
-          <div>
-            <p className="subtitle">{selected.category === focus ? "Foco sugerido" : "Fundamento"}</p>
-            <h3>{CATEGORY_LABELS[selected.category]}</h3>
-          </div>
-          {selected.improved && <span className="progress-signal">teste evoluiu</span>}
-        </div>
-        <p className="fundamental-description">{FUNDAMENTAL_COPY[selected.category]}</p>
-        <div className="fundamental-stats">
-          <div>
-            <strong>{selected.sessions}</strong>
-            <span>{selected.sessions === 1 ? "treino" : "treinos"}</span>
-          </div>
-          <div>
-            <strong>{selected.minutes}</strong>
-            <span>minutos</span>
-          </div>
-          <div>
-            <strong>{selected.lastTrained ? formatDayMonth(selected.lastTrained) : "—"}</strong>
-            <span>último</span>
-          </div>
-        </div>
-        <p className="fundamental-note">{fundamentalNote(selected)}</p>
-        {suggestion ? (
-          <PrimaryButton onClick={() => onOpenProgram(suggestion.id)}>Treinar {suggestion.title}</PrimaryButton>
-        ) : (
-          <p className="fundamental-unavailable">Ainda não há um treino deste fundamento para esta faixa.</p>
-        )}
-      </article>
-    </section>
-  );
-}
-
-function FundamentalNode({
-  item,
-  selected,
-  recommended,
-  onSelect,
-}: {
-  item: FundamentalProgress;
-  selected: boolean;
-  recommended: boolean;
-  onSelect: () => void;
-}) {
-  const label = CATEGORY_LABELS[item.category];
-  return (
-    <button
-      type="button"
-      className={`skill-node skill-node-${item.category}${selected ? " selected" : ""}${item.recentSessions > 0 ? " practiced" : ""}`}
-      aria-pressed={selected}
-      aria-label={`${label}: ${item.recentSessions} ${item.recentSessions === 1 ? "treino registrado nos últimos 28 dias" : "treinos registrados nos últimos 28 dias"}${recommended ? ", foco sugerido" : ""}${item.improved ? ", teste evoluiu" : ""}`}
-      onClick={onSelect}
-    >
-      {recommended && <span className="skill-node-focus" aria-hidden="true" />}
-      {item.improved && <span className="skill-node-up" aria-hidden="true">↗</span>}
-      <span className="skill-node-count">{item.recentSessions}</span>
-      <span className="skill-node-label">{label}</span>
-    </button>
-  );
-}
-
-function suggestedProgram(category: Category, programs: Program[], sessions: TrainingSession[]): Program | undefined {
-  const lastDone = new Map<string, string>();
-  for (const session of sessions) {
-    const last = lastDone.get(session.program_id);
-    if (!last || session.performed_on > last) lastDone.set(session.program_id, session.performed_on);
+function GoalCard({ athlete, count, minutes, onUpdateGoal }: { athlete: Athlete; count: number; minutes: number; onUpdateGoal: (goal: number) => Promise<void> | void }) {
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const goal = athlete.weekly_goal;
+  async function update(delta: number) {
+    if (busy || goal + delta < 1 || goal + delta > 7) return;
+    setBusy(true); setError(null);
+    try { await onUpdateGoal(goal + delta); } catch (err) { setError(friendlyError(err)); } finally { setBusy(false); }
   }
-  return programs
-    .filter((program) => program.category === category)
-    .sort((a, b) => (lastDone.get(a.id) ?? "").localeCompare(lastDone.get(b.id) ?? ""))[0];
-}
-
-function fundamentalNote(item: FundamentalProgress): string {
-  if (item.improved) return "Sua marca mais recente melhorou em relação à primeira medição.";
-  if (item.tested) return "Você já tem uma marca de teste para acompanhar neste fundamento.";
-  if (item.availableTests > 0) return "Faça os testes para acompanhar suas marcas além da frequência de treino.";
-  if (item.recentSessions > 0) {
-    return `${item.recentSessions} ${item.recentSessions === 1 ? "treino registrado" : "treinos registrados"} nos últimos 28 dias.`;
-  }
-  if (item.sessions > 0) return "Faz mais de 28 dias desde a última prática registrada deste fundamento.";
-  return "Comece por um treino e este ponto do mapa passa a contar sua história.";
+  return <><section className={`goal-card${count >= goal ? " met" : ""}`} aria-label="Meta da semana"><div className="goal-head"><span>Meta da semana</span><strong>{count} de {goal} práticas</strong>{count >= goal && <span className="met-badge">Meta cumprida</span>}</div>
+    <div className="goal-bar" role="progressbar" aria-valuemin={0} aria-valuemax={goal} aria-valuenow={Math.min(count, goal)}><span style={{ width: `${Math.min(100, count / goal * 100)}%` }} /></div>
+    <div className="goal-foot"><p>{minutes} min nesta semana</p><div className="goal-stepper" role="group" aria-label="Ajustar meta da semana"><button type="button" aria-label="Diminuir meta" disabled={busy || goal === 1} onClick={() => void update(-1)}>−</button><span>{goal}</span><button type="button" aria-label="Aumentar meta" disabled={busy || goal === 7} onClick={() => void update(1)}>+</button></div></div>
+    <p className="goal-explanation">Um bloco ou uma sessão com exercício concluído conta como uma prática. Ajuste uma meta que caiba na sua rotina.</p>
+  </section>{error && <Notice tone="error">{error}</Notice>}</>;
 }

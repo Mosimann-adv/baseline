@@ -1,0 +1,36 @@
+/* Exploração pública (antes do cadastro) — src/screens/Explore.tsx.
+   Reaproveita os componentes e classes globais (Screen, Group, program-card, video-frame…);
+   aqui fica só o layout próprio da exploração. */
+
+/* Faixas etárias temporárias: mesmas medidas dos cartões de perfil, sem avatar. */
+.explore-band-grid {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 12px; padding: 12px;
+}
+.explore-band {
+  display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 20px 12px;
+  border: 0; border-radius: var(--radius-group); background: var(--fill); color: var(--text); text-align: center;
+  transition: transform 0.25s var(--spring), background-color 0.2s ease;
+}
+.explore-band:active { background: var(--fill-2); transform: scale(0.97); }
+.explore-band strong { font-size: 17px; font-weight: 600; }
+.explore-band span { font-size: 13px; line-height: 1.35; color: var(--text-3); }
+@media (hover: hover) {
+  .explore-band:hover { background: var(--fill-2); }
+}
+
+/* Aviso de faixa temporária na lista de treinos. */
+.explore-current { margin: 0 4px 8px; font-size: 14px; line-height: 1.45; color: var(--text-3); }
+
+/* Notas discretas perto das ações. */
+.explore-note { margin: 0; font-size: 13px; line-height: 1.45; color: var(--text-3); max-width: 44ch; }
+
+/* Ação do exercício aberto na prévia. */
+.explore-drill-actions { display: flex; }
+.explore-drill-actions .secondary-button { min-height: 44px; }
+
+/* Demonstração com timer: contagem grande e controles lado a lado. */
+.explore-demo { margin-top: var(--space-3); }
+.explore-demo .drill-cue { font-size: 17px; }
+.explore-demo .countdown { margin: 4px 0 0; }
+.explore-timer-row { display: flex; gap: 8px; }
+.explore-timer-row .secondary-button { flex: 1; min-height: 48px; }
